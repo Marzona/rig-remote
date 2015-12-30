@@ -3,7 +3,7 @@ gqrx-remote
 
 Remotely control [gqrx](http://gqrx.dk/) while keeping your bookmarks in order. Interacts with gqrx using the [rigctl](http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
 
-![gqrx-remote-linux](http://dl.defying.me/gqrx-remote/gqrx-remote-linux.png)
+![gqrx-remote-linux](https://github.com/Marzona/gqrx-remote/blob/master/screenshots/gqrx-remote.png)
 
 
 Features
