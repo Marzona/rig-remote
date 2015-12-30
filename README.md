@@ -16,13 +16,14 @@ Features
 - Restore gqrx frequency and mode (bookmark double-click)
 - Keep window always on top
 - Auto save
+- scan for activity between bookmarks
+- scan for activity in a frequency range
 
 Next versions will also feature:
+- unit tests
+- tool tips
 
-- [Bookmark scanner](https://github.com/marmelo/gqrx-remote/issues/1) (cycle through bookmarks and stop when a live transmission is detected)
-- [Range frequency scanner](https://github.com/marmelo/gqrx-remote/issues/2)
-
-See the [issue tracker](https://github.com/marmelo/gqrx-remote/issues). Suggestions are welcome!
+I'll send the pull request as soon as I'll introduce some testing coverage. Suggestions are welcome!
 
 
 Requirements
