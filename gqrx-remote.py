@@ -70,7 +70,7 @@ def log_configuration(verbose):
         logging.basicConfig(format="%(asctime)s %(message)s",
                             datefmt="%m/%d/%Y %I:%M:%S %p %Z",
                             level=logging.INFO)
-    logging.Formatter.converter = time.utctime
+
 
 # entry point
 if __name__ == "__main__":

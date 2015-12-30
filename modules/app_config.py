@@ -85,10 +85,10 @@ class AppConfig(object):
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
-            logger.exception("Error while trying to create default config "\
+            logger.info("Error while trying to create default config "\
                               "path as {}".format(self.config_file))
         except (OSError, FileExistError):
-            logger.warning("The default config directory already exists..")
+            logger.info("The default config directory already exists..")
 
         for key in self.config.keys():
             row=[]
