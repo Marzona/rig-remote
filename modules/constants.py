@@ -46,3 +46,14 @@ SUPPORTED_SCANNING_ACTIONS = ("start")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
+
+DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
+                  "port" : "7356",
+                  "interval" : "15",
+                  "delay" : "5",
+                  "sgn_level" : "25",
+                  "range_min" : "24",
+                  "range_max" : "1800",
+                  "always_on_top" : "True",
+                  "save_exit" : "False",
+                  "auto_bookmark" : "False"}
