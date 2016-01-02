@@ -28,11 +28,16 @@ from modules.disk_io import IO
 from modules.rigctl import RigCtl
 from modules.scanning import ScanningTask
 from modules.scanning import Scanning
-import tkinter as tk
-import tkinter.ttk as ttk
-from tkinter import Text
-from tkinter import LabelFrame
-import tkinter.messagebox
+#import tkinter as tk
+#import tkinter.ttk as ttk
+import Tkinter as tk
+import ttk
+#from tkinter import Text
+#from tkinter import LabelFrame
+from Tkinter import Text
+from Tkinter import LabelFrame
+#import tkinter.messagebox
+import tkMessageBox
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -355,7 +360,7 @@ class GqrxRemote(ttk.Frame):
                                        column=2,
                                        sticky=tk.EW)
 
-        self.cb_auto_bookmark = tkinter.BooleanVar()
+        self.cb_auto_bookmark = tk.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.menu,
                                                  text="auto bookmark",
                                                  onvalue=True,
@@ -401,7 +406,7 @@ class GqrxRemote(ttk.Frame):
                           columnspan=1,
                           sticky=tk.EW)
 
-        self.cb_save_exit = tkinter.BooleanVar()
+        self.cb_save_exit = tk.BooleanVar()
         self.ckb_save_exit = ttk.Checkbutton(self.menu,
                                              text="Save on exit",
                                              onvalue=True,
