@@ -3,6 +3,7 @@
 # import modules
 
 from modules.disk_io import IO
+from modules.constants import DEFAULT_CONFIG
 import logging
 import os
 
@@ -31,17 +32,18 @@ class AppConfig(object):
         self.io = IO()
         self.default_config_file = ".gqrx-remote/gqrx-remote.conf"
         self.config_file = None
-        self.config = {}
-        self.config["hostname"] = "127.0.0.1"
-        self.config["port"] = "7356"
-        self.config["interval"] = "15"
-        self.config["delay"] = "5"
-        self.config["sgn_level"] = "25"
-        self.config["range_min"] = "24"
-        self.config["range_max"] = "1800"
-        self.config["always_on_top"] = "True"
-        self.config["save_exit"] = "False"
-        self.config["auto_bookmark"] = "False"
+        self.config = DEFAULT_CONFIG
+#        self.config = {}
+#        self.config["hostname"] = "127.0.0.1"
+#        self.config["port"] = "7356"
+#        self.config["interval"] = "15"
+#        self.config["delay"] = "5"
+#        self.config["sgn_level"] = "25"
+#        self.config["range_min"] = "24"
+#        self.config["range_max"] = "1800"
+#        self.config["always_on_top"] = "True"
+#        self.config["save_exit"] = "False"
+#        self.config["auto_bookmark"] = "False"
 
         if alternate_config_file:
             self.config_file = alternate_config_file
