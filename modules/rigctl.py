@@ -16,7 +16,6 @@ Copyright (c) 2014 Rafael Marmelo
 """
 
 import logging
-import os.path
 import telnetlib
 
 # logging configuration
