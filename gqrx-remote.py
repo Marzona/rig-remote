@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 Remote application that interacts with gqrx using rigctl protocol.
@@ -19,7 +19,8 @@ import argparse
 import logging
 import os
 import time
-import tkinter as tk
+#import tkinter as tk
+import Tkinter as tk
 from modules.ui import GqrxRemote
 from modules.app_config import AppConfig
 
