@@ -2,34 +2,29 @@
 
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
-from modules.constants import TIME_WAIT_FOR_SIGNAL
 from modules.constants import TIME_WAIT_FOR_TUNE
 from modules.constants import MIN_INTERVAL
-from modules.constants import MAX_SCAN_THREADS
+from modules.exceptions import UnsupportedScanningConfigError
 import logging
-import os
 import time
 
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class ScanningReport(object):
-
-    def __init__(self):
-        self.frequency = None
-        self.date = None
-        self.comment_header = "Discovered on "
-
 class ScanningTask(object):
+    """Representation of a scan task, with helper method for checking
+    for proper frequency range.
+
+    """
 
     def __init__(self,
                  mode,
                  bookmark_list,
-                 range_min = None,
-                 range_max = None,
-                 delay = None,
-                 interval = None,
-                 sgn_level = None):
+                 range_min=None,
+                 range_max=None,
+                 delay=None,
+                 interval=None,
+                 sgn_level=None):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -37,12 +32,13 @@ class ScanningTask(object):
         :type mode: string
         :param bookmark_list: the actual list of bookmarks, may be empty
         :type bookmark_list: list of tuples, every tuple is a bookmark
-        :raises: UnsupportedScanningConfigError if action or mode are not allowed
+        :raises: UnsupportedScanningConfigError if action or mode are not
+        allowed
         :returns: none
         """
 
         self.error = None
-        self.new_bookmark_list=[]
+        self.new_bookmark_list = []
         self.bookmark_list = bookmark_list
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
@@ -61,9 +57,8 @@ class ScanningTask(object):
             self.delay = int(delay)
             self.sgn_level = int(sgn_level)
         except ValueError:
-            """We log some info and re raise
-            """
-            logger.exception("One of the input values isn't of the proper type.")
+            """We log some info and re raise."""
+            logger.exception("One input values is not of the proper type.")
             logger.exception("range_max:{}".format(range_max))
             logger.exception("range_min:{}".format(range_min))
             logger.exception("interval:{}".format(interval))
@@ -85,10 +80,13 @@ class ScanningTask(object):
             self.interval = MIN_INTERVAL
 
 class Scanning(object):
+    """Provides methods for doing the bookmark/frequency scan,
+    updating the bookmarks with the active frequencies found.
 
+    """
 
     def scan(self, task):
-        """Wrapper class around _frequency and _bookmarks. It calls one
+        """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
 
         :param task: object that represent a scanning task
@@ -104,7 +102,7 @@ class Scanning(object):
         return updated_task
 
     def _frequency(self, task):
-        """Performs a frequency scan, using the task obj for finding 
+        """Performs a frequency scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
 
         :param task: object that represent a scanning task
@@ -121,8 +119,9 @@ class Scanning(object):
             logger.info("interval:{}".format(task.interval))
             rigctl.set_frequency(freq)
             time.sleep(TIME_WAIT_FOR_TUNE)
-            logger.info("sgn_level:{}".format(int(rigctl.get_level().replace(".",""))))
-            if int(rigctl.get_level().replace(".","")) > task.sgn_level:
+            level = int(rigctl.get_level().replace(".", ""))
+            logger.info("sgn_level:{}".format(level))
+            if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
                 logger.info("Activity found on freq: {}".format(freq))
                 task.new_bookmark_list.append(freq)
                 time.sleep(task.delay)
@@ -131,7 +130,7 @@ class Scanning(object):
         return task
 
     def _bookmarks(self, task):
-        """Performs a bookmark scan, using the task obj for finding 
+        """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
 
         :param task: object that represent a scanning task
@@ -145,8 +144,9 @@ class Scanning(object):
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
-            logger.info("sgn_level:{}".format(int(rigctl.get_level().replace(".",""))))
-            if int(rigctl.get_level().replace(".","")) > task.sgn_level:
+            level = int(rigctl.get_level().replace(".", ""))
+            logger.info("sgn_level:{}".format(level))
+            if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
                 logger.info("Activity found on freq: {}".format(bookmark[0]))
                 task.new_bookmark_list.append(bookmark)
                 time.sleep(task.delay)

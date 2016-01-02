@@ -3,7 +3,6 @@
 # import modules
 
 from modules.disk_io import IO
-from modules.constants import DIRMODE
 import logging
 import os
 
@@ -29,7 +28,7 @@ class AppConfig(object):
         :returns:none
         """
 
-        self.io= IO()
+        self.io = IO()
         self.default_config_file = ".gqrx-remote/gqrx-remote.conf"
         self.config_file = None
         self.config = {}
@@ -52,7 +51,7 @@ class AppConfig(object):
                                             self.default_config_file)
 
     def read_conf(self):
-        """Read the configuration file. 
+        """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
         and then we re-read it.
 
@@ -65,7 +64,7 @@ class AppConfig(object):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
             for row in self.io.row_list:
-                self.config[row[0].strip()]=row[1].strip()
+                self.config[row[0].strip()] = row[1].strip()
         else:
             self.write_conf()
             self.read_conf()
@@ -87,11 +86,11 @@ class AppConfig(object):
         except IOError:
             logger.info("Error while trying to create default config "\
                               "path as {}".format(self.config_file))
-        except (OSError, FileExistError):
+        except OSError:
             logger.info("The default config directory already exists..")
 
         for key in self.config.keys():
-            row=[]
+            row = []
             row.append(key)
             row.append(self.config[key])
             self.io.row_list.append(row)

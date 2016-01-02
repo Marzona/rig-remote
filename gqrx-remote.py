@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 Remote application that interacts with gqrx using rigctl protocol.
@@ -19,19 +19,22 @@ import argparse
 import logging
 import os
 import time
-import tkinter as tk
-import tkinter.ttk as ttk
-import tkinter.messagebox
+#import tkinter as tk
+import Tkinter as tk
 from modules.ui import GqrxRemote
 from modules.app_config import AppConfig
 
 
 def input_arguments():
+    """Argument parser.
+
+    """
+
     parser = argparse.ArgumentParser(
-        description="""Remote application 
+        description="""Remote application
         that interacts with gqrx using
         rigctl protocol.
-        Gqrx partially implements rigctl 
+        Gqrx partially implements rigctl
         since version 2.3""",
         epilog="""Please refer to:
         http://gqrx.dk/,
@@ -56,10 +59,13 @@ def input_arguments():
                         action="store_true",
                         help="Increase log verbosity.")
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def log_configuration(verbose):
+    """Logger configuration: time/date formatting.
+
+    """
+
     os.environ["TZ"] = "UTC"
     time.tzset()
     if verbose:
