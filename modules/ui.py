@@ -17,20 +17,17 @@ Copyright (c) 2014 Rafael Marmelo
 
 # import modules
 
-import csv
 import logging
 import datetime
 from modules.constants import ALLOWED_BOOKMARK_TASKS
 from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
-from modules.constants import MAX_SCAN_THREADS
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.disk_io import IO
 from modules.rigctl import RigCtl
 from modules.scanning import ScanningTask
 from modules.scanning import Scanning
-import os.path
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import Text
@@ -52,14 +49,14 @@ class GqrxRemote(ttk.Frame):
         ttk.Frame.__init__(self, root)
         self.bookmarks_file = "gqrx-bookmarks.csv"
         self.log_file = None
-        self.build(root, ac)
+        self.build(ac)
         self.cbb_mode.current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.rigctl = RigCtl(self.txt_hostname.get(),
                              self.txt_port.get())
 
-    def build(self,root, ac):
+    def build(self, ac):
         """Build and initialize the GUI widgets.
 
         :param ac: object instance for handling the app config
@@ -283,7 +280,7 @@ class GqrxRemote(ttk.Frame):
                                              column=0,
                                              sticky=tk.W)
         self.txt_sgn_level = ttk.Entry(self.menu,
-                                       width = 10)
+                                       width=10)
         self.txt_sgn_level.grid(row=11,
                                 column=1,
                                 columnspan=1,
@@ -306,7 +303,7 @@ class GqrxRemote(ttk.Frame):
                                    column=3,
                                    sticky=tk.W)
         self.txt_range_min = ttk.Entry(self.menu,
-                                       width = 10)
+                                       width=10)
         self.txt_range_min.grid(row=12,
                                 column=1,
                                 columnspan=1,
@@ -314,7 +311,7 @@ class GqrxRemote(ttk.Frame):
                                 pady=2,
                                 sticky=tk.W)
         self.txt_range_max = ttk.Entry(self.menu,
-                                       width = 10)
+                                       width=10)
         self.txt_range_max.grid(row=12,
                                 column=2,
                                 columnspan=1,
@@ -327,13 +324,13 @@ class GqrxRemote(ttk.Frame):
                                          column=0,
                                          sticky=tk.W)
         self.txt_interval = ttk.Entry(self.menu,
-                                      width = 10)
+                                      width=10)
         self.txt_interval.grid(row=13,
-                              column=1,
-                              columnspan=1,
-                              padx=2,
-                              pady=2,
-                              sticky=tk.W)
+                               column=1,
+                               columnspan=1,
+                               padx=2,
+                               pady=2,
+                               sticky=tk.W)
         ttk.Label(self.menu,
                   text="Khz").grid(row=13,
                                    padx=0,
@@ -345,7 +342,7 @@ class GqrxRemote(ttk.Frame):
                                       column=0,
                                       sticky=tk.W)
         self.txt_delay = ttk.Entry(self.menu,
-                                   width = 10)
+                                   width=10)
         self.txt_delay.grid(row=14,
                             column=1,
                             columnspan=1,
@@ -361,10 +358,9 @@ class GqrxRemote(ttk.Frame):
         self.cb_auto_bookmark = tkinter.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.menu,
                                                  text="auto bookmark",
-                                                 onvalue = True,
-                                                 offvalue = False,
-                                                 variable = self.cb_auto_bookmark
-                                                 )
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_auto_bookmark)
 
         self.ckb_auto_bookmark.grid(row=15,
                                     column=1,
@@ -408,9 +404,9 @@ class GqrxRemote(ttk.Frame):
         self.cb_save_exit = tkinter.BooleanVar()
         self.ckb_save_exit = ttk.Checkbutton(self.menu,
                                              text="Save on exit",
-                                             onvalue = True,
-                                             offvalue = False,
-                                             variable = self.cb_save_exit)
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.cb_save_exit)
 
         self.ckb_save_exit.grid(row=20,
                                 column=1,
@@ -419,7 +415,7 @@ class GqrxRemote(ttk.Frame):
 
         self.btn_quit = ttk.Button(self.menu,
                                    text="Quit",
-                                   command = lambda: self.shutdown(ac))
+                                   command=lambda: self.shutdown(ac))
         self.btn_quit.grid(row=20,
                            column=3,
                            columnspan=1,
@@ -440,7 +436,7 @@ class GqrxRemote(ttk.Frame):
             if self.ckb_top.state() != ("selected"):
                 self.ckb_top.invoke()
 
-    def _store_conf(self,ac):
+    def _store_conf(self, ac):
         """populates the ac object reading the info from the UI
 
         :param ac: object used to hold the app configuration.
@@ -474,7 +470,7 @@ class GqrxRemote(ttk.Frame):
         """
 
         if self.cb_save_exit.get():
-            self.bookmark("save" ,",")
+            self.bookmark("save", ",")
             ac = self._store_conf(ac)
             ac.write_conf()
         self.master.destroy()
@@ -537,8 +533,7 @@ class GqrxRemote(ttk.Frame):
 
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
-            logger.error("Supported actions:{}"
-                          .format(SUPPORTED_SCANNING_ACTIONS))
+            logger.error("Supported actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
 
         bookmark_list = []
@@ -550,15 +545,19 @@ class GqrxRemote(ttk.Frame):
         delay = self.txt_delay.get()
         interval = self.txt_interval.get()
         sgn_level = self.txt_sgn_level.get()
-        scanning_task = ScanningTask(mode, bookmark_list, min_freq, max_freq, delay, interval, sgn_level)
-
-
+        scanning_task = ScanningTask(mode,
+                                     bookmark_list,
+                                     min_freq,
+                                     max_freq,
+                                     delay,
+                                     interval,
+                                     sgn_level)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
         logger.info("new activity found:{}".format(task.new_bookmark_list))
         if task.mode.lower() == "bookmarks":
             tkinter.messagebox.showerror("Activity found:{}".format(task.new_bookmark_list),
-                                          parent=self)
+                                         parent=self)
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
 
@@ -585,8 +584,9 @@ class GqrxRemote(ttk.Frame):
 
         now = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
         for nb in nbl:
-            self.txt_description.insert(0,"activity on {}".format(now))
-            self._frequency_pp_parse(self.txt_frequency.insert(0, self._frequency_pp(frequency)))
+            self.txt_description.insert(0, "activity on {}".format(now))
+            self._frequency_pp_parse(self.txt_frequency.insert(0,
+                                                               self._frequency_pp(nb)))
             # adding bookmark to the list
             self.cb_add()
             self._clear_form()
@@ -643,7 +643,7 @@ class GqrxRemote(ttk.Frame):
                                          parent=self)
 
     def cb_autofill_form(self, event):
-        """Auto-fill bookmark fields with details 
+        """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
 
         :param event: not used?
@@ -674,7 +674,8 @@ class GqrxRemote(ttk.Frame):
         # find where to insert (insertion sort)
         idx = tk.END
         for item in self.tree.get_children():
-            curr_freq = self._frequency_pp_parse(self.tree.item(item).get('values')[0])
+            frequency = self.tree.item(item).get('values')[0]
+            curr_freq = self._frequency_pp_parse(frequency)
             curr_mode = self.tree.item(item).get('values')[1]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
@@ -688,8 +689,8 @@ class GqrxRemote(ttk.Frame):
         item = self.tree.insert('',
                                 idx,
                                 values=[self._frequency_pp(frequency),
-                                mode,
-                                description])
+                                        mode,
+                                        description])
 
         self.tree.selection_set(item)
         self.tree.focus(item)
@@ -709,7 +710,7 @@ class GqrxRemote(ttk.Frame):
         if item != '':
             self.tree.delete(item)
             # save
-        self.bookmark("save" ,",")
+        self.bookmark("save", ",")
 
     def _frequency_pp(self, frequency):
         """Add thousands separator.

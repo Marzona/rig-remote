@@ -18,19 +18,15 @@ Copyright (c) 2014 Rafael Marmelo
 import csv
 import logging
 import os.path
-import tkinter as tk
-import tkinter.ttk as ttk
-from tkinter import Text
-from tkinter import LabelFrame
-import tkinter.messagebox
-from modules.rigctl import RigCtl
 from modules.exceptions import InvalidPathError
 
 # logging configuration
 logger = logging.getLogger(__name__)
 
 class IO(object):
+    """IO wrapper class
 
+    """
     def __init__(self):
         self.row_list = []
 
@@ -61,9 +57,9 @@ class IO(object):
 
         self._path_check(csv_file)
 
-        try :
+        try:
             with open(csv_file, 'r') as data_file:
-                reader = csv.reader(data_file, delimiter = delimiter)
+                reader = csv.reader(data_file, delimiter=delimiter)
                 for line in reader:
                     self.row_list.append(line)
 
@@ -86,7 +82,7 @@ class IO(object):
 
         try:
             with open(csv_file, 'w') as data_file:
-                writer = csv.writer(data_file, delimiter = delimiter)
+                writer = csv.writer(data_file, delimiter=delimiter)
                 for row in self.row_list:
                     writer.writerow(row)
         except (IOError, OSError):
