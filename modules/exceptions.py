@@ -4,7 +4,7 @@
 
 # non retriable custom exceptions
 
-class NonRetriableError (object):
+class NonRetriableError (Exception):
     pass
 
 class InvalidPathError (NonRetriableError):

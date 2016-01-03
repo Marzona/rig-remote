@@ -17,6 +17,7 @@ Copyright (c) 2014 Rafael Marmelo
 
 import logging
 import telnetlib
+from modules.constants import DEFAULT_CONFIG
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -24,7 +25,8 @@ logger = logging.getLogger(__name__)
 class RigCtl(object):
     """Basic rigctl client implementation."""
 
-    def __init__(self, hostname='127.0.0.1', port=7356):
+    def __init__(self, hostname=DEFAULT_CONFIG["hostname"],
+                 port=DEFAULT_CONFIG["port"]):
         self.hostname = hostname
         self.port = port
 
@@ -61,7 +63,7 @@ class RigCtl(object):
 
         return self._request('f')
 
-    def set_mode(self, mode):
+    def set_mode(self, mode):  #pragma: no cover
         """Wrapper around _request. It configures the command for setting
         the mode.
 
@@ -69,7 +71,7 @@ class RigCtl(object):
 
         return self._request('M %s' % mode)
 
-    def get_mode(self):
+    def get_mode(self): #pragma: no cover
         """Wrapper around _request. It configures the command for getting
         the mode.
 
@@ -78,7 +80,7 @@ class RigCtl(object):
         return self._request('m')
 
 
-    def get_level(self):
+    def get_level(self):  #pragma: no cover
         """Wrapper around _request. It configures the command for getting
         the signal level.
 
