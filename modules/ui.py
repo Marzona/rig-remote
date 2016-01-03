@@ -28,15 +28,10 @@ from modules.disk_io import IO
 from modules.rigctl import RigCtl
 from modules.scanning import ScanningTask
 from modules.scanning import Scanning
-#import tkinter as tk
-#import tkinter.ttk as ttk
 import Tkinter as tk
 import ttk
-#from tkinter import Text
-#from tkinter import LabelFrame
 from Tkinter import Text
 from Tkinter import LabelFrame
-#import tkinter.messagebox
 import tkMessageBox
 
 # logging configuration
@@ -561,7 +556,7 @@ class GqrxRemote(ttk.Frame):
         task = scanning.scan(scanning_task)
         logger.info("new activity found:{}".format(task.new_bookmark_list))
         if task.mode.lower() == "bookmarks":
-            tkinter.messagebox.showerror("Activity found:{}".format(task.new_bookmark_list),
+            tkMessageBox.showerror("Activity found:{}".format(task.new_bookmark_list),
                                          parent=self)
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
@@ -619,12 +614,12 @@ class GqrxRemote(ttk.Frame):
         self._clear_form()
         try:
             frequency = self.rigctl.get_frequency()
-            mode = self.get_mode()
+            mode = self.rigctl.get_mode()
             # update fields
             self.txt_frequency.insert(0, self._frequency_pp(frequency))
             self.cbb_mode.insert(0, mode)
         except Exception as err:
-            tkinter.messagebox.showerror("Error",
+            tkMessageBox.showerror("Error",
                                          "Could not connect to gqrx.\n%s" % err,
                                          parent=self)
 
@@ -643,7 +638,7 @@ class GqrxRemote(ttk.Frame):
             self.rigctl.set_frequency(values[0].replace(',', ''))
             self.rigctl.set_mode((values[1]))
         except Exception as err:
-            tkinter.messagebox.showerror("Error",
+            tkMessageBox.showerror("Error",
                                          "Could not set frequency.\n%s" % err,
                                          parent=self)
 
@@ -679,8 +674,8 @@ class GqrxRemote(ttk.Frame):
         # find where to insert (insertion sort)
         idx = tk.END
         for item in self.tree.get_children():
-            frequency = self.tree.item(item).get('values')[0]
-            curr_freq = self._frequency_pp_parse(frequency)
+            freq = self.tree.item(item).get('values')[0]
+            curr_freq = self._frequency_pp_parse(freq)
             curr_mode = self.tree.item(item).get('values')[1]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
