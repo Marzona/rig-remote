@@ -87,5 +87,6 @@ if __name__ == "__main__":
     config_file = args.alternate_config_file
     root = tk.Tk()
     ac = AppConfig(config_file)
-    app = GqrxRemote(root, ac)
+    app = GqrxRemote(root)
+    app.apply_config(ac)
     app.mainloop()
