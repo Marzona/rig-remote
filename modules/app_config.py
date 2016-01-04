@@ -16,7 +16,7 @@ class AppConfig(object):
 
     """
 
-    def __init__(self, alternate_config_file):
+    def __init__(self, alternate_config_file):  #pragma: no cover
         """Default config, they will be overwritten when a conf is loaded
         this will be used to write a default config file.
         If the command line specifies a config file we note it in
@@ -41,7 +41,7 @@ class AppConfig(object):
             self.config_file = os.path.join(os.path.expanduser('~'),
                                             self.default_config_file)
 
-    def read_conf(self):
+    def read_conf(self):  # pragma: no cover
         """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
         and then we re-read it.

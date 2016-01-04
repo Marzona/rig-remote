@@ -37,7 +37,7 @@ import tkMessageBox
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class GqrxRemote(ttk.Frame):
+class GqrxRemote(ttk.Frame):  #pragma: no cover
     """Remote application that interacts with gqrx using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
 
@@ -45,22 +45,21 @@ class GqrxRemote(ttk.Frame):
     :returns: none
     """
 
-    def __init__(self, root, ac):
+    def __init__(self, root):  #pragma: no cover
         ttk.Frame.__init__(self, root)
         self.bookmarks_file = "gqrx-bookmarks.csv"
         self.log_file = None
-        self.build(ac)
+        self.build()
         self.cbb_mode.current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.rigctl = RigCtl(self.txt_hostname.get(),
                              self.txt_port.get())
 
-    def build(self, ac):
+    def build(self):  #pragma: no cover
         """Build and initialize the GUI widgets.
 
-        :param ac: object instance for handling the app config
-        :type ac: AppConfig object
+        :param: none
         :raises: none
         :returns: none
         """
@@ -421,7 +420,15 @@ class GqrxRemote(ttk.Frame):
                            columnspan=1,
                            sticky=tk.SE)
 
-        # apply config
+    def apply_config(self, ac):
+        """Applies the config to the UI.
+
+        :param ac: object instance for handling the app config
+        :type ac: AppConfig object
+        :raises : none
+        :returns : none
+        """
+
         ac.read_conf()
         self.txt_hostname.insert(0, ac.config["hostname"])
         self.txt_port.insert(0, ac.config["port"])
@@ -436,7 +443,7 @@ class GqrxRemote(ttk.Frame):
             if self.ckb_top.state() != ("selected"):
                 self.ckb_top.invoke()
 
-    def _store_conf(self, ac):
+    def _store_conf(self, ac):  #pragma: no cover
         """populates the ac object reading the info from the UI
 
         :param ac: object used to hold the app configuration.
@@ -460,7 +467,7 @@ class GqrxRemote(ttk.Frame):
         return ac
 
 
-    def shutdown(self, ac):
+    def shutdown(self, ac):  #pragma: no cover
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
 
@@ -475,7 +482,7 @@ class GqrxRemote(ttk.Frame):
             ac.write_conf()
         self.master.destroy()
 
-    def bookmark(self, task, delimiter):
+    def bookmark(self, task, delimiter):  #pragma: no cover
         """Bookmarks handling. loads and saves the bookmarks as
         a csv file.
 
@@ -505,21 +512,21 @@ class GqrxRemote(ttk.Frame):
                 bookmarks.row_list.append(values)
             bookmarks.csv_save(self.bookmarks_file, delimiter)
 
-    def bookmark_start(self):
+    def bookmark_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from bookmarks.
 
         """
 
         self._scan("bookmarks", "start")
 
-    def frequency_start(self):
+    def frequency_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from a frequency range.
 
         """
 
         self._scan("frequency", "start")
 
-    def _scan(self, mode, action):
+    def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
 
@@ -561,7 +568,7 @@ class GqrxRemote(ttk.Frame):
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
 
-    def _clear_form(self):
+    def _clear_form(self):  #pragma: no cover
         """Clear the form.. nothing more.
 
         :param: none
@@ -573,7 +580,7 @@ class GqrxRemote(ttk.Frame):
         self.txt_description.delete(0, tk.END)
         self.cbb_mode.delete(0, tk.END)
 
-    def _add_new_bookmarks(self, nbl):
+    def _add_new_bookmarks(self, nbl):  #pragma: no cover
         """Fill in the data, calls uses cb_add() and calls clear_form.
 
         :param nbl: list of new frequencies to bookmark
@@ -591,7 +598,7 @@ class GqrxRemote(ttk.Frame):
             self.cb_add()
             self._clear_form()
 
-    def cb_top(self):
+    def cb_top(self):  #pragma: no cover
         """Set window property to be always on top.
 
         :param: none
@@ -602,7 +609,7 @@ class GqrxRemote(ttk.Frame):
         self.master.attributes("-topmost",
                                'selected' in self.ckb_top.state())
 
-    def cb_get_frequency(self):
+    def cb_get_frequency(self):  #pragma: no cover
         """Get current gqrx frequency and mode.
 
         :param: none
@@ -623,7 +630,7 @@ class GqrxRemote(ttk.Frame):
                                          "Could not connect to gqrx.\n%s" % err,
                                          parent=self)
 
-    def cb_set_frequency(self, event):
+    def cb_set_frequency(self, event):  #pragma: no cover
         """Set the gqrx frequency and mode.
 
         :param event: not used?
@@ -642,7 +649,7 @@ class GqrxRemote(ttk.Frame):
                                          "Could not set frequency.\n%s" % err,
                                          parent=self)
 
-    def cb_autofill_form(self, event):
+    def cb_autofill_form(self, event):  #pragma: no cover
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
 
@@ -659,7 +666,7 @@ class GqrxRemote(ttk.Frame):
         self.txt_frequency.insert(0, values[0])
         self.txt_description.insert(0, values[2])
 
-    def cb_add(self):
+    def cb_add(self):  #pragma: no cover
         """Add frequency to tree and saves the bookmarks.
 
         :param: none
@@ -681,7 +688,7 @@ class GqrxRemote(ttk.Frame):
                 idx = self.tree.index(item)
                 break
             elif frequency == curr_freq and mode == curr_mode:
-                tkinter.messagebox.showerror("Error", "A bookmark with the "\
+                tkMessageBox.showerror("Error", "A bookmark with the "\
                                              "same frequency and mode "\
                                              "already exists.", parent=self)
                 return
@@ -698,7 +705,7 @@ class GqrxRemote(ttk.Frame):
         # save
         self.bookmark("save", ",")
 
-    def cb_delete(self):
+    def cb_delete(self):  #pragma: no cover
         """Delete frequency from tree.
 
         :param: none
@@ -712,7 +719,7 @@ class GqrxRemote(ttk.Frame):
             # save
         self.bookmark("save", ",")
 
-    def _frequency_pp(self, frequency):
+    def _frequency_pp(self, frequency):  #pragma: no cover
         """Add thousands separator.
 
         :param frequency: frequency value
@@ -723,7 +730,7 @@ class GqrxRemote(ttk.Frame):
 
         return '{:,}'.format(int(frequency))
 
-    def _frequency_pp_parse(self, frequency):
+    def _frequency_pp_parse(self, frequency):  #pragma: no cover
         """Remove thousands separator.
 
         :param frequency: frequency value

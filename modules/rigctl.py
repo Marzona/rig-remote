@@ -47,7 +47,7 @@ class RigCtl(object):
         con.write('c\n'.encode('ascii'))
         return response
 
-    def set_frequency(self, frequency):
+    def set_frequency(self, frequency):  #pragma: no cover
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -55,7 +55,7 @@ class RigCtl(object):
 
         return self._request('F %s' % frequency)
 
-    def get_frequency(self):
+    def get_frequency(self):  #pragma: no cover
         """Wrapper around _request. It configures the command for getting
         a frequency.
 
@@ -71,7 +71,7 @@ class RigCtl(object):
 
         return self._request('M %s' % mode)
 
-    def get_mode(self): #pragma: no cover
+    def get_mode(self):  #pragma: no cover
         """Wrapper around _request. It configures the command for getting
         the mode.
 
