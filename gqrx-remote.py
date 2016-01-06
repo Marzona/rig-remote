@@ -69,12 +69,13 @@ def log_configuration(verbose):
     os.environ["TZ"] = "UTC"
     time.tzset()
     if verbose:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO,
+                            format="%(asctime)s %(message)s",
+                            datefmt="%m/%d/%Y %I:%M:%S %p %Z")
     else:
-        logging.basicConfig(level=logging.WARNING)
-
-    logging.basicConfig(format="%(asctime)s %(message)s",
-                        datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+        logging.basicConfig(level=logging.WARNING,
+                            format="%(asctime)s %(message)s",
+                            datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 
     return logging.getLogger(__name__)
 

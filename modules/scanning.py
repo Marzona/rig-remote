@@ -66,7 +66,8 @@ class ScanningTask(object):
             logger.exception("sgn_level:{}".format(sgn_level))
             raise
 
-        self._check_interval()
+        if mode == "frequency":
+            self._check_interval()
 
     def _check_interval(self):
         """Checks for a sane interval. We don't want to search for signals
@@ -145,6 +146,7 @@ class Scanning(object):
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
             level = int(rigctl.get_level().replace(".", ""))
+            time.sleep(TIME_WAIT_FOR_TUNE)
             logger.info("sgn_level:{}".format(level))
             if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
                 logger.info("Activity found on freq: {}".format(bookmark[0]))
