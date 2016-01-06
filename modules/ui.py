@@ -45,18 +45,18 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
     :returns: none
     """
 
-    def __init__(self, root):  #pragma: no cover
+    def __init__(self, root, ac):  #pragma: no cover
         ttk.Frame.__init__(self, root)
         self.bookmarks_file = "gqrx-bookmarks.csv"
         self.log_file = None
-        self.build()
+        self.build(ac)
         self.cbb_mode.current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.rigctl = RigCtl(self.txt_hostname.get(),
                              self.txt_port.get())
 
-    def build(self):  #pragma: no cover
+    def build(self, ac):  #pragma: no cover
         """Build and initialize the GUI widgets.
 
         :param: none
@@ -467,7 +467,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         return ac
 
 
-    def shutdown(self, ac):  #pragma: no cover
+    def shutdown(self,ac):  #pragma: no cover
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
 
