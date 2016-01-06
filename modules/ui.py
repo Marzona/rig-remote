@@ -22,8 +22,10 @@ import datetime
 from modules.constants import ALLOWED_BOOKMARK_TASKS
 from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
+from modules.constants import BOOKMARKS_FILE
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
+from modules.exceptions import InvalidPathError
 from modules.disk_io import IO
 from modules.rigctl import RigCtl
 from modules.scanning import ScanningTask
@@ -47,7 +49,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def __init__(self, root, ac):  #pragma: no cover
         ttk.Frame.__init__(self, root)
-        self.bookmarks_file = "gqrx-bookmarks.csv"
+        self.bookmarks_file = BOOKMARKS_FILE
         self.log_file = None
         self.build(ac)
         self.cbb_mode.current(0)
@@ -496,14 +498,17 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
         if task not in ALLOWED_BOOKMARK_TASKS:
             logger.info("Not allowed bookmark task requested {}, "\
-                           "ignoring.".format(task))
+                        "ignoring.".format(task))
 
         bookmarks = IO()
         if task == "load":
-            bookmarks.csv_load(self.bookmarks_file, delimiter)
-            for line in bookmarks.row_list:
-                line[0] = self._frequency_pp(line[0])
-                self.tree.insert('', tk.END, values=line)
+            try:
+                bookmarks.csv_load(self.bookmarks_file, delimiter)
+                for line in bookmarks.row_list:
+                    line[0] = self._frequency_pp(line[0])
+                    self.tree.insert('', tk.END, values=line)
+            except InvalidPathError:
+                logger.info("No bookmarks file found, skipping.")
 
         if task == "save":
             for item in self.tree.get_children():
