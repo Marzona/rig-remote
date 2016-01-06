@@ -19,7 +19,6 @@ import argparse
 import logging
 import os
 import time
-#import tkinter as tk
 import Tkinter as tk
 from modules.ui import GqrxRemote
 from modules.app_config import AppConfig

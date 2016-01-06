@@ -46,7 +46,7 @@ SUPPORTED_SCANNING_ACTIONS = ("start")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-
+BOOKMARKS_FILE = "gqrx-bookmarks.csv"
 DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "15",
