@@ -24,7 +24,7 @@ TIME_WAIT_FOR_SIGNAL=2
 TIME_WAIT_FOR_TUNE=2
 
 # minimum interval
-MIN_INTERVAL = 100000
+MIN_INTERVAL = 100000  # hertz
 # dictionary for mapping between gqrx modes and gqrx-remote modes
 # the key is the gqrx-remote namings and the value is the gqrx naming
 
@@ -48,7 +48,7 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "15",
                   "delay" : "5",
-                  "sgn_level" : "25",
+                  "sgn_level" : "-40",
                   "range_min" : "24",
                   "range_max" : "1800",
                   "always_on_top" : "True",
