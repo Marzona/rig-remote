@@ -19,17 +19,11 @@ Features
 - scan for activity between bookmarks
 - scan for activity in a frequency range
 
-Next versions will also feature:
-- unit tests
-- tool tips
-
 I'll send the pull request as soon as I'll introduce some testing coverage. Suggestions are welcome!
-
 
 Requirements
 ---
 
-- Python 3.x
 - Gqrx 2.3 (or higher)
 
 **Note:** The latest official gqrx release is 2.2. You may need to compile gqrx straight from the [source](https://github.com/csete/gqrx).
