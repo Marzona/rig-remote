@@ -19,12 +19,9 @@ CBB_MODES = ('',
 
 # scanning constants
 # once tuned a freq, wait this time for getting the signal
-TIME_WAIT_FOR_SIGNAL=.5
+TIME_WAIT_FOR_SIGNAL=2
 # once we send the cmd for tuning a freq, wait this time
-TIME_WAIT_FOR_TUNE=.5
-
-#maximum scanning threads
-MAX_SCAN_THREADS = 1
+TIME_WAIT_FOR_TUNE=2
 
 # minimum interval
 MIN_INTERVAL = 100000

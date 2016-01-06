@@ -561,10 +561,10 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                      sgn_level)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
-        logger.info("new activity found:{}".format(task.new_bookmark_list))
-        if task.mode.lower() == "bookmarks":
-            tkMessageBox.showerror("Activity found:{}".format(task.new_bookmark_list),
-                                         parent=self)
+        if (task.mode.lower() == "bookmarks" and 
+            len(task.new_bookmark_list) > 0):
+            tkMessageBox.showinfo("Activity found:{}".format(task.new_bookmark_list),
+                                   parent=self)
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
 
