@@ -151,7 +151,7 @@ class Scanning(object):
             if int(rigctl.get_level().replace(".", "")) > sgn_level:
                 return True
             else:
-                time.wait(NO_SIGNAL_DELAY)
+                time.sleep(NO_SIGNAL_DELAY)
         return False
 
     def _bookmarks(self, task):
