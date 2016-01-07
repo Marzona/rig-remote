@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 def khertz_to_hertz(value):
     return value*1000
 
+def dbfs_to_sgn(value):
+    return value*10
+
 class ScanningTask(object):
     """Representation of a scan task, with helper method for checking
     for proper frequency range.
@@ -150,11 +153,14 @@ class Scanning(object):
         :return type: boolean
         """
 
+        sgn = dbfs_to_sgn(sgn_level)
+
         for i in range(0, SIGNAL_CHECKS):
             logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rigctl.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
-            if int(rigctl.get_level().replace(".", "")) > sgn_level:
+            logger.info("dbfs_sgn:{}".format(sgn))
+            if int(rigctl.get_level().replace(".", "")) > sgn:
                 return True
             else:
                 time.sleep(NO_SIGNAL_DELAY)
