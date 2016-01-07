@@ -3,6 +3,8 @@
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
 from modules.constants import TIME_WAIT_FOR_TUNE
+from modules.constants import SIGNAL_CHECKS
+from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
@@ -66,7 +68,8 @@ class ScanningTask(object):
             logger.exception("sgn_level:{}".format(sgn_level))
             raise
 
-        self._check_interval()
+        if mode == "frequency":
+            self._check_interval()
 
     def _check_interval(self):
         """Checks for a sane interval. We don't want to search for signals
@@ -123,15 +126,38 @@ class Scanning(object):
             logger.info("sgn_level:{}".format(level))
             if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
                 logger.info("Activity found on freq: {}".format(freq))
+                logger.info("Waiting {} secs".format(task.delay))
                 task.new_bookmark_list.append(freq)
                 time.sleep(task.delay)
             freq = freq + task.interval
 
         return task
 
+    def _signal_check(self, sgn_level, rigctl):
+        """check for the signal SIGNAL_CHECKS times pausing 
+        NO_SIGNAL_DELAY between checks.
+
+        :param sgn_level: minimum signal level we are searching
+        :type sgn_level: string from the UI setting
+        :returns true/false: signal found, signal not found
+        :return type: boolean
+        """
+
+        for i in range(0, SIGNAL_CHECKS):
+
+            logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            level = int(rigctl.get_level().replace(".", ""))
+            logger.info("sgn_level:{}".format(level))
+            if int(rigctl.get_level().replace(".", "")) > sgn_level:
+                return True
+            else:
+                time.wait(NO_SIGNAL_DELAY)
+        return False
+
     def _bookmarks(self, task):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
+        For every bookmark we tune the frequency and we call _signal_check
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
@@ -144,9 +170,7 @@ class Scanning(object):
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
-            level = int(rigctl.get_level().replace(".", ""))
-            logger.info("sgn_level:{}".format(level))
-            if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
+            if self._signal_check(task.sgn_level, rigctl):
                 logger.info("Activity found on freq: {}".format(bookmark[0]))
                 task.new_bookmark_list.append(bookmark)
                 time.sleep(task.delay)
