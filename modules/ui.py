@@ -55,8 +55,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         self.cbb_mode.current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
-        self.rigctl = RigCtl(self.txt_hostname.get(),
-                             self.txt_port.get())
+
 
     def build(self, ac):  #pragma: no cover
         """Build and initialize the GUI widgets.
@@ -444,6 +443,8 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.state() != ("selected"):
                 self.ckb_top.invoke()
+        self.rigctl = RigCtl(self.txt_hostname.get(),
+                             self.txt_port.get())
 
     def _store_conf(self, ac):  #pragma: no cover
         """populates the ac object reading the info from the UI
@@ -566,12 +567,30 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                      sgn_level)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
-        logger.info("new activity found:{}".format(task.new_bookmark_list))
-        if task.mode.lower() == "bookmarks":
-            tkMessageBox.showerror("Activity found:{}".format(task.new_bookmark_list),
-                                         parent=self)
+        if (task.mode.lower() == "bookmarks" and 
+            len(task.new_bookmark_list) > 0):
+            message = self._new_activity_message(task.new_bookmark_list)
+            tkMessageBox.showinfo("New activity found", message,
+                                   parent=self)
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
+
+    def _new_activity_message(self, nbl):
+        """Provides a little formatting from the new bookmark list.
+
+        :param nbl: new bookmark list
+        :type nbl: list
+        :raises : none
+        :returns message: message to be printed in an info messagebox.
+        :type message: string
+        """
+
+        message = []
+        for b in nbl:
+            message.append(b[2])
+        message = ", ".join(message)
+        logger.warning(message)
+        return message
 
     def _clear_form(self):  #pragma: no cover
         """Clear the form.. nothing more.
