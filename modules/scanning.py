@@ -136,6 +136,8 @@ class Scanning(object):
     def _bookmarks(self, task):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
+        For every bookmark we tune the frequency and we check for the
+        signal SIGNAL_CHECKS times pausing NO_SIGNAL_DELAY between checks.
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
