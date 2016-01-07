@@ -570,7 +570,16 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         if task.mode.lower() == "frequency":
             self._add_new_bookmarks(task.new_bookmark_list)
 
-    def _new_activity_message(self,nbl):
+    def _new_activity_message(self, nbl):
+        """Provides a little formatting from the new bookmark list.
+
+        :param nbl: new bookmark list
+        :type nbl: list
+        :raises : none
+        :returns message: message to be printed in an info messagebox.
+        :type message: string
+        """
+
         message = []
         for b in nbl:
             message.append(b[2])
