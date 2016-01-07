@@ -18,13 +18,14 @@ CBB_MODES = ('',
              'CWU')
 
 # scanning constants
-# once tuned a freq, wait this time for getting the signal
-TIME_WAIT_FOR_SIGNAL=2
+# once tuned a freq, check this number of times for a signal
+SIGNAL_CHECKS=2
+# time to wait between checks on the same frequency
+NO_SIGNAL_DELAY = 1
 # once we send the cmd for tuning a freq, wait this time
-TIME_WAIT_FOR_TUNE=2
-
-# minimum interval
-MIN_INTERVAL = 100000  # hertz
+TIME_WAIT_FOR_TUNE=.2
+# minimum interval in hertz
+MIN_INTERVAL = 100000
 # dictionary for mapping between gqrx modes and gqrx-remote modes
 # the key is the gqrx-remote namings and the value is the gqrx naming
 
@@ -48,7 +49,7 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "15",
                   "delay" : "5",
-                  "sgn_level" : "-40",
+                  "sgn_level" : "-200",
                   "range_min" : "24",
                   "range_max" : "1800",
                   "always_on_top" : "True",

@@ -3,6 +3,8 @@
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
 from modules.constants import TIME_WAIT_FOR_TUNE
+from modules.constants import SIGNAL_CHECKS
+from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
@@ -124,6 +126,7 @@ class Scanning(object):
             logger.info("sgn_level:{}".format(level))
             if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
                 logger.info("Activity found on freq: {}".format(freq))
+                logger.info("Waiting {} secs".format(task.delay))
                 task.new_bookmark_list.append(freq)
                 time.sleep(task.delay)
             freq = freq + task.interval
@@ -145,11 +148,15 @@ class Scanning(object):
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
-            level = int(rigctl.get_level().replace(".", ""))
-            time.sleep(TIME_WAIT_FOR_TUNE)
-            logger.info("sgn_level:{}".format(level))
-            if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
-                logger.info("Activity found on freq: {}".format(bookmark[0]))
-                task.new_bookmark_list.append(bookmark)
-                time.sleep(task.delay)
+            for i in range(0, SIGNAL_CHECKS):
+                logging.warning("checks left:{}".format(SIGNAL_CHECKS -i))
+                level = int(rigctl.get_level().replace(".", ""))
+                logger.info("sgn_level:{}".format(level))
+                if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
+                    logger.info("Activity found on freq: {}".format(bookmark[0]))
+                    task.new_bookmark_list.append(bookmark)
+                    time.sleep(task.delay)
+                    break
+                else:
+                    time.sleep(NO_SIGNAL_DELAY)
         return task
