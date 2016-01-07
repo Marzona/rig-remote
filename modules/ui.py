@@ -289,7 +289,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                 pady=2,
                                 sticky=tk.W)
         ttk.Label(self.menu,
-                  text="db").grid(row=11,
+                  text="dBFS").grid(row=11,
                                   column=2,
                                   padx=0,
                                   sticky=tk.W)
