@@ -133,11 +133,31 @@ class Scanning(object):
 
         return task
 
+    def _signal_check(self, sgn_level, rigctl):
+        """check for the signal SIGNAL_CHECKS times pausing 
+        NO_SIGNAL_DELAY between checks.
+
+        :param sgn_level: minimum signal level we are searching
+        :type sgn_level: string from the UI setting
+        :returns true/false: signal found, signal not found
+        :return type: boolean
+        """
+
+        for i in range(0, SIGNAL_CHECKS):
+
+            logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            level = int(rigctl.get_level().replace(".", ""))
+            logger.info("sgn_level:{}".format(level))
+            if int(rigctl.get_level().replace(".", "")) > sgn_level:
+                return True
+            else:
+                time.wait(NO_SIGNAL_DELAY)
+        return False
+
     def _bookmarks(self, task):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
-        For every bookmark we tune the frequency and we check for the
-        signal SIGNAL_CHECKS times pausing NO_SIGNAL_DELAY between checks.
+        For every bookmark we tune the frequency and we call _signal_check
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
@@ -150,15 +170,8 @@ class Scanning(object):
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
-            for i in range(0, SIGNAL_CHECKS):
-                logging.warning("checks left:{}".format(SIGNAL_CHECKS -i))
-                level = int(rigctl.get_level().replace(".", ""))
-                logger.info("sgn_level:{}".format(level))
-                if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
-                    logger.info("Activity found on freq: {}".format(bookmark[0]))
-                    task.new_bookmark_list.append(bookmark)
-                    time.sleep(task.delay)
-                    break
-                else:
-                    time.sleep(NO_SIGNAL_DELAY)
+            if self._signal_check(task.sgn_level, rigctl):
+                logger.info("Activity found on freq: {}".format(bookmark[0]))
+                task.new_bookmark_list.append(bookmark)
+                time.sleep(task.delay)
         return task
