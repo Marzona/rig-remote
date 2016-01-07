@@ -23,6 +23,7 @@ from modules.constants import ALLOWED_BOOKMARK_TASKS
 from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
 from modules.constants import BOOKMARKS_FILE
+from modules.constants import UNKNOWN_MODE
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -298,7 +299,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                         column=0,
                                         sticky=tk.W)
         ttk.Label(self.menu,
-                  text="Mhz").grid(row=12,
+                  text="khz").grid(row=12,
                                    padx=0,
                                    column=3,
                                    sticky=tk.W)
@@ -572,8 +573,19 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
             message = self._new_activity_message(task.new_bookmark_list)
             tkMessageBox.showinfo("New activity found", message,
                                    parent=self)
-        if task.mode.lower() == "frequency":
-            self._add_new_bookmarks(task.new_bookmark_list)
+
+        if (task.mode.lower() == "frequency" and 
+            len(task.new_bookmark_list) > 0 and 
+            (len(self.ckb_auto_bookmark.state()) == 1 and
+            self.ckb_auto_bookmark.state()== ('selected',))):
+                self._add_new_bookmarks(task.new_bookmark_list)
+
+        elif (task.mode.lower() == "frequency" and 
+              len(task.new_bookmark_list) > 0 and 
+              len(self.ckb_auto_bookmark.state()) == 0):
+                message = self._new_activity_message(task.new_bookmark_list)
+                tkMessageBox.showinfo("New activity found", message,
+                                       parent=self)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
@@ -586,8 +598,8 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         """
 
         message = []
-        for b in nbl:
-            message.append(b[2])
+        for nb in nbl:
+            message.append(nb[2])
         message = ", ".join(message)
         logger.warning(message)
         return message
@@ -613,11 +625,12 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         :returns: none
         """
 
+        self._clear_form()
         now = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
         for nb in nbl:
             self.txt_description.insert(0, "activity on {}".format(now))
-            self._frequency_pp_parse(self.txt_frequency.insert(0,
-                                                               self._frequency_pp(nb)))
+            self.txt_frequency.insert(0, self._frequency_pp(nb[2]))
+            self.cbb_mode.insert(0,nb[1])
             # adding bookmark to the list
             self.cb_add()
             self._clear_form()
@@ -711,7 +724,9 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
             if frequency < curr_freq:
                 idx = self.tree.index(item)
                 break
-            elif frequency == curr_freq and mode == curr_mode:
+            elif (frequency == curr_freq and
+                  mode == curr_mode and
+                  mode != UNKNOWN_MODE):
                 tkMessageBox.showerror("Error", "A bookmark with the "\
                                              "same frequency and mode "\
                                              "already exists.", parent=self)

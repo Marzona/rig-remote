@@ -27,7 +27,8 @@ def scan_task():
 def test_bad_interval(scan_task):
 
     scan_task._check_interval()
-    assert (scan_task.interval == MIN_INTERVAL)
+    minimum_interval = MIN_INTERVAL*100
+    assert (scan_task.interval == minimum_interval)
 
 def test_good_interval(scan_task):
 

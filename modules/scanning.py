@@ -6,12 +6,18 @@ from modules.constants import TIME_WAIT_FOR_TUNE
 from modules.constants import SIGNAL_CHECKS
 from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
+from modules.constants import UNKNOWN_MODE
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
 
 # logging configuration
 logger = logging.getLogger(__name__)
+
+# helper functions
+
+def khertz_to_hertz(value):
+    return value*1000
 
 class ScanningTask(object):
     """Representation of a scan task, with helper method for checking
@@ -53,8 +59,8 @@ class ScanningTask(object):
         self.mode = mode
 
         try:
-            self.range_min = int(range_min.replace(',', ''))*1000000
-            self.range_max = int(range_max.replace(',', ''))*1000000
+            self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
+            self.range_max = khertz_to_hertz(int(range_max.replace(',', '')))
             self.interval = int(interval)
             self.delay = int(delay)
             self.sgn_level = int(sgn_level)
@@ -77,10 +83,11 @@ class ScanningTask(object):
         we overwrite and log a warning.
         """
 
-        if self.interval < MIN_INTERVAL:
+        if khertz_to_hertz(self.interval) < MIN_INTERVAL:
             logger.info("Low interval provided:{}".format(self.interval))
             logger.info("Overriding with {}".format(MIN_INTERVAL))
             self.interval = MIN_INTERVAL
+
 
 class Scanning(object):
     """Provides methods for doing the bookmark/frequency scan,
@@ -98,13 +105,14 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
+        rigctl = RigCtl()
         if task and task.mode.lower() == "bookmarks":
-            updated_task = self._bookmarks(task)
+            updated_task = self._bookmarks(task, rigctl)
         elif task and task.mode.lower() == "frequency":
-            updated_task = self._frequency(task)
+            updated_task = self._frequency(task, rigctl)
         return updated_task
 
-    def _frequency(self, task):
+    def _frequency(self, task, rigctl):
         """Performs a frequency scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
 
@@ -114,22 +122,21 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        rigctl = RigCtl()
         freq = task.range_min
+        interval = khertz_to_hertz(task.interval)
         while freq < task.range_max:
-            logger.info("delay {}".format(task.delay))
             logger.info("Tuning to {}".format(freq))
             logger.info("interval:{}".format(task.interval))
             rigctl.set_frequency(freq)
             time.sleep(TIME_WAIT_FOR_TUNE)
-            level = int(rigctl.get_level().replace(".", ""))
-            logger.info("sgn_level:{}".format(level))
-            if int(rigctl.get_level().replace(".", "")) > task.sgn_level:
+
+            if self._signal_check(task.sgn_level, rigctl):
                 logger.info("Activity found on freq: {}".format(freq))
-                logger.info("Waiting {} secs".format(task.delay))
-                task.new_bookmark_list.append(freq)
+                triple = (freq, UNKNOWN_MODE, str(freq))
+                task.new_bookmark_list.append(triple)
                 time.sleep(task.delay)
-            freq = freq + task.interval
+
+            freq = freq + interval
 
         return task
 
@@ -144,7 +151,6 @@ class Scanning(object):
         """
 
         for i in range(0, SIGNAL_CHECKS):
-
             logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rigctl.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
@@ -154,7 +160,7 @@ class Scanning(object):
                 time.sleep(NO_SIGNAL_DELAY)
         return False
 
-    def _bookmarks(self, task):
+    def _bookmarks(self, task, rigctl):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
         For every bookmark we tune the frequency and we call _signal_check
@@ -165,7 +171,7 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        rigctl = RigCtl()
+#        rigctl = RigCtl()
         for bookmark in task.bookmark_list:
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
