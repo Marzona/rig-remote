@@ -15,11 +15,12 @@ Features
 - Create bookmarks from the current gqrx frequency and mode
 - Restore gqrx frequency and mode (bookmark double-click)
 - Keep window always on top
-- Auto save
+- Auto save configuration on exit
 - scan for activity between bookmarks
 - scan for activity in a frequency range
+- auto bookmark frequencies that are discovered as active
 
-I'll send the pull request as soon as I'll introduce some testing coverage. Suggestions are welcome!
+Suggestions are welcome!
 
 Requirements
 ---
@@ -43,7 +44,7 @@ $ chmod +x gqrx-remote.py
 $ ./gqrx-remote.py
 
 $ # if your system is not yet using Python 3.x by default
-$ python3 gqrx-remote.py
+$ python gqrx-remote.py
 ```
 
 If you are using Windows you just need to double-click the ```gqrx-remote.py``` file (as the  ```.py``` file type is most likely already bound with ```python``` executable). If you want to get rid of the anoying command-line that is always running in background you may rename ```gqrx-remote.py``` to ```gqrx-remote.pyw``` and Windows will use the ```pythonw``` executable instead (which does not need the command-line).
