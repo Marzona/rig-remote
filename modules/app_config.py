@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+"""
+Remote application that interacts with rigs using rigctl protocol.
+
+Please refer to:
+http://gqrx.dk/
+http://gqrx.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+Author: Rafael Marmelo
+Author: Simone Marzona
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+"""
 
 # import modules
 
@@ -30,7 +46,7 @@ class AppConfig(object):
         """
 
         self.io = IO()
-        self.default_config_file = ".gqrx-remote/gqrx-remote.conf"
+        self.default_config_file = ".rig-remote/rig-remote.conf"
         self.config_file = None
         self.config = DEFAULT_CONFIG
 

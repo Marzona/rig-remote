@@ -1,5 +1,20 @@
 #!/usr/bin/env python
+"""
+Remote application that interacts with rigs using rigctl protocol.
 
+Please refer to:
+http://gqrx.dk/
+http://gqrx.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+Author: Rafael Marmelo <rafael@defying.me>
+Author: Simone Marzona <rafael@defying.me>
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+"""
 # import modules
 import pytest
 from modules.scanning import ScanningTask
