@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 
 """
-Remote application that interacts with gqrx using rigctl protocol.
-Gqrx partially implements rigctl since version 2.3.
+Remote application that interacts with rigs using rigctl protocol.
 
 Please refer to:
 http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo <rafael@defying.me>
+Author: Rafael Marmelo
+Author: Simone Marzona
+
 License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
 """
 
 # import modules
@@ -41,8 +43,8 @@ import tkMessageBox
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class GqrxRemote(ttk.Frame):  #pragma: no cover
-    """Remote application that interacts with gqrx using rigctl protocol.
+class RigRemote(ttk.Frame):  #pragma: no cover
+    """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
 
     :raises: none
@@ -67,7 +69,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         :returns: none
         """
 
-        self.master.title("Gqrx Remote 2")
+        self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
         self.columnconfigure(0, weight=1)
@@ -163,6 +165,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                        stick=tk.NSEW)
         #self.rig_config_menurowconfigure(7, weight=1)
         ttk.Label(self.rig_config_menu,
+
                   text="Hostname:").grid(row=1,
                                          column=2,
                                          sticky=tk.W)
@@ -688,7 +691,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                'selected' in self.ckb_top.state())
 
     def cb_get_frequency(self):  #pragma: no cover
-        """Get current gqrx frequency and mode.
+        """Get current rig frequency and mode.
 
         :param: none
         :raises: none
@@ -705,11 +708,11 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
             self.cbb_mode.insert(0, mode)
         except Exception as err:
             tkMessageBox.showerror("Error",
-                                         "Could not connect to gqrx.\n%s" % err,
+                                         "Could not connect to rig.\n%s" % err,
                                          parent=self)
 
     def cb_set_frequency(self, event):  #pragma: no cover
-        """Set the gqrx frequency and mode.
+        """Set the rig frequency and mode.
 
         :param event: not used?
         :type event:
