@@ -1,13 +1,14 @@
 rig-remote
 ===========
 
-started as a fork of https://github.com/marzona/rig-remote, in https://github.com/marzona/rig-remote I ended up adding features and rewriting all of the previous code exiting the original scope of the tool.
+started as a fork of https://github.com/marmelo/gqrx-remote, in https://github.com/marzona/gqrx-remote I ended up adding features and rewriting all of the previous code exiting the original scope of the tool.
 After sending some pull request I created this new repo with an updated project name.
 
 
 Remotely control software radio receivers that implement rigctl protocol, like [gqrx](http://gqrx.dk/),
 while keeping your bookmarks in order.
-rigctl (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
+
+rigctl: (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
 
 ![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
@@ -25,6 +26,8 @@ Features
 - auto bookmark frequencies that are discovered as active
 
 Suggestions are welcome!
+
+Checkout my issus on GitHub
 
 Requirements
 ---
@@ -56,7 +59,7 @@ This software consists of two files and two folder:
 - modules: python modules
 - tests: unit tests
 
-The file ```gqrx-bookmarks.csv``` consists on a standard comma-separated values file. For reference, the following example file is provided:
+The file ```rig-bookmarks.csv``` consists on a standard comma-separated values file. For reference, the following example file is provided:
 
 ```
 79200000,FM,Voice
