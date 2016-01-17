@@ -10,7 +10,7 @@ while keeping your bookmarks in order.
 
 rigctl: (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/new_ui/screenshots/rig-remote.png)
 
 
 Features
