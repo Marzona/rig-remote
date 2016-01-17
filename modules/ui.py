@@ -35,6 +35,7 @@ import Tkinter as tk
 import ttk
 from Tkinter import Text
 from Tkinter import LabelFrame
+from Tkinter import Label
 import tkMessageBox
 
 # logging configuration
@@ -66,7 +67,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         :returns: none
         """
 
-        self.master.title("Gqrx Remote")
+        self.master.title("Gqrx Remote 2")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
         self.columnconfigure(0, weight=1)
@@ -85,132 +86,138 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         # |                              |  [x] Always on top?   [quit] |
         # +------------------------------+------------------------------+
 
-        # frequency list
+        # bookmarks list
+#        self.bookmarks_menu = LabelFrame(self,
+#                               text="Bookmarks"
+#                               )
+#        self.bookmarks_menu.grid(row=0,
+#               column=0,
+#               stick=tk.NSEW)
+
         self.tree = ttk.Treeview(self,
-                                 columns=('frequency',
-                                          'mode',
-                                          'description'),
+                                 columns=("frequency",
+                                          "mode",
+                                          "description"),
                                  show="headings")
         self.tree.heading('frequency',
                           text='Frequency',
                           anchor=tk.CENTER)
         self.tree.column('frequency',
-                         minwidth=100,
-                         width=130,
-                         stretch=False,
+                         #minwidth=100,
+                         width=100,
+                         stretch=True,
                          anchor=tk.CENTER)
         self.tree.heading('mode',
                           text='Mode',
                           anchor=tk.CENTER)
         self.tree.column('mode',
-                         minwidth=80,
-                         width=80,
-                         stretch=False,
+                         #minwidth=80,
+                         width=70,
+                         stretch=True,
                          anchor=tk.CENTER)
         self.tree.heading('description',
                           text='Description',
-                          anchor=tk.W)
+                          )
         self.tree.column('description',
                          stretch=True,
-                         anchor=tk.W,
-                         minwidth=70,
-                         width=70)
+                         #width=70
+                         )
         ysb = ttk.Scrollbar(self,
                             orient=tk.VERTICAL,
                             command=self.tree.yview)
         ysb.grid(row=0,
-                 column=1,
+                 column=2,
+                 rowspan=3,
                  sticky=tk.NS)
-        xsb = ttk.Scrollbar(self,
-                            orient=tk.HORIZONTAL,
-                            command=self.tree.xview)
-        xsb.grid(row=1,
-                 column=0,
-                 sticky=tk.EW)
-        self.tree.configure(yscroll=ysb.set,
-                            xscroll=xsb.set)
+#        xsb = ttk.Scrollbar(self,
+#                            orient=tk.HORIZONTAL,
+#                            command=self.tree.xview)
+#        xsb.grid(row=1,
+#                 column=0,
+#                 sticky=tk.NSEW
+#                 )
+        self.tree.configure(
+                            yscroll=ysb.set,
+                            #xscroll=xsb.set
+                            )
         self.tree.grid(row=0,
                        column=0,
-                       sticky=tk.NSEW)
+                       rowspan=3,
+                       sticky=tk.NSEW
+                       )
         self.tree.bind('<<TreeviewSelect>>',
                        self.cb_autofill_form)
         self.tree.bind('<Double-Button-1>',
                        self.cb_set_frequency)
 
-        # vertical separator
+        # vertical separator between bookmarks and comands
         ttk.Frame(self).grid(row=0,
                              column=2,
-                             rowspan=2,
+                             rowspan=5,
                              padx=5)
-
         # right-side container
-        self.menu = ttk.Frame(self)
-        self.menu.grid(row=0,
+        self.rig_config_menu = LabelFrame(self,
+                               text="Rig configuration")
+        self.rig_config_menu.grid(row=0,
                        column=3,
-                       rowspan=2,
                        stick=tk.NSEW)
-        self.menu.rowconfigure(7, weight=1)
-
-        ttk.Label(self.menu,
-                  text="GQRX Configuration:").grid(row=0,
-                                                   column=0,
-                                                   sticky=tk.W)
-
-
-        ttk.Label(self.menu,
+        #self.rig_config_menurowconfigure(7, weight=1)
+        ttk.Label(self.rig_config_menu,
                   text="Hostname:").grid(row=1,
-                                         column=0,
+                                         column=2,
                                          sticky=tk.W)
-        self.txt_hostname = ttk.Entry(self.menu)
+        self.txt_hostname = ttk.Entry(self.rig_config_menu)
         self.txt_hostname.grid(row=1,
-                               column=1,
-                               columnspan=3,
+                               column=3,
+                               columnspan=2,
                                padx=2,
                                pady=2,
                                sticky=tk.EW)
 
-        ttk.Label(self.menu,
+        ttk.Label(self.rig_config_menu,
                   text="Port:").grid(row=2,
-                                     column=0,
+                                     column=2,
                                      sticky=tk.W)
-        self.txt_port = ttk.Entry(self.menu)
+        self.txt_port = ttk.Entry(self.rig_config_menu)
         self.txt_port.grid(row=2,
-                           column=1,
-                           columnspan=3,
+                           column=3,
                            padx=2,
                            pady=2,
                            sticky=tk.EW)
 
         # horizontal separator
-        ttk.Frame(self.menu).grid(row=3,
+        ttk.Frame(self.rig_config_menu).grid(row=3,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
-        ttk.Label(self.menu,
-                  text="Bookmarking:").grid(row=4,
-                                            column=0,
-                                            sticky=tk.W)
 
-        ttk.Label(self.menu,
+        self.rig_control_menu = LabelFrame(self,
+                                           text="Rig Control")
+        self.rig_control_menu.grid(row=1,
+                       column=3,
+                       stick=tk.NSEW)
+
+
+        ttk.Label(self.rig_control_menu,
                   text="Frequency:").grid(row=5,
                                           column=0,
                                           sticky=tk.W)
-        self.txt_frequency = ttk.Entry(self.menu)
+        self.txt_frequency = ttk.Entry(self.rig_control_menu)
         self.txt_frequency.grid(row=5,
                                 column=1,
                                 columnspan=3,
                                 padx=2,
                                 pady=2,
                                 sticky=tk.W)
-        ttk.Label(self.menu,
+        ttk.Label(self.rig_control_menu,
                   text="Mhz").grid(row=5,
                                    column=3,
                                    sticky=tk.EW)
-        ttk.Label(self.menu,
+        ttk.Label(self.rig_control_menu,
                   text="Mode:").grid(row=6,
                                      column=0,
                                      sticky=tk.W)
-        self.cbb_mode = ttk.Combobox(self.menu, width=15)
+        self.cbb_mode = ttk.Combobox(self.rig_control_menu, width=15)
         self.cbb_mode.grid(row=6,
                            column=1,
                            columnspan=3,
@@ -219,11 +226,11 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                            sticky=tk.EW)
         self.cbb_mode['values'] = CBB_MODES
 
-        ttk.Label(self.menu,
+        ttk.Label(self.rig_control_menu,
                   text="Description:").grid(row=7,
                                             column=0,
                                             sticky=tk.EW)
-        self.txt_description = ttk.Entry(self.menu)
+        self.txt_description = ttk.Entry(self.rig_control_menu)
         self.txt_description.grid(row=7,
                                   column=1,
                                   columnspan=3,
@@ -231,7 +238,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                   pady=2,
                                   sticky=tk.EW)
 
-        self.btn_add = ttk.Button(self.menu,
+        self.btn_add = ttk.Button(self.rig_control_menu,
                                   text="Add",
                                   width=7,
                                   command=self.cb_add)
@@ -240,7 +247,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                           padx=2,
                           pady=2)
 
-        self.btn_delete = ttk.Button(self.menu,
+        self.btn_delete = ttk.Button(self.rig_control_menu,
                                      text="Delete",
                                      width=7,
                                      command=self.cb_delete)
@@ -249,7 +256,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                              padx=2,
                              pady=2)
 
-        self.btn_load = ttk.Button(self.menu,
+        self.btn_load = ttk.Button(self.rig_control_menu,
                                    text="Get",
                                    width=7,
                                    command=self.cb_get_frequency)
@@ -258,152 +265,179 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                            padx=2,
                            pady=2)
 
-        ttk.Frame(self.menu).grid(row=9,
+#        # horizontal separator
+        ttk.Frame(self.rig_control_menu).grid(row=9,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
-        ttk.Label(self.menu,
-                  text="Frequency scan:").grid(row=10,
-                                               column=0,
-                                               sticky=tk.W)
 
-        self.freq_scan_start = ttk.Button(self.menu,
+        self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
+        self.freq_scanning_menu.grid(row=2,
+                       column=3,
+                       #rowspan=3,
+                       stick=tk.NSEW)
+        self.freq_scan_start = ttk.Button(self.freq_scanning_menu,
                                           text="Start",
                                           command=self.frequency_start)
-        self.freq_scan_start.grid(row=10,
-                                  column=1,
+        self.freq_scan_start.grid(row=15,
+                                  column=2,
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.NW)
 
-        ttk.Label(self.menu,
-                  text="Signal level:").grid(row=11,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Signal level:").grid(row=10,
                                              column=0,
                                              sticky=tk.W)
-        self.txt_sgn_level = ttk.Entry(self.menu,
+        self.txt_sgn_level = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
-        self.txt_sgn_level.grid(row=11,
+        self.txt_sgn_level.grid(row=10,
                                 column=1,
                                 columnspan=1,
                                 padx=2,
                                 pady=2,
                                 sticky=tk.W)
-        ttk.Label(self.menu,
-                  text="dBFS").grid(row=11,
+        ttk.Label(self.freq_scanning_menu,
+                  text="dBFS").grid(row=10,
                                   column=2,
                                   padx=0,
                                   sticky=tk.W)
 
-        ttk.Label(self.menu,
-                  text="Min/Max:").grid(row=12,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Min/Max:").grid(row=11,
                                         column=0,
                                         sticky=tk.W)
-        ttk.Label(self.menu,
-                  text="khz").grid(row=12,
+        ttk.Label(self.freq_scanning_menu,
+                  text="khz").grid(row=11,
                                    padx=0,
                                    column=3,
                                    sticky=tk.W)
-        self.txt_range_min = ttk.Entry(self.menu,
+        self.txt_range_min = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
-        self.txt_range_min.grid(row=12,
+        self.txt_range_min.grid(row=11,
                                 column=1,
                                 columnspan=1,
                                 padx=2,
                                 pady=2,
                                 sticky=tk.W)
-        self.txt_range_max = ttk.Entry(self.menu,
+        self.txt_range_max = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
-        self.txt_range_max.grid(row=12,
+        self.txt_range_max.grid(row=11,
                                 column=2,
                                 columnspan=1,
                                 padx=0,
                                 pady=0,
                                 sticky=tk.W)
 
-        ttk.Label(self.menu,
-                  text="Interval:").grid(row=13,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Interval:").grid(row=12,
                                          column=0,
                                          sticky=tk.W)
-        self.txt_interval = ttk.Entry(self.menu,
+        self.txt_interval = ttk.Entry(self.freq_scanning_menu,
                                       width=10)
-        self.txt_interval.grid(row=13,
+        self.txt_interval.grid(row=12,
                                column=1,
                                columnspan=1,
                                padx=2,
                                pady=2,
                                sticky=tk.W)
-        ttk.Label(self.menu,
-                  text="Khz").grid(row=13,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Khz").grid(row=12,
                                    padx=0,
                                    column=2,
                                    sticky=tk.EW)
 
-        ttk.Label(self.menu,
-                  text="Delay:").grid(row=14,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Delay:").grid(row=13,
                                       column=0,
                                       sticky=tk.W)
-        self.txt_delay = ttk.Entry(self.menu,
+        self.txt_delay = ttk.Entry(self.freq_scanning_menu,
                                    width=10)
-        self.txt_delay.grid(row=14,
+        self.txt_delay.grid(row=13,
                             column=1,
                             columnspan=1,
                             padx=2,
                             pady=2,
                             sticky=tk.W)
-        ttk.Label(self.menu,
-                  text="Seconds").grid(row=14,
+        ttk.Label(self.freq_scanning_menu,
+                  text="Seconds").grid(row=13,
                                        padx=0,
                                        column=2,
                                        sticky=tk.EW)
 
         self.cb_auto_bookmark = tk.BooleanVar()
-        self.ckb_auto_bookmark = ttk.Checkbutton(self.menu,
+        self.ckb_auto_bookmark = ttk.Checkbutton(self.freq_scanning_menu,
                                                  text="auto bookmark",
                                                  onvalue=True,
                                                  offvalue=False,
                                                  variable=self.cb_auto_bookmark)
 
         self.ckb_auto_bookmark.grid(row=15,
-                                    column=1,
+                                    column=0,
                                     columnspan=1,
                                     sticky=tk.EW)
 
-        # horizontal separator
-        ttk.Frame(self.menu).grid(row=16,
+#        # horizontal separator
+        ttk.Frame(self.freq_scanning_menu).grid(row=16,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
+        self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
+        self.book_scanning_menu.grid(row=3,
+                                    column=3,
+                                    #rowspan=3,
+                                    stick=tk.NSEW)
 
-        ttk.Label(self.menu,
-                  text="Bookmarks scan:").grid(row=17,
-                                               column=0,
-                                               sticky=tk.W)
+        #horrible horizontal placeholder
+        ttk.Label(self.book_scanning_menu,
+                  width=8).grid(row=17,
+                               column=0,
+                               sticky=tk.NSEW)
+        #horrible horizontal placeholder
+        ttk.Label(self.book_scanning_menu,
+                  width=8).grid(row=17,
+                               column=1,
+                               sticky=tk.NSEW)
+        #horrible horizontal placeholder
+        ttk.Label(self.book_scanning_menu,
+                  width=8).grid(row=17,
+                               column=2,
+                               sticky=tk.NSEW)
 
-        self.book_scan_start = ttk.Button(self.menu,
+        self.book_scan_start = ttk.Button(self.book_scanning_menu,
                                           text="Start",
-                                          command=self.bookmark_start)
+                                          command=self.bookmark_start,
+                                          )
         self.book_scan_start.grid(row=17,
-                                  column=1,
+                                  column=3,
                                   columnspan=1,
                                   padx=2,
-                                  sticky=tk.NW)
+                                  sticky=tk.W)
 
         # horizontal separator
-        ttk.Frame(self.menu).grid(row=18,
+        ttk.Frame(self.book_scanning_menu).grid(row=18,
                                   column=0,
                                   columnspan=3,
+                                  rowspan=1,
                                   pady=5)
 
-        self.ckb_top = ttk.Checkbutton(self.menu,
+        self.control_menu = LabelFrame(self, text="Options")
+
+        self.control_menu.grid(row=4,
+                       column=3,
+                        #rowspan=3,
+                       stick=tk.NSEW)
+        self.ckb_top = ttk.Checkbutton(self.control_menu,
                                        text="Always on top",
                                        command=self.cb_top)
         self.ckb_top.grid(row=20,
                           column=2,
                           columnspan=1,
+                          padx=2,
                           sticky=tk.EW)
 
         self.cb_save_exit = tk.BooleanVar()
-        self.ckb_save_exit = ttk.Checkbutton(self.menu,
+        self.ckb_save_exit = ttk.Checkbutton(self.control_menu,
                                              text="Save on exit",
                                              onvalue=True,
                                              offvalue=False,
@@ -412,15 +446,22 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         self.ckb_save_exit.grid(row=20,
                                 column=1,
                                 columnspan=1,
+                                padx=2,
                                 sticky=tk.EW)
 
-        self.btn_quit = ttk.Button(self.menu,
+        self.btn_quit = ttk.Button(self.control_menu,
                                    text="Quit",
                                    command=lambda: self.shutdown(ac))
         self.btn_quit.grid(row=20,
                            column=3,
                            columnspan=1,
                            sticky=tk.SE)
+
+#        # horizontal separator
+        ttk.Frame(self.control_menu).grid(row=21,
+                                  column=0,
+                                  columnspan=3,
+                                  pady=5)
 
     def apply_config(self, ac):
         """Applies the config to the UI.
