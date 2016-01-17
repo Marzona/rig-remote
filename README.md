@@ -1,19 +1,23 @@
-gqrx-remote
+rig-remote
 ===========
 
-Fork of (https://github.com/marmelo/gqrx-remote)
+started as a fork of https://github.com/marzona/rig-remote, in https://github.com/marzona/rig-remote I ended up adding features and rewriting all of the previous code exiting the original scope of the tool.
+After sending some pull request I created this new repo with an updated project name.
 
-Remotely control [gqrx](http://gqrx.dk/) while keeping your bookmarks in order. Interacts with gqrx using the [rigctl](http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
 
-![gqrx-remote-linux](https://github.com/Marzona/gqrx-remote/blob/master/screenshots/gqrx-remote.png)
+Remotely control software radio receivers that implement rigctl protocol, like [gqrx](http://gqrx.dk/),
+while keeping your bookmarks in order.
+rigctl (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
+
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
 
 Features
 --
 
 - Bookmark frequencies and modes
-- Create bookmarks from the current gqrx frequency and mode
-- Restore gqrx frequency and mode (bookmark double-click)
+- Create bookmarks from the current rig frequency and mode
+- Restore rig frequency and mode (bookmark double-click)
 - Keep window always on top
 - Auto save configuration on exit
 - scan for activity between bookmarks
@@ -25,49 +29,32 @@ Suggestions are welcome!
 Requirements
 ---
 
-- Gqrx 2.3 (or higher)
-
-**Note:** The latest official gqrx release is 2.2. You may need to compile gqrx straight from the [source](https://github.com/csete/gqrx).
-
+- Gqrx 2.3 (or higher), or any other software that offers rigctl support.
 
 Usage
 ---
 
-You just need to download and run ```gqrx-remote.py```.
+=======
+You just need to download and run ```rig-remote.py```.
 
 For instance, using Linux / Mac OS X, you may do:
 
-```bash
-$ git clone https://github.com/marmelo/gqrx-remote.git
-$ cd gqrx-remote
-$ chmod +x gqrx-remote.py
-$ ./gqrx-remote.py
+bash
+=======
+$ git clone https://github.com/marzona/rig-remote.git
+$ cd rig-remote
+$ python ./rig-remote.py
 
-$ # if your system is not yet using Python 3.x by default
-$ python gqrx-remote.py
 ```
 
-If you are using Windows you just need to double-click the ```gqrx-remote.py``` file (as the  ```.py``` file type is most likely already bound with ```python``` executable). If you want to get rid of the anoying command-line that is always running in background you may rename ```gqrx-remote.py``` to ```gqrx-remote.pyw``` and Windows will use the ```pythonw``` executable instead (which does not need the command-line).
+If you are using Windows you just need to double-click the ```rig-remote.py``` file (as the  ```.py``` file type is most likely already bound with ```python``` executable). If you want to get rid of the anoying command-line that is always running in background you may rename ```rig-remote.py``` to ```rig-remote.pyw``` and Windows will use the ```pythonw``` executable instead (which does not need the command-line).
 
-
-Screenshots
----
-
-This software is built using Python default GUI -- [Tkinter](https://docs.python.org/3/library/tkinter.html) with [Ttk](https://docs.python.org/3/library/tkinter.ttk.html) -- which allows us to have an almost-native cross-platform look and feel while using the same code.
-
-**Linux**
-![gqrx-remote-linux](https://github.com/Marzona/gqrx-remote/blob/master/screenshots/gqrx-remote.png)
-
-
-
-
-Bookmark Database
----
-
-This software consists of two files:
-
-- gqrx-remote.py
-- gqrx-bookmarks.csv (the bookmark database)
+This software consists of two files and two folder:
+=======
+- rig-remote.py
+- rig-bookmarks.csv (the bookmark database)
+- modules: python modules
+- tests: unit tests
 
 The file ```gqrx-bookmarks.csv``` consists on a standard comma-separated values file. For reference, the following example file is provided:
 
@@ -86,3 +73,4 @@ The file ```gqrx-bookmarks.csv``` consists on a standard comma-separated values 
 442036000,FM,Digital
 1090000000,FM,ADBS
 ```
+
