@@ -6,22 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>639</width>
-    <height>565</height>
+    <width>762</width>
+    <height>534</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Rig remote</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>450</x>
       <y>10</y>
       <width>251</width>
       <height>131</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rig configuration area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="title">
      <string>Rig Config</string>
@@ -61,6 +64,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hostname on which the rig is running&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Hostname</string>
        </property>
@@ -83,6 +89,9 @@
          <width>31</width>
          <height>16</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Port to connect to&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Port</string>
@@ -147,9 +156,12 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>341</width>
+      <width>421</width>
       <height>341</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bookmarking area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="title">
      <string>Bookmarking</string>
@@ -159,44 +171,16 @@
       <rect>
        <x>10</x>
        <y>20</y>
-       <width>321</width>
+       <width>401</width>
        <height>311</height>
       </rect>
      </property>
-     <property name="currentIndex">
-      <number>0</number>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <widget class="QWidget" name="tab_2">
-      <attribute name="title">
-       <string>Meters bands</string>
-      </attribute>
-      <widget class="QTreeWidget" name="treeWidget_2">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>311</width>
-         <height>281</height>
-        </rect>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>1000</width>
-         <height>1000</height>
-        </size>
-       </property>
-       <column>
-        <property name="text">
-         <string>Meters</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Frequency band</string>
-        </property>
-       </column>
-      </widget>
-     </widget>
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
        <string>Bookmarks</string>
@@ -230,16 +214,50 @@
        </column>
       </widget>
      </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Meters bands</string>
+      </attribute>
+      <widget class="QTreeWidget" name="treeWidget_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>391</width>
+         <height>281</height>
+        </rect>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>1000</width>
+         <height>1000</height>
+        </size>
+       </property>
+       <column>
+        <property name="text">
+         <string>Meters</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Frequency band</string>
+        </property>
+       </column>
+      </widget>
+     </widget>
     </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox_3">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>450</x>
       <y>150</y>
       <width>251</width>
       <height>271</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scanning configuration area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="title">
      <string>Scanning</string>
@@ -254,7 +272,7 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_5">
       <attribute name="title">
@@ -279,6 +297,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time to wait before moving to the next bookmark when the tuned one is reporting a signal stronger than &lt;span style=&quot; font-style:italic;&quot;&gt;Signal level&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Delay</string>
        </property>
@@ -291,6 +312,9 @@
          <width>61</width>
          <height>20</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When a bookmark is tuning a signal stronger than &lt;span style=&quot; font-style:italic;&quot;&gt;Signal level&lt;/span&gt; we tell the rig to record for &lt;span style=&quot; font-style:italic;&quot;&gt;Delay &lt;/span&gt;seconds&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>record</string>
@@ -305,6 +329,9 @@
          <height>25</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start and stop the scanning&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Start/Stop</string>
        </property>
@@ -317,6 +344,9 @@
          <width>71</width>
          <height>16</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Signal level we are searching for&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Signal level</string>
@@ -398,6 +428,9 @@
          <height>20</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When a bookmark is tuning a signal stronger than &lt;span style=&quot; font-style:italic;&quot;&gt;Signal level&lt;/span&gt; we tell the rig to record for &lt;span style=&quot; font-style:italic;&quot;&gt;Delay &lt;/span&gt;seconds&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>record</string>
        </property>
@@ -410,6 +443,9 @@
          <width>71</width>
          <height>16</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Signal level we are searching for&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Signal level</string>
@@ -424,6 +460,9 @@
          <height>25</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start and stop the scanning&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Start/Stop</string>
        </property>
@@ -436,6 +475,9 @@
          <width>71</width>
          <height>16</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time to wait before moving to the next bookmark when the tuned one is reporting a signal stronger than &lt;span style=&quot; font-style:italic;&quot;&gt;Signal level&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Delay</string>
@@ -483,6 +525,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;We are scanning a frequency range, this is the upper end&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Stop Freq</string>
        </property>
@@ -529,6 +574,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;We are scanning a frequency range, this is the lower end&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Start Freq</string>
        </property>
@@ -568,6 +616,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The amplitude of the channel, the scan moves from &lt;span style=&quot; font-style:italic;&quot;&gt;Start freq&lt;/span&gt; to &lt;span style=&quot; font-style:italic;&quot;&gt;Stop freq&lt;/span&gt; with steps &lt;span style=&quot; font-style:italic;&quot;&gt;Interval &lt;/span&gt;wide&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Interval</string>
        </property>
@@ -581,6 +632,9 @@
          <height>20</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bookmarks all the frequencies that have a signal stronger than &lt;span style=&quot; font-style:italic;&quot;&gt;Signal level&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Auto bookmark</string>
        </property>
@@ -591,11 +645,14 @@
    <widget class="QGroupBox" name="groupBox_4">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>450</x>
       <y>430</y>
       <width>251</width>
-      <height>51</height>
+      <height>71</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Options area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="title">
      <string>Options</string>
@@ -609,6 +666,9 @@
        <height>20</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Automatically saves bookmark and checkboxes on exit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Save on exit</string>
      </property>
@@ -616,14 +676,33 @@
     <widget class="QCheckBox" name="checkBox_3">
      <property name="geometry">
       <rect>
-       <x>130</x>
+       <x>120</x>
        <y>20</y>
        <width>111</width>
        <height>20</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This windows stays always on top&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Always on top</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_6">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>40</y>
+       <width>51</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;...mmm not sure what this button does...:)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Quit</string>
      </property>
     </widget>
    </widget>
@@ -632,8 +711,8 @@
      <rect>
       <x>10</x>
       <y>360</y>
-      <width>271</width>
-      <height>161</height>
+      <width>421</width>
+      <height>141</height>
      </rect>
     </property>
     <property name="title">
@@ -643,20 +722,26 @@
      <property name="geometry">
       <rect>
        <x>120</x>
-       <y>30</y>
+       <y>20</y>
        <width>113</width>
        <height>21</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
      </property>
     </widget>
     <widget class="QLabel" name="label_5">
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>30</y>
+       <y>20</y>
        <width>81</width>
        <height>16</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Frequency in khz&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Frequency</string>
@@ -666,10 +751,13 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>60</y>
+       <y>50</y>
        <width>41</width>
        <height>16</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select one mode of operation from the list&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Mode</string>
@@ -679,10 +767,13 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>90</y>
+       <y>80</y>
        <width>71</width>
        <height>16</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Description as it is reported in the bookmarks&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Description</string>
@@ -692,7 +783,7 @@
      <property name="geometry">
       <rect>
        <x>120</x>
-       <y>90</y>
+       <y>80</y>
        <width>113</width>
        <height>21</height>
       </rect>
@@ -702,7 +793,7 @@
      <property name="geometry">
       <rect>
        <x>240</x>
-       <y>30</y>
+       <y>20</y>
        <width>31</width>
        <height>16</height>
       </rect>
@@ -715,7 +806,7 @@
      <property name="geometry">
       <rect>
        <x>120</x>
-       <y>60</y>
+       <y>50</y>
        <width>81</width>
        <height>22</height>
       </rect>
@@ -724,11 +815,14 @@
     <widget class="QPushButton" name="pushButton_3">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>120</y>
+       <x>290</x>
+       <y>20</y>
        <width>61</width>
        <height>25</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add this frequency/mode/description to the bookmarks. It will overwrite existing one.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Add</string>
@@ -737,11 +831,14 @@
     <widget class="QPushButton" name="pushButton_4">
      <property name="geometry">
       <rect>
-       <x>90</x>
-       <y>120</y>
+       <x>290</x>
+       <y>50</y>
        <width>79</width>
        <height>25</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Delete this frequency/mode/description from the bookmark list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Delete</string>
@@ -750,27 +847,20 @@
     <widget class="QPushButton" name="pushButton_5">
      <property name="geometry">
       <rect>
-       <x>190</x>
-       <y>120</y>
+       <x>290</x>
+       <y>80</y>
        <width>51</width>
        <height>25</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Get the frequency and mode urrently tuned by the rig&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Get</string>
      </property>
     </widget>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>639</width>
-     <height>20</height>
-    </rect>
-   </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
