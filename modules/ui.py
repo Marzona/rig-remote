@@ -89,12 +89,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         # +------------------------------+------------------------------+
 
         # bookmarks list
-#        self.bookmarks_menu = LabelFrame(self,
-#                               text="Bookmarks"
-#                               )
-#        self.bookmarks_menu.grid(row=0,
-#               column=0,
-#               stick=tk.NSEW)
 
         self.tree = ttk.Treeview(self,
                                  columns=("frequency",
@@ -129,22 +123,22 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                             command=self.tree.yview)
         ysb.grid(row=0,
                  column=2,
-                 rowspan=3,
+                 rowspan=5,
                  sticky=tk.NS)
-#        xsb = ttk.Scrollbar(self,
-#                            orient=tk.HORIZONTAL,
-#                            command=self.tree.xview)
-#        xsb.grid(row=1,
-#                 column=0,
-#                 sticky=tk.NSEW
-#                 )
+        xsb = ttk.Scrollbar(self,
+                            orient=tk.HORIZONTAL,
+                            command=self.tree.xview)
+        xsb.grid(row=5,
+                 column=0,
+                 sticky=tk.NSEW
+                 )
         self.tree.configure(
                             yscroll=ysb.set,
                             #xscroll=xsb.set
                             )
         self.tree.grid(row=0,
                        column=0,
-                       rowspan=3,
+                       rowspan=5,
                        sticky=tk.NSEW
                        )
         self.tree.bind('<<TreeviewSelect>>',
@@ -157,15 +151,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                              column=2,
                              rowspan=5,
                              padx=5)
-        # right-side container
+#        # right-side container
         self.rig_config_menu = LabelFrame(self,
                                text="Rig configuration")
         self.rig_config_menu.grid(row=0,
-                       column=3,
-                       stick=tk.NSEW)
-        #self.rig_config_menurowconfigure(7, weight=1)
+                                  column=3,
+                                  stick=tk.NSEW)
         ttk.Label(self.rig_config_menu,
-
                   text="Hostname:").grid(row=1,
                                          column=2,
                                          sticky=tk.W)
@@ -197,10 +189,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.rig_control_menu = LabelFrame(self,
                                            text="Rig Control")
         self.rig_control_menu.grid(row=1,
-                       column=3,
-                       stick=tk.NSEW)
-
-
+                                   column=3,
+                                   stick=tk.NSEW)
         ttk.Label(self.rig_control_menu,
                   text="Frequency:").grid(row=5,
                                           column=0,
@@ -380,7 +370,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                     columnspan=1,
                                     sticky=tk.EW)
 
-#        # horizontal separator
         ttk.Frame(self.freq_scanning_menu).grid(row=16,
                                   column=0,
                                   columnspan=3,
@@ -391,17 +380,16 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                     #rowspan=3,
                                     stick=tk.NSEW)
 
-        #horrible horizontal placeholder
+#        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=0,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=1,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
+
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=2,
