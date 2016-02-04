@@ -50,7 +50,8 @@ class ScanningTask(object):
                  range_max=None,
                  delay=None,
                  interval=None,
-                 sgn_level=None):
+                 sgn_level=None,
+                 recording=False):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -75,6 +76,7 @@ class ScanningTask(object):
             raise UnsupportedScanningConfigError
 
         self.mode = mode
+        self.recording = recording
 
         try:
             self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
@@ -144,16 +146,21 @@ class Scanning(object):
         interval = khertz_to_hertz(task.interval)
         while freq < task.range_max:
             logger.info("Tuning to {}".format(freq))
-            logger.info("interval:{}".format(task.interval))
+            logger.info("Interval:{}".format(task.interval))
             rigctl.set_frequency(freq)
             time.sleep(TIME_WAIT_FOR_TUNE)
 
             if self._signal_check(task.sgn_level, rigctl):
                 logger.info("Activity found on freq: {}".format(freq))
+                if task.recording:
+                    rigctl.start_recording()
+                    logger.info("Recording started.")
                 triple = (freq, UNKNOWN_MODE, str(freq))
                 task.new_bookmark_list.append(triple)
                 time.sleep(task.delay)
-
+                if task.recording:
+                    rigctl.stop_recording()
+                    logger.info("Recording stopped.")
             freq = freq + interval
 
         return task
@@ -192,13 +199,18 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-#        rigctl = RigCtl()
         for bookmark in task.bookmark_list:
             logger.info("Tuning to {}".format(bookmark[0]))
             rigctl.set_frequency(bookmark[0].replace(',', ''))
             time.sleep(TIME_WAIT_FOR_TUNE)
             if self._signal_check(task.sgn_level, rigctl):
                 logger.info("Activity found on freq: {}".format(bookmark[0]))
+                if task.recording:
+                    rigctl.start_recording()
+                    logger.info("Recording started.")
                 task.new_bookmark_list.append(bookmark)
                 time.sleep(task.delay)
+                if task.recording:
+                    rigctl.stop_recording()
+                    logger.info("Recording stopped.")
         return task

@@ -352,6 +352,18 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                        column=2,
                                        sticky=tk.EW)
 
+        self.cb_recording = tk.BooleanVar()
+        self.ckb_recording = ttk.Checkbutton(self.freq_scanning_menu,
+                                                 text="recording",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_recording)
+
+        self.ckb_recording.grid(row=15,
+                                    column=1,
+                                    columnspan=1,
+                                    sticky=tk.EW)
+
         self.cb_auto_bookmark = tk.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.freq_scanning_menu,
                                                  text="auto bookmark",
@@ -578,13 +590,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         delay = self.txt_delay.get()
         interval = self.txt_interval.get()
         sgn_level = self.txt_sgn_level.get()
+        if (len(self.ckb_recording.state()) == 1 and
+            self.ckb_recording.state()== ('selected',)):
+            recording = True
+        else:
+            recording = False
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
                                      min_freq,
                                      max_freq,
                                      delay,
                                      interval,
-                                     sgn_level)
+                                     sgn_level,
+                                     recording)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
         if (task.mode.lower() == "bookmarks" and 
