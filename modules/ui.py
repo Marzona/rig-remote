@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
 """
-Remote application that interacts with gqrx using rigctl protocol.
-Gqrx partially implements rigctl since version 2.3.
-
+Remote application that interacts with rigs using rigctl protocol.
 Please refer to:
 http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
-
-Author: Rafael Marmelo <rafael@defying.me>
+Author: Rafael Marmelo
+Author: Simone Marzona
 License: MIT License
-
 Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
 """
 
 # import modules
@@ -41,10 +39,9 @@ import tkMessageBox
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class GqrxRemote(ttk.Frame):  #pragma: no cover
-    """Remote application that interacts with gqrx using rigctl protocol.
+class RigRemote(ttk.Frame):  #pragma: no cover
+    """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
-
     :raises: none
     :returns: none
     """
@@ -61,13 +58,12 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def build(self, ac):  #pragma: no cover
         """Build and initialize the GUI widgets.
-
         :param: none
         :raises: none
         :returns: none
         """
 
-        self.master.title("Gqrx Remote 2")
+        self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
         self.columnconfigure(0, weight=1)
@@ -87,12 +83,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         # +------------------------------+------------------------------+
 
         # bookmarks list
-#        self.bookmarks_menu = LabelFrame(self,
-#                               text="Bookmarks"
-#                               )
-#        self.bookmarks_menu.grid(row=0,
-#               column=0,
-#               stick=tk.NSEW)
 
         self.tree = ttk.Treeview(self,
                                  columns=("frequency",
@@ -127,22 +117,22 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                             command=self.tree.yview)
         ysb.grid(row=0,
                  column=2,
-                 rowspan=3,
+                 rowspan=5,
                  sticky=tk.NS)
-#        xsb = ttk.Scrollbar(self,
-#                            orient=tk.HORIZONTAL,
-#                            command=self.tree.xview)
-#        xsb.grid(row=1,
-#                 column=0,
-#                 sticky=tk.NSEW
-#                 )
+        xsb = ttk.Scrollbar(self,
+                            orient=tk.HORIZONTAL,
+                            command=self.tree.xview)
+        xsb.grid(row=5,
+                 column=0,
+                 sticky=tk.NSEW
+                 )
         self.tree.configure(
                             yscroll=ysb.set,
                             #xscroll=xsb.set
                             )
         self.tree.grid(row=0,
                        column=0,
-                       rowspan=3,
+                       rowspan=5,
                        sticky=tk.NSEW
                        )
         self.tree.bind('<<TreeviewSelect>>',
@@ -155,13 +145,12 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                              column=2,
                              rowspan=5,
                              padx=5)
-        # right-side container
+#        # right-side container
         self.rig_config_menu = LabelFrame(self,
                                text="Rig configuration")
         self.rig_config_menu.grid(row=0,
-                       column=3,
-                       stick=tk.NSEW)
-        #self.rig_config_menurowconfigure(7, weight=1)
+                                  column=3,
+                                  stick=tk.NSEW)
         ttk.Label(self.rig_config_menu,
                   text="Hostname:").grid(row=1,
                                          column=2,
@@ -194,10 +183,8 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         self.rig_control_menu = LabelFrame(self,
                                            text="Rig Control")
         self.rig_control_menu.grid(row=1,
-                       column=3,
-                       stick=tk.NSEW)
-
-
+                                   column=3,
+                                   stick=tk.NSEW)
         ttk.Label(self.rig_control_menu,
                   text="Frequency:").grid(row=5,
                                           column=0,
@@ -377,7 +364,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                     columnspan=1,
                                     sticky=tk.EW)
 
-#        # horizontal separator
         ttk.Frame(self.freq_scanning_menu).grid(row=16,
                                   column=0,
                                   columnspan=3,
@@ -388,17 +374,16 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                     #rowspan=3,
                                     stick=tk.NSEW)
 
-        #horrible horizontal placeholder
+#        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=0,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=1,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
+
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=2,
@@ -465,7 +450,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def apply_config(self, ac):
         """Applies the config to the UI.
-
         :param ac: object instance for handling the app config
         :type ac: AppConfig object
         :raises : none
@@ -490,7 +474,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _store_conf(self, ac):  #pragma: no cover
         """populates the ac object reading the info from the UI
-
         :param ac: object used to hold the app configuration.
         :type ac: AppConfig() object
         :returns ac: ac obj updated.
@@ -515,7 +498,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
     def shutdown(self,ac):  #pragma: no cover
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
-
         :param ac: object that represent the UI configuration
         :type ac:AppConfig instance
         :returns: none
@@ -530,7 +512,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
     def bookmark(self, task, delimiter):  #pragma: no cover
         """Bookmarks handling. loads and saves the bookmarks as
         a csv file.
-
         :param task: either load or save
         :type task: string
         :param delimiter: delimiter to use for creating the csv file
@@ -562,14 +543,12 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def bookmark_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from bookmarks.
-
         """
 
         self._scan("bookmarks", "start")
 
     def frequency_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from a frequency range.
-
         """
 
         self._scan("frequency", "start")
@@ -577,7 +556,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
     def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
-
         :param mode: bookmark or frequency
         :type mode: string
         :param action: only start, for now
@@ -630,7 +608,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
-
         :param nbl: new bookmark list
         :type nbl: list
         :raises : none
@@ -647,7 +624,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _clear_form(self):  #pragma: no cover
         """Clear the form.. nothing more.
-
         :param: none
         :raises: none
         :returns: none
@@ -659,7 +635,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _add_new_bookmarks(self, nbl):  #pragma: no cover
         """Fill in the data, calls uses cb_add() and calls clear_form.
-
         :param nbl: list of new frequencies to bookmark
         :type nbl: list
         :raises: none
@@ -678,7 +653,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def cb_top(self):  #pragma: no cover
         """Set window property to be always on top.
-
         :param: none
         :raises: none
         :returns: none
@@ -688,8 +662,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                'selected' in self.ckb_top.state())
 
     def cb_get_frequency(self):  #pragma: no cover
-        """Get current gqrx frequency and mode.
-
+        """Get current rig frequency and mode.
         :param: none
         :raises: none
         :returns: none
@@ -705,12 +678,11 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
             self.cbb_mode.insert(0, mode)
         except Exception as err:
             tkMessageBox.showerror("Error",
-                                         "Could not connect to gqrx.\n%s" % err,
+                                         "Could not connect to rig.\n%s" % err,
                                          parent=self)
 
     def cb_set_frequency(self, event):  #pragma: no cover
-        """Set the gqrx frequency and mode.
-
+        """Set the rig frequency and mode.
         :param event: not used?
         :type event:
         :raises: none
@@ -730,7 +702,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
     def cb_autofill_form(self, event):  #pragma: no cover
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
-
         :param event: not used?
         :type event:
         :raises: none
@@ -746,7 +717,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def cb_add(self):  #pragma: no cover
         """Add frequency to tree and saves the bookmarks.
-
         :param: none
         :raises: none
         :returns: none
@@ -787,7 +757,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def cb_delete(self):  #pragma: no cover
         """Delete frequency from tree.
-
         :param: none
         :raises: none
         :returns: none
@@ -801,7 +770,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _frequency_pp(self, frequency):  #pragma: no cover
         """Add thousands separator.
-
         :param frequency: frequency value
         :type frequency: string
         :return: frequency with separator
@@ -812,7 +780,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
     def _frequency_pp_parse(self, frequency):  #pragma: no cover
         """Remove thousands separator.
-
         :param frequency: frequency value
         :type frequency: string
         :return: frequency without separator
@@ -820,4 +787,5 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         """
 
         return int(str(frequency).replace(',', ''))
+
 
