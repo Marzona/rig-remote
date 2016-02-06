@@ -23,7 +23,6 @@ from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
 from modules.constants import UNKNOWN_MODE
 from modules.constants import MONITOR_MODE_DELAY
-from modules.constants import MONITOR_MODE_LOOPS
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
@@ -48,6 +47,7 @@ class ScanningTask(object):
     def __init__(self,
                  mode,
                  bookmark_list,
+                 monitoring_loops,
                  range_min=None,
                  range_max=None,
                  delay=None,
@@ -81,6 +81,7 @@ class ScanningTask(object):
         self.mode = mode
         self.recording = recording
         self.monitoring = monitoring
+        self.monitoring_loops = monitoring_loops
 
         try:
             self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
@@ -145,8 +146,7 @@ class Scanning(object):
         :raises: none
         :returns: updates the scanning task object with the new activity found
         """
-        import pdb; pdb.set_trace()
-        for i in range(MONITOR_MODE_LOOPS):
+        for i in range(task.monitoring_loops):
             logger.warning("loop {}".format(i))
             freq = task.range_min
             interval = khertz_to_hertz(task.interval)
@@ -211,18 +211,25 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        for bookmark in task.bookmark_list:
-            logger.info("Tuning to {}".format(bookmark[0]))
-            rigctl.set_frequency(bookmark[0].replace(',', ''))
-            time.sleep(TIME_WAIT_FOR_TUNE)
-            if self._signal_check(task.sgn_level, rigctl):
-                logger.info("Activity found on freq: {}".format(bookmark[0]))
-                if task.recording:
-                    rigctl.start_recording()
-                    logger.info("Recording started.")
-                task.new_bookmark_list.append(bookmark)
-                time.sleep(task.delay)
-                if task.recording:
-                    rigctl.stop_recording()
-                    logger.info("Recording stopped.")
+        for i in range(task.monitoring_loops):
+            for bookmark in task.bookmark_list:
+                logger.info("Tuning to {}".format(bookmark[0]))
+                rigctl.set_frequency(bookmark[0].replace(',', ''))
+                time.sleep(TIME_WAIT_FOR_TUNE)
+                if self._signal_check(task.sgn_level, rigctl):
+                    logger.info("Activity found on freq: {}".format(bookmark[0]))
+                    if task.recording:
+                        rigctl.start_recording()
+                        logger.info("Recording started.")
+                    task.new_bookmark_list.append(bookmark)
+                    time.sleep(task.delay)
+                    if task.recording:
+                        rigctl.stop_recording()
+                        logger.info("Recording stopped.")
+            if task.monitoring == False:
+                # if we are not monitoring, at the end of the first loop
+                # we are done.
+                break
+            else:
+                time.sleep(MONITOR_MODE_DELAY)
         return task

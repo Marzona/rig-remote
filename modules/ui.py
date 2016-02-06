@@ -62,7 +62,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         :raises: none
         :returns: none
         """
-
+        import pdb; pdb.set_trace()
         self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
@@ -486,6 +486,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.txt_range_max.insert(0, ac.config["range_max"])
         self.cb_save_exit.set(ac.config["save_exit"].lower())
         self.cb_auto_bookmark.set(ac.config["auto_bookmark"].lower())
+        self.monitor_mode_loops=ac.config["monitor_mode_loops"]
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.state() != ("selected"):
                 self.ckb_top.invoke()
@@ -610,6 +611,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             monitoring = False
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
+                                     self.monitor_mode_loops,
                                      min_freq,
                                      max_freq,
                                      delay,
