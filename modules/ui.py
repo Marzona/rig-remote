@@ -318,6 +318,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    columnspan=1,
                                    sticky=tk.EW)
 
+        self.cb_recording = tk.BooleanVar()
+        self.ckb_recording = ttk.Checkbutton(self.scanning_conf_menu,
+                                                 text="recording",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_recording)
+
+        self.ckb_recording.grid(row=14,
+                                    column=1,
+                                    columnspan=1,
+                                    sticky=tk.EW)
+
+
 
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
         self.freq_scanning_menu.grid(row=3,
