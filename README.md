@@ -10,7 +10,7 @@ while keeping your bookmarks in order.
 
 rigctl: (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/new_ui/screenshots/rig-remote.png)
 
 
 Features
@@ -45,7 +45,9 @@ For instance, using Linux / Mac OS X, you may do:
 bash
 =======
 $ git clone https://github.com/marzona/rig-remote.git
+
 $ cd rig-remote
+
 $ python ./rig-remote.py
 
 ```
@@ -63,17 +65,29 @@ The file ```rig-bookmarks.csv``` consists on a standard comma-separated values f
 
 ```
 79200000,FM,Voice
+
 80425000,FM,Data
+
 82275000,FM,Taxi
+
 97400000,WFM_ST,Radio
+
 118100000,AM,Airport
+
 124150000,AM,Weather
+
 137500000,FM,NOAA
+
 144800000,FM,APRS
+
 162000000,FM,Navy
+
 162025000,FM,Navy Data
+
 165000000,FM,Taxi
+
 442036000,FM,Digital
+
 1090000000,FM,ADBS
 ```
 
