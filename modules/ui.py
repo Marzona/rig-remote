@@ -62,7 +62,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         :raises: none
         :returns: none
         """
-        import pdb; pdb.set_trace()
         self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
