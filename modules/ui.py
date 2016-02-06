@@ -2,17 +2,13 @@
 
 """
 Remote application that interacts with rigs using rigctl protocol.
-
 Please refer to:
 http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
-
 Author: Rafael Marmelo
 Author: Simone Marzona
-
 License: MIT License
-
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 """
@@ -46,7 +42,6 @@ logger = logging.getLogger(__name__)
 class RigRemote(ttk.Frame):  #pragma: no cover
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
-
     :raises: none
     :returns: none
     """
@@ -63,7 +58,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def build(self, ac):  #pragma: no cover
         """Build and initialize the GUI widgets.
-
         :param: none
         :raises: none
         :returns: none
@@ -358,6 +352,18 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                        column=2,
                                        sticky=tk.EW)
 
+        self.cb_recording = tk.BooleanVar()
+        self.ckb_recording = ttk.Checkbutton(self.freq_scanning_menu,
+                                                 text="recording",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_recording)
+
+        self.ckb_recording.grid(row=15,
+                                    column=1,
+                                    columnspan=1,
+                                    sticky=tk.EW)
+
         self.cb_auto_bookmark = tk.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.freq_scanning_menu,
                                                  text="auto bookmark",
@@ -456,7 +462,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def apply_config(self, ac):
         """Applies the config to the UI.
-
         :param ac: object instance for handling the app config
         :type ac: AppConfig object
         :raises : none
@@ -481,7 +486,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _store_conf(self, ac):  #pragma: no cover
         """populates the ac object reading the info from the UI
-
         :param ac: object used to hold the app configuration.
         :type ac: AppConfig() object
         :returns ac: ac obj updated.
@@ -506,7 +510,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
     def shutdown(self,ac):  #pragma: no cover
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
-
         :param ac: object that represent the UI configuration
         :type ac:AppConfig instance
         :returns: none
@@ -521,7 +524,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
     def bookmark(self, task, delimiter):  #pragma: no cover
         """Bookmarks handling. loads and saves the bookmarks as
         a csv file.
-
         :param task: either load or save
         :type task: string
         :param delimiter: delimiter to use for creating the csv file
@@ -553,14 +555,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def bookmark_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from bookmarks.
-
         """
 
         self._scan("bookmarks", "start")
 
     def frequency_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from a frequency range.
-
         """
 
         self._scan("frequency", "start")
@@ -568,7 +568,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
     def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
-
         :param mode: bookmark or frequency
         :type mode: string
         :param action: only start, for now
@@ -591,13 +590,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         delay = self.txt_delay.get()
         interval = self.txt_interval.get()
         sgn_level = self.txt_sgn_level.get()
+        if (len(self.ckb_recording.state()) == 1 and
+            self.ckb_recording.state()== ('selected',)):
+            recording = True
+        else:
+            recording = False
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
                                      min_freq,
                                      max_freq,
                                      delay,
                                      interval,
-                                     sgn_level)
+                                     sgn_level,
+                                     recording)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
         if (task.mode.lower() == "bookmarks" and 
@@ -621,7 +626,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
-
         :param nbl: new bookmark list
         :type nbl: list
         :raises : none
@@ -638,7 +642,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _clear_form(self):  #pragma: no cover
         """Clear the form.. nothing more.
-
         :param: none
         :raises: none
         :returns: none
@@ -650,7 +653,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _add_new_bookmarks(self, nbl):  #pragma: no cover
         """Fill in the data, calls uses cb_add() and calls clear_form.
-
         :param nbl: list of new frequencies to bookmark
         :type nbl: list
         :raises: none
@@ -669,7 +671,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def cb_top(self):  #pragma: no cover
         """Set window property to be always on top.
-
         :param: none
         :raises: none
         :returns: none
@@ -680,7 +681,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def cb_get_frequency(self):  #pragma: no cover
         """Get current rig frequency and mode.
-
         :param: none
         :raises: none
         :returns: none
@@ -701,7 +701,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def cb_set_frequency(self, event):  #pragma: no cover
         """Set the rig frequency and mode.
-
         :param event: not used?
         :type event:
         :raises: none
@@ -721,7 +720,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
     def cb_autofill_form(self, event):  #pragma: no cover
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
-
         :param event: not used?
         :type event:
         :raises: none
@@ -737,7 +735,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def cb_add(self):  #pragma: no cover
         """Add frequency to tree and saves the bookmarks.
-
         :param: none
         :raises: none
         :returns: none
@@ -778,7 +775,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def cb_delete(self):  #pragma: no cover
         """Delete frequency from tree.
-
         :param: none
         :raises: none
         :returns: none
@@ -792,7 +788,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _frequency_pp(self, frequency):  #pragma: no cover
         """Add thousands separator.
-
         :param frequency: frequency value
         :type frequency: string
         :return: frequency with separator
@@ -803,7 +798,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
     def _frequency_pp_parse(self, frequency):  #pragma: no cover
         """Remove thousands separator.
-
         :param frequency: frequency value
         :type frequency: string
         :return: frequency without separator
@@ -811,4 +805,5 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         """
 
         return int(str(frequency).replace(',', ''))
+
 
