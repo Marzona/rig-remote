@@ -69,19 +69,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        # +------------------------------+------------------------------+
-        # |                              | Hostname:    _______________ |
-        # |                              | Port:        _______________ |
-        # |                              |                              |
-        # |                              | Frequency:   _______________ |
-        # |        Frequency List        | Mode:        ____________[v] |
-        # |                              | Description: _______________ |
-        # |                              |                              |
-        # |                              |         [add] [delete] [get] |
-        # |                              |                              |
-        # |                              |  [x] Always on top?   [quit] |
-        # +------------------------------+------------------------------+
-
         # bookmarks list
 
         self.tree = ttk.Treeview(self,
@@ -616,6 +603,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             recording = True
         else:
             recording = False
+        if (len(self.ckb_monitor_mode.state()) == 1 and
+            self.ckb_monitor_mode.state()== ('selected',)):
+            monitoring = True
+        else:
+            monitoring = False
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
                                      min_freq,
@@ -623,7 +615,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      delay,
                                      interval,
                                      sgn_level,
-                                     recording)
+                                     recording,
+                                     monitoring)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
         if (task.mode.lower() == "bookmarks" and 

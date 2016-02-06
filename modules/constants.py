@@ -45,7 +45,8 @@ MIN_INTERVAL = 1000
 UNKNOWN_MODE = "unknown"
 # monitoring mode delay
 MONITOR_MODE_DELAY = 2
-
+# monitoring mode loops count
+MONITOR_MODE_LOOPS = 10
 # dictionary for mapping between rig modes and rig-remote modes
 # the key is the rig-remote namings and the value is the rig naming
 
