@@ -62,25 +62,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         :raises: none
         :returns: none
         """
-
         self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-
-        # +------------------------------+------------------------------+
-        # |                              | Hostname:    _______________ |
-        # |                              | Port:        _______________ |
-        # |                              |                              |
-        # |                              | Frequency:   _______________ |
-        # |        Frequency List        | Mode:        ____________[v] |
-        # |                              | Description: _______________ |
-        # |                              |                              |
-        # |                              |         [add] [delete] [get] |
-        # |                              |                              |
-        # |                              |  [x] Always on top?   [quit] |
-        # +------------------------------+------------------------------+
 
         # bookmarks list
 
@@ -258,8 +244,76 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                   columnspan=3,
                                   pady=5)
 
+
+        self.scanning_conf_menu = LabelFrame(self, text="Scanning options")
+        self.scanning_conf_menu.grid(row=2,
+                       column=3,
+                       #rowspan=3,
+                       stick=tk.NSEW)
+        ttk.Label(self.scanning_conf_menu,
+                  text="Signal level:").grid(row=10,
+                                             column=0,
+                                             sticky=tk.W)
+        self.txt_sgn_level = ttk.Entry(self.scanning_conf_menu,
+                                       width=10)
+        self.txt_sgn_level.grid(row=10,
+                                column=1,
+                                columnspan=1,
+                                padx=2,
+                                pady=2,
+                                sticky=tk.W)
+        ttk.Label(self.scanning_conf_menu,
+                  text="dBFS").grid(row=10,
+                                  column=2,
+                                  padx=0,
+                                  sticky=tk.W)
+
+        ttk.Label(self.scanning_conf_menu,
+                  text="Delay:").grid(row=13,
+                                      column=0,
+                                      sticky=tk.W)
+        self.txt_delay = ttk.Entry(self.scanning_conf_menu,
+                                   width=10)
+        self.txt_delay.grid(row=13,
+                            column=1,
+                            columnspan=1,
+                            padx=2,
+                            pady=2,
+                            sticky=tk.W)
+        ttk.Label(self.scanning_conf_menu,
+                  text="Seconds").grid(row=13,
+                                       padx=0,
+                                       column=2,
+                                       sticky=tk.EW)
+
+        self.cb_monitor_mode = tk.BooleanVar()
+        self.ckb_monitor_mode = ttk.Checkbutton(self.scanning_conf_menu,
+                                                text="monitor mode",
+                                                onvalue=True,
+                                                offvalue=False,
+                                                variable=self.cb_monitor_mode)
+
+        self.ckb_monitor_mode.grid(row=14,
+                                   column=0,
+                                   columnspan=1,
+                                   sticky=tk.EW)
+
+        self.cb_recording = tk.BooleanVar()
+        self.ckb_recording = ttk.Checkbutton(self.scanning_conf_menu,
+                                                 text="recording",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_recording)
+
+        self.ckb_recording.grid(row=14,
+                                    column=1,
+                                    columnspan=1,
+                                    sticky=tk.EW)
+
+
+
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
-        self.freq_scanning_menu.grid(row=2,
+        self.freq_scanning_menu.grid(row=3,
                        column=3,
                        #rowspan=3,
                        stick=tk.NSEW)
@@ -271,24 +325,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.NW)
-
-        ttk.Label(self.freq_scanning_menu,
-                  text="Signal level:").grid(row=10,
-                                             column=0,
-                                             sticky=tk.W)
-        self.txt_sgn_level = ttk.Entry(self.freq_scanning_menu,
-                                       width=10)
-        self.txt_sgn_level.grid(row=10,
-                                column=1,
-                                columnspan=1,
-                                padx=2,
-                                pady=2,
-                                sticky=tk.W)
-        ttk.Label(self.freq_scanning_menu,
-                  text="dBFS").grid(row=10,
-                                  column=2,
-                                  padx=0,
-                                  sticky=tk.W)
 
         ttk.Label(self.freq_scanning_menu,
                   text="Min/Max:").grid(row=11,
@@ -334,35 +370,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    column=2,
                                    sticky=tk.EW)
 
-        ttk.Label(self.freq_scanning_menu,
-                  text="Delay:").grid(row=13,
-                                      column=0,
-                                      sticky=tk.W)
-        self.txt_delay = ttk.Entry(self.freq_scanning_menu,
-                                   width=10)
-        self.txt_delay.grid(row=13,
-                            column=1,
-                            columnspan=1,
-                            padx=2,
-                            pady=2,
-                            sticky=tk.W)
-        ttk.Label(self.freq_scanning_menu,
-                  text="Seconds").grid(row=13,
-                                       padx=0,
-                                       column=2,
-                                       sticky=tk.EW)
-
-        self.cb_recording = tk.BooleanVar()
-        self.ckb_recording = ttk.Checkbutton(self.freq_scanning_menu,
-                                                 text="recording",
-                                                 onvalue=True,
-                                                 offvalue=False,
-                                                 variable=self.cb_recording)
-
-        self.ckb_recording.grid(row=15,
-                                    column=1,
-                                    columnspan=1,
-                                    sticky=tk.EW)
 
         self.cb_auto_bookmark = tk.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.freq_scanning_menu,
@@ -381,7 +388,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                   columnspan=3,
                                   pady=5)
         self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
-        self.book_scanning_menu.grid(row=3,
+        self.book_scanning_menu.grid(row=4,
                                     column=3,
                                     #rowspan=3,
                                     stick=tk.NSEW)
@@ -420,7 +427,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.control_menu = LabelFrame(self, text="Options")
 
-        self.control_menu.grid(row=4,
+        self.control_menu.grid(row=5,
                        column=3,
                         #rowspan=3,
                        stick=tk.NSEW)
@@ -478,6 +485,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.txt_range_max.insert(0, ac.config["range_max"])
         self.cb_save_exit.set(ac.config["save_exit"].lower())
         self.cb_auto_bookmark.set(ac.config["auto_bookmark"].lower())
+        self.monitor_mode_loops=ac.config["monitor_mode_loops"]
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.state() != ("selected"):
                 self.ckb_top.invoke()
@@ -595,14 +603,21 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             recording = True
         else:
             recording = False
+        if (len(self.ckb_monitor_mode.state()) == 1 and
+            self.ckb_monitor_mode.state()== ('selected',)):
+            monitoring = True
+        else:
+            monitoring = False
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
+                                     self.monitor_mode_loops,
                                      min_freq,
                                      max_freq,
                                      delay,
                                      interval,
                                      sgn_level,
-                                     recording)
+                                     recording,
+                                     monitoring)
         scanning = Scanning()
         task = scanning.scan(scanning_task)
         if (task.mode.lower() == "bookmarks" and 

@@ -1,7 +1,0 @@
-request for having the following features from gqrx through rigctl:
-
-- enable the query of the recording status
-- enable start/stop/status for streaming
-- enable the configuration of the streaming and recording info (socket, filename)
-
-
