@@ -1,5 +1,20 @@
 #!/usr/bin/env python
+"""
+Remote application that interacts with rigs using rigctl protocol.
 
+Please refer to:
+http://rig.dk/
+http://rig.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+Author: Rafael Marmelo
+Author: Simone Marzona
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+"""
 
 # constant definition
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
@@ -31,8 +46,8 @@ UNKNOWN_MODE = "unknown"
 # monitoring mode delay
 MONITOR_MODE_DELAY = 2
 
-# dictionary for mapping between gqrx modes and gqrx-remote modes
-# the key is the gqrx-remote namings and the value is the gqrx naming
+# dictionary for mapping between rig modes and rig-remote modes
+# the key is the rig-remote namings and the value is the rig naming
 
 MODE_MAP = {}
 MODE_MAP["AM"] = "AM",
@@ -49,7 +64,7 @@ SUPPORTED_SCANNING_ACTIONS = ("start")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-BOOKMARKS_FILE = "gqrx-bookmarks.csv"
+BOOKMARKS_FILE = "rig-bookmarks.csv"
 DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "1",

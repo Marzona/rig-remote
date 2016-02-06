@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 
 """
-Remote application that interacts with gqrx using rigctl protocol.
-Gqrx partially implements rigctl since version 2.3.
+Remote application that interacts with rigs using rigctl protocol.
 
 Please refer to:
 http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo <rafael@defying.me>
+Author: Rafael Marmelo
+Author: Simone Marzona
+
 License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
 """
 
 # import modules
@@ -41,8 +43,8 @@ import tkMessageBox
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class GqrxRemote(ttk.Frame):  #pragma: no cover
-    """Remote application that interacts with gqrx using rigctl protocol.
+class RigRemote(ttk.Frame):  #pragma: no cover
+    """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
 
     :raises: none
@@ -67,7 +69,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         :returns: none
         """
 
-        self.master.title("Gqrx Remote 2")
+        self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
         self.columnconfigure(0, weight=1)
@@ -87,12 +89,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         # +------------------------------+------------------------------+
 
         # bookmarks list
-#        self.bookmarks_menu = LabelFrame(self,
-#                               text="Bookmarks"
-#                               )
-#        self.bookmarks_menu.grid(row=0,
-#               column=0,
-#               stick=tk.NSEW)
 
         self.tree = ttk.Treeview(self,
                                  columns=("frequency",
@@ -127,22 +123,22 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                             command=self.tree.yview)
         ysb.grid(row=0,
                  column=2,
-                 rowspan=3,
+                 rowspan=5,
                  sticky=tk.NS)
-#        xsb = ttk.Scrollbar(self,
-#                            orient=tk.HORIZONTAL,
-#                            command=self.tree.xview)
-#        xsb.grid(row=1,
-#                 column=0,
-#                 sticky=tk.NSEW
-#                 )
+        xsb = ttk.Scrollbar(self,
+                            orient=tk.HORIZONTAL,
+                            command=self.tree.xview)
+        xsb.grid(row=5,
+                 column=0,
+                 sticky=tk.NSEW
+                 )
         self.tree.configure(
                             yscroll=ysb.set,
                             #xscroll=xsb.set
                             )
         self.tree.grid(row=0,
                        column=0,
-                       rowspan=3,
+                       rowspan=5,
                        sticky=tk.NSEW
                        )
         self.tree.bind('<<TreeviewSelect>>',
@@ -155,13 +151,12 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                              column=2,
                              rowspan=5,
                              padx=5)
-        # right-side container
+#        # right-side container
         self.rig_config_menu = LabelFrame(self,
                                text="Rig configuration")
         self.rig_config_menu.grid(row=0,
-                       column=3,
-                       stick=tk.NSEW)
-        #self.rig_config_menurowconfigure(7, weight=1)
+                                  column=3,
+                                  stick=tk.NSEW)
         ttk.Label(self.rig_config_menu,
                   text="Hostname:").grid(row=1,
                                          column=2,
@@ -194,10 +189,8 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
         self.rig_control_menu = LabelFrame(self,
                                            text="Rig Control")
         self.rig_control_menu.grid(row=1,
-                       column=3,
-                       stick=tk.NSEW)
-
-
+                                   column=3,
+                                   stick=tk.NSEW)
         ttk.Label(self.rig_control_menu,
                   text="Frequency:").grid(row=5,
                                           column=0,
@@ -271,8 +264,63 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                   columnspan=3,
                                   pady=5)
 
+
+        self.scanning_conf_menu = LabelFrame(self, text="Scanning options")
+        self.scanning_conf_menu.grid(row=2,
+                       column=3,
+                       #rowspan=3,
+                       stick=tk.NSEW)
+        ttk.Label(self.scanning_conf_menu,
+                  text="Signal level:").grid(row=10,
+                                             column=0,
+                                             sticky=tk.W)
+        self.txt_sgn_level = ttk.Entry(self.scanning_conf_menu,
+                                       width=10)
+        self.txt_sgn_level.grid(row=10,
+                                column=1,
+                                columnspan=1,
+                                padx=2,
+                                pady=2,
+                                sticky=tk.W)
+        ttk.Label(self.scanning_conf_menu,
+                  text="dBFS").grid(row=10,
+                                  column=2,
+                                  padx=0,
+                                  sticky=tk.W)
+
+        ttk.Label(self.scanning_conf_menu,
+                  text="Delay:").grid(row=13,
+                                      column=0,
+                                      sticky=tk.W)
+        self.txt_delay = ttk.Entry(self.scanning_conf_menu,
+                                   width=10)
+        self.txt_delay.grid(row=13,
+                            column=1,
+                            columnspan=1,
+                            padx=2,
+                            pady=2,
+                            sticky=tk.W)
+        ttk.Label(self.scanning_conf_menu,
+                  text="Seconds").grid(row=13,
+                                       padx=0,
+                                       column=2,
+                                       sticky=tk.EW)
+
+        self.cb_monitor_mode = tk.BooleanVar()
+        self.ckb_monitor_mode = ttk.Checkbutton(self.scanning_conf_menu,
+                                                text="monitor mode",
+                                                onvalue=True,
+                                                offvalue=False,
+                                                variable=self.cb_monitor_mode)
+
+        self.ckb_monitor_mode.grid(row=14,
+                                   column=0,
+                                   columnspan=1,
+                                   sticky=tk.EW)
+
+
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
-        self.freq_scanning_menu.grid(row=2,
+        self.freq_scanning_menu.grid(row=3,
                        column=3,
                        #rowspan=3,
                        stick=tk.NSEW)
@@ -284,24 +332,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.NW)
-
-        ttk.Label(self.freq_scanning_menu,
-                  text="Signal level:").grid(row=10,
-                                             column=0,
-                                             sticky=tk.W)
-        self.txt_sgn_level = ttk.Entry(self.freq_scanning_menu,
-                                       width=10)
-        self.txt_sgn_level.grid(row=10,
-                                column=1,
-                                columnspan=1,
-                                padx=2,
-                                pady=2,
-                                sticky=tk.W)
-        ttk.Label(self.freq_scanning_menu,
-                  text="dBFS").grid(row=10,
-                                  column=2,
-                                  padx=0,
-                                  sticky=tk.W)
 
         ttk.Label(self.freq_scanning_menu,
                   text="Min/Max:").grid(row=11,
@@ -347,24 +377,6 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                    column=2,
                                    sticky=tk.EW)
 
-        ttk.Label(self.freq_scanning_menu,
-                  text="Delay:").grid(row=13,
-                                      column=0,
-                                      sticky=tk.W)
-        self.txt_delay = ttk.Entry(self.freq_scanning_menu,
-                                   width=10)
-        self.txt_delay.grid(row=13,
-                            column=1,
-                            columnspan=1,
-                            padx=2,
-                            pady=2,
-                            sticky=tk.W)
-        ttk.Label(self.freq_scanning_menu,
-                  text="Seconds").grid(row=13,
-                                       padx=0,
-                                       column=2,
-                                       sticky=tk.EW)
-
         self.cb_auto_bookmark = tk.BooleanVar()
         self.ckb_auto_bookmark = ttk.Checkbutton(self.freq_scanning_menu,
                                                  text="auto bookmark",
@@ -377,28 +389,26 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                     columnspan=1,
                                     sticky=tk.EW)
 
-#        # horizontal separator
         ttk.Frame(self.freq_scanning_menu).grid(row=16,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
         self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
-        self.book_scanning_menu.grid(row=3,
+        self.book_scanning_menu.grid(row=4,
                                     column=3,
                                     #rowspan=3,
                                     stick=tk.NSEW)
 
-        #horrible horizontal placeholder
+#        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=0,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=1,
                                sticky=tk.NSEW)
-        #horrible horizontal placeholder
+
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=17,
                                column=2,
@@ -423,7 +433,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
 
         self.control_menu = LabelFrame(self, text="Options")
 
-        self.control_menu.grid(row=4,
+        self.control_menu.grid(row=5,
                        column=3,
                         #rowspan=3,
                        stick=tk.NSEW)
@@ -688,7 +698,7 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
                                'selected' in self.ckb_top.state())
 
     def cb_get_frequency(self):  #pragma: no cover
-        """Get current gqrx frequency and mode.
+        """Get current rig frequency and mode.
 
         :param: none
         :raises: none
@@ -705,11 +715,11 @@ class GqrxRemote(ttk.Frame):  #pragma: no cover
             self.cbb_mode.insert(0, mode)
         except Exception as err:
             tkMessageBox.showerror("Error",
-                                         "Could not connect to gqrx.\n%s" % err,
+                                         "Could not connect to rig.\n%s" % err,
                                          parent=self)
 
     def cb_set_frequency(self, event):  #pragma: no cover
-        """Set the gqrx frequency and mode.
+        """Set the rig frequency and mode.
 
         :param event: not used?
         :type event:
