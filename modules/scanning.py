@@ -14,6 +14,12 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/02/16 - TAS - Added code to support continuous bookmark scanning.
+                   scan method modified to support threading.
+
 """
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
@@ -113,6 +119,12 @@ class Scanning(object):
 
     """
 
+    def __init__(self):
+        self.scan_active = True
+
+    def terminate(self):
+        self.scan_active = False
+
     def scan(self, task):
         """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
@@ -128,7 +140,7 @@ class Scanning(object):
             updated_task = self._bookmarks(task, rigctl)
         elif task and task.mode.lower() == "frequency":
             updated_task = self._frequency(task, rigctl)
-        return updated_task
+#        return updated_task
 
     def _frequency(self, task, rigctl):
         """Performs a frequency scan, using the task obj for finding
@@ -193,12 +205,16 @@ class Scanning(object):
         """
 
 #        rigctl = RigCtl()
-        for bookmark in task.bookmark_list:
-            logger.info("Tuning to {}".format(bookmark[0]))
-            rigctl.set_frequency(bookmark[0].replace(',', ''))
-            time.sleep(TIME_WAIT_FOR_TUNE)
-            if self._signal_check(task.sgn_level, rigctl):
-                logger.info("Activity found on freq: {}".format(bookmark[0]))
-                task.new_bookmark_list.append(bookmark)
-                time.sleep(task.delay)
+        while self.scan_active == True :
+            for bookmark in task.bookmark_list:
+                logger.info("Tuning to {}".format(bookmark[0]))
+                rigctl.set_frequency(bookmark[0].replace(',', ''))
+                time.sleep(TIME_WAIT_FOR_TUNE)
+                if self._signal_check(task.sgn_level, rigctl):
+                    logger.info(
+                        "Activity found on freq: {}".format(bookmark[0]))
+                    task.new_bookmark_list.append(bookmark)
+                    time.sleep(task.delay)
+                if self.scan_active == False :
+                    return task
         return task
