@@ -57,7 +57,8 @@ MODE_MAP["CW"] = "CW",
 MODE_MAP["CWL"] = "CW-L",
 MODE_MAP["CWU"] = "CW-U"
 
-SUPPORTED_SCANNING_ACTIONS = ("start")
+SUPPORTED_SCANNING_ACTIONS = ("start",
+                              "stop")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
