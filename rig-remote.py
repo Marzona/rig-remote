@@ -92,3 +92,5 @@ if __name__ == "__main__":
     app = RigRemote(root, ac)
     app.apply_config(ac)
     app.mainloop()
+    if app.scan_thread != None :
+        app.scanning.terminate()
