@@ -35,6 +35,7 @@ from Tkinter import Text
 from Tkinter import LabelFrame
 from Tkinter import Label
 import tkMessageBox
+import threading
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -54,6 +55,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.cbb_mode.current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
+        self.scan_thread = None
+        self.scanning = None
+
 
 
     def build(self, ac):  #pragma: no cover
@@ -413,6 +417,16 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                           command=self.bookmark_start,
                                           )
         self.book_scan_start.grid(row=17,
+                                  column=2,
+                                  columnspan=1,
+                                  padx=2,
+                                  sticky=tk.W)
+
+        self.book_scan_stop = ttk.Button(self.book_scanning_menu,
+                                          text="Stop",
+                                          command=self.bookmark_stop,
+                                          )
+        self.book_scan_stop.grid(row=17,
                                   column=3,
                                   columnspan=1,
                                   padx=2,
@@ -567,6 +581,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self._scan("bookmarks", "start")
 
+    def bookmark_stop(self):  #pragma: no cover
+        """Wrapper around _scan() that starts a scan from bookmarks.
+
+        """
+
+        self._scan("bookmarks", "stop")
+
     def frequency_start(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from a frequency range.
         """
@@ -588,6 +609,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             logger.error("Provided action:{}".format(action))
             logger.error("Supported actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
+
+        if action.lower() == "stop" and self.scan_thread != None:
+            self.scanning.terminate()
+            self.scan_thread.join()
+            self.scan_thread = None
+            return
+        
+        if (action.lower() == "start" and self.scan_thread != None) :
+            return
+        if (action.lower() == "stop" and self.scan_thread == None) :
+            return
 
         bookmark_list = []
         for item in self.tree.get_children():
@@ -618,26 +650,32 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      sgn_level,
                                      recording,
                                      monitoring)
-        scanning = Scanning()
-        task = scanning.scan(scanning_task)
-        if (task.mode.lower() == "bookmarks" and 
-            len(task.new_bookmark_list) > 0):
-            message = self._new_activity_message(task.new_bookmark_list)
-            tkMessageBox.showinfo("New activity found", message,
-                                   parent=self)
+        self.scanning = Scanning()
+        self.scan_thread = threading.Thread(target = self.scanning.scan, 
+                                       args = (scanning_task,))
+        self.scan_thread.start()
 
-        if (task.mode.lower() == "frequency" and 
-            len(task.new_bookmark_list) > 0 and 
-            (len(self.ckb_auto_bookmark.state()) == 1 and
-            self.ckb_auto_bookmark.state()== ('selected',))):
-                self._add_new_bookmarks(task.new_bookmark_list)
 
-        elif (task.mode.lower() == "frequency" and 
-              len(task.new_bookmark_list) > 0 and 
-              len(self.ckb_auto_bookmark.state()) == 0):
-                message = self._new_activity_message(task.new_bookmark_list)
-                tkMessageBox.showinfo("New activity found", message,
-                                       parent=self)
+#        task = scanning.scan(scanning_task)
+
+        # if (task.mode.lower() == "bookmarks" and 
+        #     len(task.new_bookmark_list) > 0):
+        #     message = self._new_activity_message(task.new_bookmark_list)
+        #     tkMessageBox.showinfo("New activity found", message,
+        #                            parent=self)
+
+        # if (task.mode.lower() == "frequency" and 
+        #     len(task.new_bookmark_list) > 0 and 
+        #     (len(self.ckb_auto_bookmark.state()) == 1 and
+        #     self.ckb_auto_bookmark.state()== ('selected',))):
+        #         self._add_new_bookmarks(task.new_bookmark_list)
+
+        # elif (task.mode.lower() == "frequency" and 
+        #       len(task.new_bookmark_list) > 0 and 
+        #       len(self.ckb_auto_bookmark.state()) == 0):
+        #         message = self._new_activity_message(task.new_bookmark_list)
+        #         tkMessageBox.showinfo("New activity found", message,
+        #                                parent=self)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.

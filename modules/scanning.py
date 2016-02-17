@@ -81,7 +81,7 @@ class ScanningTask(object):
         self.mode = mode
         self.recording = recording
         self.monitoring = monitoring
-        self.monitoring_loops = monitoring_loops
+        self.monitoring_loops = int(monitoring_loops)
 
         try:
             self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
@@ -120,6 +120,12 @@ class Scanning(object):
 
     """
 
+    def __init__(self):
+        self.scan_active = True
+
+    def terminate(self):
+        self.scan_active = False
+
     def scan(self, task):
         """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
@@ -135,7 +141,7 @@ class Scanning(object):
             updated_task = self._bookmarks(task, rigctl)
         elif task and task.mode.lower() == "frequency":
             updated_task = self._frequency(task, rigctl)
-        return updated_task
+#        return updated_task
 
     def _frequency(self, task, rigctl):
         """Performs a frequency scan, using the task obj for finding
@@ -211,7 +217,7 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        for i in range(task.monitoring_loops):
+        while (self.scan_active == True) or (task.monitoring_loops != 0):
             for bookmark in task.bookmark_list:
                 logger.info("Tuning to {}".format(bookmark[0]))
                 rigctl.set_frequency(bookmark[0].replace(',', ''))
@@ -226,10 +232,14 @@ class Scanning(object):
                     if task.recording:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
-            if task.monitoring == False:
-                # if we are not monitoring, at the end of the first loop
-                # we are done.
-                break
-            else:
-                time.sleep(MONITOR_MODE_DELAY)
+                if self.scan_active == False :
+                    return task
+            if task.monitoring == True:
+                task.monitoring_loops -= 1
+                print("Loop count: ", task.monitoring_loops)
+                if task.monitoring_loops == 0:
+                    break
+                else:
+                    time.sleep(MONITOR_MODE_DELAY) 
+        self.scan_active = False
         return task
