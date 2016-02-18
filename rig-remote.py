@@ -25,7 +25,6 @@ import Tkinter as tk
 from modules.ui import RigRemote
 from modules.app_config import AppConfig
 
-
 def input_arguments():
     """Argument parser.
 

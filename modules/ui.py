@@ -36,6 +36,7 @@ from Tkinter import LabelFrame
 from Tkinter import Label
 import tkMessageBox
 import threading
+import globals
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -612,7 +613,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         if action.lower() == "stop" and self.scan_thread != None:
             self.scanning.terminate()
-            self.scan_thread.join()
             self.scan_thread = None
             return
         
@@ -643,6 +643,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
                                      self.monitor_mode_loops,
+                                     self.book_scan_stop,
                                      min_freq,
                                      max_freq,
                                      delay,
