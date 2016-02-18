@@ -48,6 +48,7 @@ class ScanningTask(object):
                  mode,
                  bookmark_list,
                  monitoring_loops,
+                 stop_scan_button,
                  range_min=None,
                  range_max=None,
                  delay=None,
@@ -82,6 +83,7 @@ class ScanningTask(object):
         self.recording = recording
         self.monitoring = monitoring
         self.monitoring_loops = int(monitoring_loops)
+        self.stop_scan_button = stop_scan_button
 
         try:
             self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
@@ -241,5 +243,6 @@ class Scanning(object):
                     break
                 else:
                     time.sleep(MONITOR_MODE_DELAY) 
-        self.scan_active = False
+        task.stop_scan_button.event_generate("<Button-1>")
+        task.stop_scan_button.event_generate("<ButtonRelease-1>")
         return task
