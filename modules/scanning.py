@@ -14,6 +14,18 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/02/16 - TAS - Added code to support continuous bookmark scanning.
+                   scan method modified to support threading.
+
+2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
+                   choice of variable or infinite looping.
+                   Only done in bookmark scanning, still need to rework
+                   frequency scanning to match. Also need to implement
+                   changes in delay code (to allow for wait on signal).
+
 """
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
