@@ -83,6 +83,21 @@ class RigCtl(object):
 
         return self._request('m')
 
+    def start_recording(self):  #pragma: no cover
+        """Wrapper around _request. It configures the command for starting
+        the recording.
+
+        """
+
+        return self._request('AOS')
+
+    def stop_recording(self):  #pragma: no cover
+        """Wrapper around _request. It configures the command for stopping
+        the recording.
+
+        """
+
+        return self._request('LOS')
 
     def get_level(self):  #pragma: no cover
         """Wrapper around _request. It configures the command for getting
