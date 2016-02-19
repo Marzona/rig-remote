@@ -194,7 +194,6 @@ class Scanning(object):
                     return task
             if pass_count > 0 :
                 pass_count -= 1
-                print("Loop count: ", pass_count)
                 if pass_count == 0 and task.passes > 0:
                     self.scan_active = False
                 else:
@@ -258,7 +257,6 @@ class Scanning(object):
                     return task
             if pass_count > 0 :
                 pass_count -= 1
-                print("Loop count: ", pass_count)
                 if pass_count == 0 and task.passes > 0:
                     self.scan_active = False
                 else:
