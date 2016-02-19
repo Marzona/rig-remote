@@ -11,6 +11,20 @@ Author: Simone Marzona
 License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/02/16 - TAS - Added code to support continuous bookmark scanning.
+                   Temporarily disabled freq activity logging and notification.
+                   Scan call now a separate thread.
+                   Added a "stop" button.
+2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
+                   choice of variable or infinite looping.
+                   Added a "pass count" field in config display.
+                   Only done in bookmark scanning, still need to rework
+                   frequency scanning to match. Also need to implement
+                   changes in delay code (to allow for wait on signal).
+
 """
 
 # import modules
