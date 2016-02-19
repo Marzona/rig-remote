@@ -24,6 +24,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    Only done in bookmark scanning, still need to rework
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
+2016/02/19 - TAS - Added frequency scan "Stop" button.
 
 """
 
