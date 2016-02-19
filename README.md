@@ -1,17 +1,16 @@
 rig-remote forked version notes
 -------------------------------
 
-a fork of Simone Marzone's rig-remote, initially to add features oriented toward "police scanner" type 
+a fork of Simone Marzona's rig-remote, initially to add features oriented toward "police scanner" type 
 operation, and expand scanning operation in general. Now working from his "devel" branch.
 
 Added Features
 --------------
 
-Threaded scanning of bookmarks, in "police scanner" fashion.
+Threaded scanning of bookmarks or frequency blocks, in "police scanner" fashion.
 Selectable infinite or limited passes.
 
 To be done:
-Rewrite "frequency scan" code to supoort threading.
 Implement "wait on signal" style pause.
 Implement selectable logging.
 Fix notifications broken by threading.
@@ -20,7 +19,7 @@ Generally see what else I broke and fix it.
 Very much a work in progress, the updated code resides in the "devel-working" branch right now. 
 Definitely not ready for prime time!
 
-![rig-remote-fork](https://github.com/MaineTim/rig-remote/blob/devel-working/screenshots/rigremote1.png)
+![rig-remote-fork](https://github.com/MaineTim/rig-remote/blob/devel-working/screenshots/rigremote2.png)
 
 Original readme:
 
