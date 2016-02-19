@@ -167,8 +167,8 @@ class Scanning(object):
         :raises: none
         :returns: updates the scanning task object with the new activity found
         """
-        for i in range(task.monitoring_loops):
-            logger.warning("loop {}".format(i))
+        pass_count = task.passes
+        while (self.scan_active == True):
             freq = task.range_min
             interval = khertz_to_hertz(task.interval)
             while freq < task.range_max:
@@ -189,14 +189,19 @@ class Scanning(object):
                         rigctl.stop_recording()
                         logger.warning("Recording stopped.")
                 freq = freq + interval
-            if task.monitoring == False:
-                # if we are not monitoring, at the end of the first loop
-                # we are done.
-                break
-            else:
-                time.sleep(MONITOR_MODE_DELAY)
-
+                if self.scan_active == False :
+                    return task
+            if pass_count > 0 :
+                pass_count -= 1
+                print("Loop count: ", pass_count)
+                if pass_count == 0 and task.passes > 0:
+                    self.scan_active = False
+                else:
+                    time.sleep(MONITOR_MODE_DELAY) 
+        task.stop_scan_button.event_generate("<Button-1>")
+        task.stop_scan_button.event_generate("<ButtonRelease-1>")
         return task
+
 
     def _signal_check(self, sgn_level, rigctl):
         """check for the signal SIGNAL_CHECKS times pausing 
