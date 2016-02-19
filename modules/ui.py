@@ -251,6 +251,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    text="Get",
                                    width=7,
                                    command=self.cb_get_frequency)
+
         self.btn_load.grid(row=8,
                            column=3,
                            padx=2,
@@ -359,7 +360,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                   column=2,
                                   columnspan=1,
                                   padx=2,
-                                  sticky=tk.NW)
+                                  sticky=tk.W)
+
+        self.freq_scan_stop = ttk.Button(self.freq_scanning_menu,
+                                          text="Stop",
+                                          command=self.frequency_stop,
+                                          )
+        self.freq_scan_stop.grid(row=16,
+                                  column=3,
+                                  columnspan=1,
+                                  padx=2,
+                                  sticky=tk.W)
 
         ttk.Label(self.freq_scanning_menu,
                   text="Min/Max:").grid(row=12,
@@ -370,8 +381,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    padx=0,
                                    column=3,
                                    sticky=tk.W)
+
         self.txt_range_min = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
+
         self.txt_range_min.grid(row=12,
                                 column=1,
                                 columnspan=1,
@@ -380,6 +393,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 sticky=tk.W)
         self.txt_range_max = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
+
         self.txt_range_max.grid(row=12,
                                 column=2,
                                 columnspan=1,
@@ -415,13 +429,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.ckb_auto_bookmark.grid(row=16,
                                     column=0,
-                                    columnspan=1,
-                                    sticky=tk.EW)
+                                    columnspan=2)
 
         ttk.Frame(self.freq_scanning_menu).grid(row=17,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
+
         self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
         self.book_scanning_menu.grid(row=4,
                                     column=3,
@@ -625,6 +639,14 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         """
 
         self._scan("frequency", "start")
+
+
+    def frequency_stop(self):  #pragma: no cover
+        """Wrapper around _scan() that starts a scan from bookmarks.
+
+        """
+
+        self._scan("frequency", "stop")
 
     def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
