@@ -60,13 +60,14 @@ class ScanningTask(object):
                  mode,
                  bookmark_list,
                  stop_scan_button,
-                 range_min=None,
-                 range_max=None,
-                 delay=None,
+                 range_min = None,
+                 range_max = None,
+                 delay = None,
                  passes = None,
-                 interval=None,
-                 sgn_level=None,
-                 recording=False):
+                 interval = None,
+                 sgn_level = None,
+                 record = False,
+                 log = False):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -91,7 +92,8 @@ class ScanningTask(object):
             raise UnsupportedScanningConfigError
 
         self.mode = mode
-        self.recording = recording
+        self.record = record
+        self.log = log
         self.stop_scan_button = stop_scan_button
 
         try:

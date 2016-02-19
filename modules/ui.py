@@ -334,6 +334,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                     columnspan=1,
                                     sticky=tk.EW)
 
+        self.cb_log = tk.BooleanVar()
+        self.ckb_log = ttk.Checkbutton(self.scanning_conf_menu,
+                                                 text="Log",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_log)
+
+        self.ckb_log.grid(row=15,
+                                    column=2,
+                                    columnspan=1,
+                                    sticky=tk.EW)
 
 
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
@@ -656,6 +667,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             record = True
         else:
             record = False
+        if (len(self.ckb_log.state()) == 1 and
+            self.ckb_log.state()== ('selected',)):
+            log = True
+        else:
+            log = False
+
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
                                      self.book_scan_stop,
@@ -665,7 +682,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      passes,
                                      interval,
                                      sgn_level,
-                                     record)
+                                     record, 
+                                     log)
         self.scanning = Scanning()
         self.scan_thread = threading.Thread(target = self.scanning.scan, 
                                        args = (scanning_task,))
