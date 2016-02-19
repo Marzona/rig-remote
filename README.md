@@ -13,10 +13,13 @@ rigctl: (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentat
 ![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
 
-Features
+Features/changes
 --
 
+- small ui redesign
 - Bookmark frequencies and modes
+- monitor bookmarks and frequency range
+- trigger recording, autobookmarks, streaming for the detected signals
 - Create bookmarks from the current rig frequency and mode
 - Restore rig frequency and mode (bookmark double-click)
 - Keep window always on top
