@@ -14,6 +14,18 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/02/16 - TAS - Added code to support continuous bookmark scanning.
+                   scan method modified to support threading.
+
+2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
+                   choice of variable or infinite looping.
+                   Only done in bookmark scanning, still need to rework
+                   frequency scanning to match. Also need to implement
+                   changes in delay code (to allow for wait on signal).
+
 """
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
@@ -47,14 +59,15 @@ class ScanningTask(object):
     def __init__(self,
                  mode,
                  bookmark_list,
-                 monitoring_loops,
-                 range_min=None,
-                 range_max=None,
-                 delay=None,
-                 interval=None,
-                 sgn_level=None,
-                 recording=False,
-                 monitoring=False):
+                 stop_scan_button,
+                 range_min = None,
+                 range_max = None,
+                 delay = None,
+                 passes = None,
+                 interval = None,
+                 sgn_level = None,
+                 record = False,
+                 log = False):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -79,15 +92,16 @@ class ScanningTask(object):
             raise UnsupportedScanningConfigError
 
         self.mode = mode
-        self.recording = recording
-        self.monitoring = monitoring
-        self.monitoring_loops = monitoring_loops
+        self.record = record
+        self.log = log
+        self.stop_scan_button = stop_scan_button
 
         try:
             self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
             self.range_max = khertz_to_hertz(int(range_max.replace(',', '')))
             self.interval = int(interval)
             self.delay = int(delay)
+            self.passes = int(passes)
             self.sgn_level = int(sgn_level)
         except ValueError:
             """We log some info and re raise."""
@@ -96,6 +110,7 @@ class ScanningTask(object):
             logger.exception("range_min:{}".format(range_min))
             logger.exception("interval:{}".format(interval))
             logger.exception("delay:{}".format(delay))
+            logger.exception("passes:{}".format(passes))
             logger.exception("sgn_level:{}".format(sgn_level))
             raise
 
@@ -120,6 +135,12 @@ class Scanning(object):
 
     """
 
+    def __init__(self):
+        self.scan_active = True
+
+    def terminate(self):
+        self.scan_active = False
+
     def scan(self, task):
         """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
@@ -135,7 +156,7 @@ class Scanning(object):
             updated_task = self._bookmarks(task, rigctl)
         elif task and task.mode.lower() == "frequency":
             updated_task = self._frequency(task, rigctl)
-        return updated_task
+#        return updated_task
 
     def _frequency(self, task, rigctl):
         """Performs a frequency scan, using the task obj for finding
@@ -211,7 +232,8 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        for i in range(task.monitoring_loops):
+        pass_count = task.passes
+        while (self.scan_active == True):
             for bookmark in task.bookmark_list:
                 logger.info("Tuning to {}".format(bookmark[0]))
                 rigctl.set_frequency(bookmark[0].replace(',', ''))
@@ -226,10 +248,15 @@ class Scanning(object):
                     if task.recording:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
-            if task.monitoring == False:
-                # if we are not monitoring, at the end of the first loop
-                # we are done.
-                break
-            else:
-                time.sleep(MONITOR_MODE_DELAY)
+                if self.scan_active == False :
+                    return task
+            if pass_count > 0 :
+                pass_count -= 1
+                print("Loop count: ", pass_count)
+                if pass_count == 0 and task.passes > 0:
+                    self.scan_active = False
+                else:
+                    time.sleep(MONITOR_MODE_DELAY) 
+        task.stop_scan_button.event_generate("<Button-1>")
+        task.stop_scan_button.event_generate("<ButtonRelease-1>")
         return task
