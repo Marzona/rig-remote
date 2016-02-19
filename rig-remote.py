@@ -25,7 +25,6 @@ import Tkinter as tk
 from modules.ui import RigRemote
 from modules.app_config import AppConfig
 
-
 def input_arguments():
     """Argument parser.
 
@@ -92,3 +91,5 @@ if __name__ == "__main__":
     app = RigRemote(root, ac)
     app.apply_config(ac)
     app.mainloop()
+    if app.scan_thread != None :
+        app.scanning.terminate()

@@ -45,7 +45,6 @@ MIN_INTERVAL = 1000
 UNKNOWN_MODE = "unknown"
 # monitoring mode delay
 MONITOR_MODE_DELAY = 2
-# monitoring mode loops count
 
 # dictionary for mapping between rig modes and rig-remote modes
 # the key is the rig-remote namings and the value is the rig naming
@@ -61,7 +60,8 @@ MODE_MAP["CW"] = "CW",
 MODE_MAP["CWL"] = "CW-L",
 MODE_MAP["CWU"] = "CW-U"
 
-SUPPORTED_SCANNING_ACTIONS = ("start")
+SUPPORTED_SCANNING_ACTIONS = ("start",
+                               "stop")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
@@ -70,10 +70,10 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "1",
                   "delay" : "5",
+                  "passes" : "0",
                   "sgn_level" : "-30",
                   "range_min" : "24,000",
                   "range_max" : "1800,000",
                   "always_on_top" : "True",
                   "save_exit" : "False",
-                  "auto_bookmark" : "False",
-                  "monitor_mode_loops" : 10}
+                  "auto_bookmark" : "False"}
