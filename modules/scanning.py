@@ -180,13 +180,13 @@ class Scanning(object):
 
                 if self._signal_check(task.sgn_level, rigctl):
                     logger.info("Activity found on freq: {}".format(freq))
-                    if task.recording:
+                    if task.record:
                         rigctl.start_recording()
                         logger.warning("Recording started.")
                     triple = (freq, UNKNOWN_MODE, str(freq))
                     task.new_bookmark_list.append(triple)
                     time.sleep(task.delay)
-                    if task.recording:
+                    if task.record:
                         rigctl.stop_recording()
                         logger.warning("Recording stopped.")
                 freq = freq + interval
@@ -245,12 +245,12 @@ class Scanning(object):
                 time.sleep(TIME_WAIT_FOR_TUNE)
                 if self._signal_check(task.sgn_level, rigctl):
                     logger.info("Activity found on freq: {}".format(bookmark[0]))
-                    if task.recording:
+                    if task.record:
                         rigctl.start_recording()
                         logger.info("Recording started.")
                     task.new_bookmark_list.append(bookmark)
                     time.sleep(task.delay)
-                    if task.recording:
+                    if task.record:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
                 if self.scan_active == False :
