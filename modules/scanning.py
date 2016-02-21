@@ -25,8 +25,17 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    Only done in bookmark scanning, still need to rework
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
+
 2016/02/19 - TAS - Fixed code for frequency scan to support threading.
 
+2016/02/20 - TAS - Recoded signal_check to help prevent false positives.
+                   Implemented "wait for signal" style pause in bookmark
+                   scanning. Selectable via the "wait" checkbox. When
+                   on, scanning will pause on signal detection until
+                   the frequency has been been clear for "Delay" seconds.
+                   When off, scanning will resume after "Delay" seconds no
+                   matter if a signal is still present or not.
+                   
 """
 from modules.rigctl import RigCtl
 from modules.constants import SUPPORTED_SCANNING_MODES
@@ -68,7 +77,8 @@ class ScanningTask(object):
                  interval = None,
                  sgn_level = None,
                  record = False,
-                 log = False):
+                 log = False,
+                 wait = False):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -95,6 +105,7 @@ class ScanningTask(object):
         self.mode = mode
         self.record = record
         self.log = log
+        self.wait = wait
         self.stop_scan_button = stop_scan_button
 
         try:
@@ -214,18 +225,21 @@ class Scanning(object):
         """
 
         sgn = dbfs_to_sgn(sgn_level)
+        signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
             logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rigctl.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))
-            if int(rigctl.get_level().replace(".", "")) > sgn:
-                return True
-            else:
-                time.sleep(NO_SIGNAL_DELAY)
+            if (level > sgn) :
+                signal_found += 1
+            time.sleep(NO_SIGNAL_DELAY)
+        logger.info("signal_found:{}".format(signal_found))
+        if (signal_found > 1) :
+            return True
         return False
-
+        
     def _bookmarks(self, task, rigctl):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
@@ -238,18 +252,26 @@ class Scanning(object):
         """
 
         pass_count = task.passes
+
         while (self.scan_active == True):
             for bookmark in task.bookmark_list:
                 logger.info("Tuning to {}".format(bookmark[0]))
                 rigctl.set_frequency(bookmark[0].replace(',', ''))
                 time.sleep(TIME_WAIT_FOR_TUNE)
                 if self._signal_check(task.sgn_level, rigctl):
-                    logger.info("Activity found on freq: {}".format(bookmark[0]))
+                    logger.info(
+                        "Activity found on freq: {}".format(bookmark[0]))
                     if task.record:
                         rigctl.start_recording()
                         logger.info("Recording started.")
                     task.new_bookmark_list.append(bookmark)
                     time.sleep(task.delay)
+                    while task.wait :
+                        while self._signal_check(task.sgn_level, rigctl): 
+                            continue
+                        time.sleep(task.delay)
+                        if not (self._signal_check(task.sgn_level, rigctl)):
+                            break
                     if task.record:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
