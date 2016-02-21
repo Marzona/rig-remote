@@ -9,9 +9,10 @@ Added Features
 
 Threaded scanning of bookmarks or frequency blocks, in "police scanner" fashion.
 Selectable infinite or limited passes.
+Selectable fixed pause on signal detection, or "wait on signal", where the scan will pause on 
+a detected signal until the frequency is clear for a specified time.
 
 To be done:
-Implement "wait on signal" style pause.
 Implement selectable logging.
 Implement bookmark scan lockouts.
 Fix notifications broken by threading.
@@ -19,7 +20,7 @@ Generally see what else I broke and fix it.
 
 Very much a work in progress. Definitely not ready for prime time!
 
-![rig-remote-fork](https://github.com/MaineTim/rig-remote/blob/devel/screenshots/rigremote2.png)
+![rig-remote-fork](https://github.com/MaineTim/rig-remote/blob/devel/screenshots/rig-remote-fork.png)
 
 Original readme:
 
