@@ -25,6 +25,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
 2016/02/19 - TAS - Added frequency scan "Stop" button.
+2016/02/20 - TAS - Added "wait" button. See scanning.py for notes.
 
 """
 
@@ -283,13 +284,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 pady=2,
                                 sticky=tk.W)
         ttk.Label(self.scanning_conf_menu,
-                  text="dBFS").grid(row=10,
+                  text=" dBFS").grid(row=10,
                                   column=2,
                                   padx=0,
                                   sticky=tk.W)
 
         ttk.Label(self.scanning_conf_menu,
-                  text="Delay (Secs):").grid(row=13,
+                  text="Delay:").grid(row=13,
                                       column=0,
                                       sticky=tk.W)
         self.txt_delay = ttk.Entry(self.scanning_conf_menu,
@@ -301,7 +302,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                             pady=2,
                             sticky=tk.W)
         ttk.Label(self.scanning_conf_menu,
-                  text="  -1=Wait").grid(row=13,
+                  text=" seconds").grid(row=13,
                                        padx=0,
                                        column=2,
                                        sticky=tk.EW)
@@ -324,6 +325,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                        column=2,
                                        sticky=tk.EW)
 
+        self.cb_wait = tk.BooleanVar()
+        self.ckb_wait = ttk.Checkbutton(self.scanning_conf_menu,
+                                                 text="Wait",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_wait)
+
+        self.ckb_wait.grid(row=15,
+                                    column=0,
+                                    columnspan=1,
+                                    sticky=tk.E)
         self.cb_record = tk.BooleanVar()
         self.ckb_record = ttk.Checkbutton(self.scanning_conf_menu,
                                                  text="Record",
@@ -334,7 +346,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.ckb_record.grid(row=15,
                                     column=1,
                                     columnspan=1,
-                                    sticky=tk.EW)
+                                    sticky=tk.E)
 
         self.cb_log = tk.BooleanVar()
         self.ckb_log = ttk.Checkbutton(self.scanning_conf_menu,
@@ -346,7 +358,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.ckb_log.grid(row=15,
                                     column=2,
                                     columnspan=1,
-                                    sticky=tk.EW)
+                                    sticky=tk.E)
 
 
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
@@ -695,6 +707,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             log = True
         else:
             log = False
+        if (len(self.ckb_wait.state()) == 1 and
+            self.ckb_wait.state()== ('selected',)):
+            wait = True
+        else:
+            wait = False
 
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
@@ -706,7 +723,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      interval,
                                      sgn_level,
                                      record, 
-                                     log)
+                                     log,
+                                     wait)
         self.scanning = Scanning()
         self.scan_thread = threading.Thread(target = self.scanning.scan, 
                                        args = (scanning_task,))
