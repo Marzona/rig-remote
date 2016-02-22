@@ -185,7 +185,7 @@ class Scanning(object):
             interval = khertz_to_hertz(task.interval)
             while freq < task.range_max:
                 logger.info("Tuning to {}".format(freq))
-                logger.warning("Interval:{}".format(task.interval))
+                logger.info("Interval:{}".format(task.interval))
                 rigctl.set_frequency(freq)
                 time.sleep(TIME_WAIT_FOR_TUNE)
 
@@ -193,13 +193,13 @@ class Scanning(object):
                     logger.info("Activity found on freq: {}".format(freq))
                     if task.record:
                         rigctl.start_recording()
-                        logger.warning("Recording started.")
+                        logger.info("Recording started.")
                     triple = (freq, UNKNOWN_MODE, str(freq))
                     task.new_bookmark_list.append(triple)
                     time.sleep(task.delay)
                     if task.record:
                         rigctl.stop_recording()
-                        logger.warning("Recording stopped.")
+                        logger.info("Recording stopped.")
                 freq = freq + interval
                 if self.scan_active == False :
                     return task
