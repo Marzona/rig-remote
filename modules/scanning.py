@@ -35,6 +35,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    the frequency has been been clear for "Delay" seconds.
                    When off, scanning will resume after "Delay" seconds no
                    matter if a signal is still present or not.
+2016/02/21 - TAS - Added error handling for initial rig_control call.
                    
 """
 from modules.rigctl import RigCtl
@@ -186,7 +187,12 @@ class Scanning(object):
             while freq < task.range_max:
                 logger.info("Tuning to {}".format(freq))
                 logger.info("Interval:{}".format(task.interval))
-                rigctl.set_frequency(freq)
+                try :
+                    rigctl.set_frequency(freq)
+                except Exception :
+                    logger.warning("Communications Error!")
+                    self.scan_active  = False
+                    break
                 time.sleep(TIME_WAIT_FOR_TUNE)
 
                 if self._signal_check(task.sgn_level, rigctl):
@@ -256,7 +262,12 @@ class Scanning(object):
         while (self.scan_active == True):
             for bookmark in task.bookmark_list:
                 logger.info("Tuning to {}".format(bookmark[0]))
-                rigctl.set_frequency(bookmark[0].replace(',', ''))
+                try:
+                    rigctl.set_frequency(bookmark[0].replace(',', ''))
+                except Exception :
+                    logger.warning("Communications Error!")
+                    self.scan_active  = False
+                    break
                 time.sleep(TIME_WAIT_FOR_TUNE)
                 if self._signal_check(task.sgn_level, rigctl):
                     logger.info(
