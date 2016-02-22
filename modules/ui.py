@@ -25,7 +25,10 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
 2016/02/19 - TAS - Added frequency scan "Stop" button.
-2016/02/20 - TAS - Added "wait" button. See scanning.py for notes.
+2016/02/20 - TAS - Added "wait" checkbox. See scanning.py for notes.
+2016/02/22 - TAS - Removed "stop" button and use a "toggle" function for
+                   start/stop of scanning. Add "lock" button to UI as 
+                   placeholder, but haven't implemented lockout yet.
 
 """
 
@@ -52,6 +55,7 @@ from Tkinter import LabelFrame
 from Tkinter import Label
 import tkMessageBox
 import threading
+import itertools
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -72,6 +76,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.scan_thread = None
+        self.scan_mode = None
         self.scanning = None
 
 
@@ -366,21 +371,14 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                        column=3,
                        #rowspan=3,
                        stick=tk.NSEW)
-        self.freq_scan_start = ttk.Button(self.freq_scanning_menu,
-                                          text="Start",
-                                          command=self.frequency_start)
-        self.freq_scan_start.grid(row=16,
-                                  column=2,
-                                  columnspan=1,
-                                  padx=2,
-                                  sticky=tk.W)
 
-        self.freq_scan_stop = ttk.Button(self.freq_scanning_menu,
-                                          text="Stop",
-                                          command=self.frequency_stop,
+
+        self.freq_scan_toggle = ttk.Button(self.freq_scanning_menu,
+                                          text="Start",
+                                          command=self.frequency_toggle,
                                           )
-        self.freq_scan_stop.grid(row=16,
-                                  column=3,
+        self.freq_scan_toggle.grid(row=16,
+                                  column=2,
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.W)
@@ -470,21 +468,21 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                column=2,
                                sticky=tk.NSEW)
 
-        self.book_scan_start = ttk.Button(self.book_scanning_menu,
+        self.book_scan_toggle = ttk.Button(self.book_scanning_menu,
                                           text="Start",
-                                          command=self.bookmark_start,
+                                          command=self.bookmark_toggle,
                                           )
-        self.book_scan_start.grid(row=18,
+        self.book_scan_toggle.grid(row=18,
                                   column=2,
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.W)
 
-        self.book_scan_stop = ttk.Button(self.book_scanning_menu,
-                                          text="Stop",
-                                          command=self.bookmark_stop,
+        self.book_lockout = ttk.Button(self.book_scanning_menu,
+                                          text="Lock",
+                                          command=self.bookmark_lockout,
                                           )
-        self.book_scan_stop.grid(row=18,
+        self.book_lockout.grid(row=18,
                                   column=3,
                                   columnspan=1,
                                   padx=2,
@@ -634,32 +632,24 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                 bookmarks.row_list.append(values)
             bookmarks.csv_save(self.bookmarks_file, delimiter)
 
-    def bookmark_start(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from bookmarks.
-        """
+    def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
+        if self.scan_mode == None or self.scan_mode == "bookmarks" :
+            action = self.book_scan_toggle.cget('text').lower()
+            self.book_scan_toggle.config(text = next(icycle))
+            self._scan("bookmarks", action)
 
-        self._scan("bookmarks", "start")
-
-    def bookmark_stop(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from bookmarks.
-
-        """
-
-        self._scan("bookmarks", "stop")
-
-    def frequency_start(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from a frequency range.
-        """
-
-        self._scan("frequency", "start")
-
-
-    def frequency_stop(self):  #pragma: no cover
+    def bookmark_lockout(self):  #pragma: no cover
         """Wrapper around _scan() that starts a scan from bookmarks.
 
         """
+        pass
+#        self._scan("bookmarks", "stop")
 
-        self._scan("frequency", "stop")
+    def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
+        if self.scan_mode == None or self.scan_mode == "frequency" : 
+            action = self.freq_scan_toggle.cget('text').lower()
+            self.freq_scan_toggle.config(text = next(icycle))
+            self._scan("frequency", action)
 
     def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
@@ -680,6 +670,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         if action.lower() == "stop" and self.scan_thread != None:
             self.scanning.terminate()
             self.scan_thread = None
+            self.scan_mode = None
             return
         
         if (action.lower() == "start" and self.scan_thread != None) :
@@ -687,6 +678,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         if (action.lower() == "stop" and self.scan_thread == None) :
             return
 
+        self.scan_mode = mode.lower()
         bookmark_list = []
         for item in self.tree.get_children():
             values = self.tree.item(item).get('values')
@@ -712,10 +704,14 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             wait = True
         else:
             wait = False
+        if mode == "frequency" :
+            button = self.freq_scan_toggle
+        else :
+            button = self.book_scan_toggle
 
         scanning_task = ScanningTask(mode,
                                      bookmark_list,
-                                     self.book_scan_stop,
+                                     button,
                                      min_freq,
                                      max_freq,
                                      delay,

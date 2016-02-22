@@ -44,7 +44,7 @@ class RigCtl(object):
         """
 
         logger.info("Connecting the rig at: {}:{}".format(self.hostname,
-                                                            self.port))
+                                                          self.port))
         con = telnetlib.Telnet(self.hostname, self.port)
         con.write(('%s\n' % request).encode('ascii'))
         response = con.read_some().decode('ascii').strip()
