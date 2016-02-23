@@ -35,7 +35,12 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    the frequency has been been clear for "Delay" seconds.
                    When off, scanning will resume after "Delay" seconds no
                    matter if a signal is still present or not.
+
 2016/02/21 - TAS - Added error handling for initial rig_control call.
+
+2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
+                   Still need to highlight locked fields, and add supporting
+                   scanning code.
                    
 """
 from modules.rigctl import RigCtl
