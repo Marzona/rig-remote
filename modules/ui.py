@@ -11,6 +11,7 @@ Author: Simone Marzona
 License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
@@ -37,7 +38,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
 
 2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
-                   are passed to scan thread.
+                   are passed to scan thread. Added support for logging
+                   scanning activity to a file.
 
 """
 
