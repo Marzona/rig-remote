@@ -78,6 +78,6 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "save_exit" : "False",
                   "auto_bookmark" : "False"}
 
-FIELDS_COUNT = 4
-class Fields :
-    frequency, mode, description, lockout = range(FIELDS_COUNT)
+LEN_BM = 4
+class BM :
+    freq, mode, desc, lockout = range(LEN_BM)

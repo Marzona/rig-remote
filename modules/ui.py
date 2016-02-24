@@ -34,6 +34,10 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    start/stop of scanning. Add "lock" button to UI as 
                    placeholder, but haven't implemented lockout yet.
 
+2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
+
+2016/02/24 - TAS - Added lockout highlight code.
+
 """
 
 # import modules
@@ -45,8 +49,8 @@ from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
 from modules.constants import BOOKMARKS_FILE
 from modules.constants import UNKNOWN_MODE
-from modules.constants import FIELDS_COUNT
-from modules.constants import Fields
+from modules.constants import LEN_BM
+from modules.constants import BM
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -630,19 +634,18 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             try:
                 bookmarks.csv_load(self.bookmarks_file, delimiter)
                 for line in bookmarks.row_list:
-                    if len(line) < FIELDS_COUNT :
+                    if len(line) < LEN_BM:
                         line.append("O")
-                    line[Fields.frequency] = self._frequency_pp(
-                                              line[Fields.frequency])
-                    self.tree.insert('', tk.END, values=line)
+                    line[BM.freq] = self._frequency_pp(line[BM.freq])
+                    item = self.tree.insert('', tk.END, values=line)
+                    self.bookmark_bg_tag(item, line[BM.lockout])
             except InvalidPathError:
                 logger.info("No bookmarks file found, skipping.")
 
         if task == "save":
             for item in self.tree.get_children():
                 values = self.tree.item(item).get('values')
-                values[Fields.frequency] = self._frequency_pp_parse(
-                                            values[Fields.frequency])
+                values[BM.freq] = self._frequency_pp_parse(values[BM.freq])
                 bookmarks.row_list.append(values)
             bookmarks.csv_save(self.bookmarks_file, delimiter)
 
@@ -656,6 +659,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.book_scan_toggle.config(text = next(icycle))
             self._scan("bookmarks", action)
 
+    def bookmark_bg_tag(self, item, value) :
+        """Set item background color based on lock status
+        """
+
+        if value == "L" :
+            self.tree.tag_configure('locked', background = 'red')
+            self.tree.item(item, tags = "locked")
+        else :
+            self.tree.tag_configure('unlocked', background = 'white')
+            self.tree.item(item, tags = "unlocked")
+
     def bookmark_lockout(self, icycle=itertools.cycle(["L", "O"])):
         """Toggle lockout of selected bookmark.
         """
@@ -664,12 +678,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             print("Skipping")
         else:
             values = list((self.tree.item(self.selected_bookmark, "values")))
-            values[Fields.lockout] = next(icycle)
+            if values[BM.lockout] == 'L' :
+                values[BM.lockout] = "O"
+            else :
+                values[BM.lockout] = "L"
             self.tree.item(self.selected_bookmark, values = values)
-
-            #so we can toggle the value of lockout - now we
-            #need to update the tree view to highlight locked marks.
-            
+            self.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
 
     def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle frequency scan Start/Stop button, changing label text as
@@ -694,7 +708,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
-            logger.error("Supported actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
+            logger.error("Supported actions:{}".format(
+                         SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
 
         if action.lower() == "stop" and self.scan_thread != None:
@@ -902,9 +917,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         # find where to insert (insertion sort)
         idx = tk.END
         for item in self.tree.get_children():
-            freq = self.tree.item(item).get('values')[Fields.frequency]
+            freq = self.tree.item(item).get('values')[BM.freq]
             curr_freq = self._frequency_pp_parse(freq)
-            curr_mode = self.tree.item(item).get('values')[Fields.mode]
+            curr_mode = self.tree.item(item).get('values')[BM.mode]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
                 break

@@ -37,10 +37,6 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    matter if a signal is still present or not.
 
 2016/02/21 - TAS - Added error handling for initial rig_control call.
-
-2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
-                   Still need to highlight locked fields, and add supporting
-                   scanning code.
                    
 """
 from modules.rigctl import RigCtl
@@ -51,6 +47,7 @@ from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
 from modules.constants import UNKNOWN_MODE
 from modules.constants import MONITOR_MODE_DELAY
+from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
@@ -266,9 +263,11 @@ class Scanning(object):
 
         while (self.scan_active == True):
             for bookmark in task.bookmark_list:
-                logger.info("Tuning to {}".format(bookmark[0]))
+                if (bookmark[BM.lockout]) == "L" :
+                    continue
+                logger.info("Tuning to {}".format(bookmark[BM.freq]))
                 try:
-                    rigctl.set_frequency(bookmark[0].replace(',', ''))
+                    rigctl.set_frequency(bookmark[BM.freq].replace(',', ''))
                 except Exception :
                     logger.warning("Communications Error!")
                     self.scan_active  = False
@@ -276,7 +275,7 @@ class Scanning(object):
                 time.sleep(TIME_WAIT_FOR_TUNE)
                 if self._signal_check(task.sgn_level, rigctl):
                     logger.info(
-                        "Activity found on freq: {}".format(bookmark[0]))
+                        "Activity found on freq: {}".format(bookmark[BM.freq]))
                     if task.record:
                         rigctl.start_recording()
                         logger.info("Recording started.")
