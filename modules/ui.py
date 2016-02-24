@@ -36,7 +36,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
 
-2016/02/24 - TAS - Added lockout highlight code.
+2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
+                   are passed to scan thread.
 
 """
 
@@ -675,7 +676,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         """
         
         if (self.selected_bookmark == None) :
-            print("Skipping")
+            # will use this in future to support "current scan" lockout
+            return
         else:
             values = list((self.tree.item(self.selected_bookmark, "values")))
             if values[BM.lockout] == 'L' :
@@ -724,10 +726,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             return
 
         self.scan_mode = mode.lower()
-        bookmark_list = []
-        for item in self.tree.get_children():
-            values = self.tree.item(item).get('values')
-            bookmark_list.append(values)
+        bookmarks = self.tree
         min_freq = self.txt_range_min.get()
         max_freq = self.txt_range_max.get()
         delay = self.txt_delay.get()
@@ -754,8 +753,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         else :
             button = self.book_scan_toggle
 
-        scanning_task = ScanningTask(mode,
-                                     bookmark_list,
+        task = ScanningTask(mode,
+                                     bookmarks,
                                      button,
                                      min_freq,
                                      max_freq,
@@ -768,30 +767,16 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      wait)
         self.scanning = Scanning()
         self.scan_thread = threading.Thread(target = self.scanning.scan, 
-                                       args = (scanning_task,))
+                                            args = (task,))
         self.scan_thread.start()
 
-
-#        task = scanning.scan(scanning_task)
-
-        # if (task.mode.lower() == "bookmarks" and 
-        #     len(task.new_bookmark_list) > 0):
-        #     message = self._new_activity_message(task.new_bookmark_list)
-        #     tkMessageBox.showinfo("New activity found", message,
-        #                            parent=self)
-
-        # if (task.mode.lower() == "frequency" and 
-        #     len(task.new_bookmark_list) > 0 and 
-        #     (len(self.ckb_auto_bookmark.state()) == 1 and
-        #     self.ckb_auto_bookmark.state()== ('selected',))):
-        #         self._add_new_bookmarks(task.new_bookmark_list)
-
-        # elif (task.mode.lower() == "frequency" and 
-        #       len(task.new_bookmark_list) > 0 and 
-        #       len(self.ckb_auto_bookmark.state()) == 0):
-        #         message = self._new_activity_message(task.new_bookmark_list)
-        #         tkMessageBox.showinfo("New activity found", message,
-        #                                parent=self)
+# Leaving this code to remind me to deal with this
+#        
+#        if (task.mode.lower() == "frequency" and 
+#            len(task.new_bookmark_list) > 0 and 
+#            (len(self.ckb_auto_bookmark.state()) == 1 and
+#             self.ckb_auto_bookmark.state()== ('selected',))):
+#                 self._add_new_bookmarks(task.new_bookmark_list)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.

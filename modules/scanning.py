@@ -37,6 +37,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    matter if a signal is still present or not.
 
 2016/02/21 - TAS - Added error handling for initial rig_control call.
+
+2016/02/24 - TAS - Added bookmark lockout support. Changed how bookmarks
+                   are passed so that on-the-fly lockout will work.
                    
 """
 from modules.rigctl import RigCtl
@@ -71,7 +74,7 @@ class ScanningTask(object):
 
     def __init__(self,
                  mode,
-                 bookmark_list,
+                 bookmarks,
                  stop_scan_button,
                  range_min = None,
                  range_max = None,
@@ -96,7 +99,7 @@ class ScanningTask(object):
 
         self.error = None
         self.new_bookmark_list = []
-        self.bookmark_list = bookmark_list
+        self.bookmarks = bookmarks
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
             logger.error("Unsupported scanning mode "\
@@ -168,10 +171,9 @@ class Scanning(object):
 
         rigctl = RigCtl()
         if task and task.mode.lower() == "bookmarks":
-            updated_task = self._bookmarks(task, rigctl)
+            task = self._bookmarks(task, rigctl)
         elif task and task.mode.lower() == "frequency":
-            updated_task = self._frequency(task, rigctl)
-#        return updated_task
+            task = self._frequency(task, rigctl)
 
     def _frequency(self, task, rigctl):
         """Performs a frequency scan, using the task obj for finding
@@ -262,7 +264,8 @@ class Scanning(object):
         pass_count = task.passes
 
         while (self.scan_active == True):
-            for bookmark in task.bookmark_list:
+            for item in task.bookmarks.get_children():
+                bookmark = task.bookmarks.item(item).get('values')
                 if (bookmark[BM.lockout]) == "L" :
                     continue
                 logger.info("Tuning to {}".format(bookmark[BM.freq]))
@@ -279,7 +282,6 @@ class Scanning(object):
                     if task.record:
                         rigctl.start_recording()
                         logger.info("Recording started.")
-                    task.new_bookmark_list.append(bookmark)
                     time.sleep(task.delay)
                     while task.wait :
                         while self._signal_check(task.sgn_level, rigctl): 
