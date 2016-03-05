@@ -14,6 +14,7 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2106 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
@@ -26,8 +27,25 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
 
+2016/02/19 - TAS - Fixed code for frequency scan to support threading.
+
+2016/02/20 - TAS - Recoded signal_check to help prevent false positives.
+                   Implemented "wait for signal" style pause in bookmark
+                   scanning. Selectable via the "wait" checkbox. When
+                   on, scanning will pause on signal detection until
+                   the frequency has been been clear for "Delay" seconds.
+                   When off, scanning will resume after "Delay" seconds no
+                   matter if a signal is still present or not.
+
+2016/02/21 - TAS - Added error handling for initial rig_control call.
+
+2016/02/24 - TAS - Added bookmark lockout support. Changed how bookmarks
+                   are passed so that on-the-fly lockout will work. Added
+                   logging activity to file.
+                   
 """
 from modules.rigctl import RigCtl
+from modules.disk_io import Log_file
 from modules.constants import SUPPORTED_SCANNING_MODES
 from modules.constants import TIME_WAIT_FOR_TUNE
 from modules.constants import SIGNAL_CHECKS
@@ -35,6 +53,7 @@ from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
 from modules.constants import UNKNOWN_MODE
 from modules.constants import MONITOR_MODE_DELAY
+from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
@@ -58,7 +77,7 @@ class ScanningTask(object):
 
     def __init__(self,
                  mode,
-                 bookmark_list,
+                 bookmarks,
                  stop_scan_button,
                  range_min = None,
                  range_max = None,
@@ -67,7 +86,8 @@ class ScanningTask(object):
                  interval = None,
                  sgn_level = None,
                  record = False,
-                 log = False):
+                 log = False,
+                 wait = False):
 
         """We do some checks to see if we are good to go with the scan.
 
@@ -82,7 +102,7 @@ class ScanningTask(object):
 
         self.error = None
         self.new_bookmark_list = []
-        self.bookmark_list = bookmark_list
+        self.bookmarks = bookmarks
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
             logger.error("Unsupported scanning mode "\
@@ -94,6 +114,7 @@ class ScanningTask(object):
         self.mode = mode
         self.record = record
         self.log = log
+        self.wait = wait
         self.stop_scan_button = stop_scan_button
 
         try:
@@ -152,13 +173,15 @@ class Scanning(object):
         """
 
         rigctl = RigCtl()
+        log = Log_file()
+        log.open()
         if task and task.mode.lower() == "bookmarks":
-            updated_task = self._bookmarks(task, rigctl)
+            task = self._bookmarks(task, rigctl, log)
         elif task and task.mode.lower() == "frequency":
-            updated_task = self._frequency(task, rigctl)
-#        return updated_task
+            task = self._frequency(task, rigctl, log)
+        log.close()
 
-    def _frequency(self, task, rigctl):
+    def _frequency(self, task, rigctl, log):
         """Performs a frequency scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
 
@@ -167,40 +190,52 @@ class Scanning(object):
         :raises: none
         :returns: updates the scanning task object with the new activity found
         """
-        for i in range(task.monitoring_loops):
-            logger.warning("loop {}".format(i))
+        level = []
+        pass_count = task.passes
+        while self.scan_active :
             freq = task.range_min
             interval = khertz_to_hertz(task.interval)
             while freq < task.range_max:
                 logger.info("Tuning to {}".format(freq))
-                logger.warning("Interval:{}".format(task.interval))
-                rigctl.set_frequency(freq)
+                logger.info("Interval:{}".format(task.interval))
+                try :
+                    rigctl.set_frequency(freq)
+                except Exception :
+                    logger.warning("Communications Error!")
+                    self.scan_active  = False
+                    break
                 time.sleep(TIME_WAIT_FOR_TUNE)
 
-                if self._signal_check(task.sgn_level, rigctl):
+                if self._signal_check(task.sgn_level, rigctl, level):
                     logger.info("Activity found on freq: {}".format(freq))
-                    if task.recording:
+                    if task.record:
                         rigctl.start_recording()
-                        logger.warning("Recording started.")
+                        logger.info("Recording started.")
                     triple = (freq, UNKNOWN_MODE, str(freq))
                     task.new_bookmark_list.append(triple)
+                    if task.log :
+                        log.write('F', triple, level[0])
                     time.sleep(task.delay)
-                    if task.recording:
+                    if task.record:
                         rigctl.stop_recording()
-                        logger.warning("Recording stopped.")
+                        logger.info("Recording stopped.")
                 freq = freq + interval
-            if task.monitoring == False:
-                # if we are not monitoring, at the end of the first loop
-                # we are done.
-                break
-            else:
-                time.sleep(MONITOR_MODE_DELAY)
-
+                if not self.scan_active :
+                    return task
+            if pass_count > 0 :
+                pass_count -= 1
+                if pass_count == 0 and task.passes > 0:
+                    self.scan_active = False
+                else:
+                    time.sleep(MONITOR_MODE_DELAY) 
+        task.stop_scan_button.event_generate("<Button-1>")
+        task.stop_scan_button.event_generate("<ButtonRelease-1>")
         return task
 
-    def _signal_check(self, sgn_level, rigctl):
+    def _signal_check(self, sgn_level, rigctl, detected_level):
         """check for the signal SIGNAL_CHECKS times pausing 
-        NO_SIGNAL_DELAY between checks.
+        NO_SIGNAL_DELAY between checks. Puts signal level in
+        list to hand back to caller for logging.
 
         :param sgn_level: minimum signal level we are searching
         :type sgn_level: string from the UI setting
@@ -208,20 +243,25 @@ class Scanning(object):
         :return type: boolean
         """
 
+        del detected_level[:]
         sgn = dbfs_to_sgn(sgn_level)
+        signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
             logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rigctl.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))
-            if int(rigctl.get_level().replace(".", "")) > sgn:
-                return True
-            else:
-                time.sleep(NO_SIGNAL_DELAY)
+            if (level > sgn) :
+                signal_found += 1
+            time.sleep(NO_SIGNAL_DELAY)
+        logger.info("signal_found:{}".format(signal_found))
+        if (signal_found > 1) :
+            detected_level.append(level)
+            return True
         return False
-
-    def _bookmarks(self, task, rigctl):
+        
+    def _bookmarks(self, task, rigctl, log):
         """Performs a bookmark scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
         For every bookmark we tune the frequency and we call _signal_check
@@ -232,27 +272,45 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
+        level = []
         pass_count = task.passes
-        while (self.scan_active == True):
-            for bookmark in task.bookmark_list:
-                logger.info("Tuning to {}".format(bookmark[0]))
-                rigctl.set_frequency(bookmark[0].replace(',', ''))
+        while self.scan_active:
+            for item in task.bookmarks.get_children():
+                bookmark = task.bookmarks.item(item).get('values')
+                if (bookmark[BM.lockout]) == "L" :
+                    continue
+                logger.info("Tuning to {}".format(bookmark[BM.freq]))
+                try:
+                    rigctl.set_frequency(bookmark[BM.freq].replace(',', ''))
+                except Exception :
+                    logger.warning("Communications Error!")
+                    self.scan_active  = False
+                    break
                 time.sleep(TIME_WAIT_FOR_TUNE)
-                if self._signal_check(task.sgn_level, rigctl):
-                    logger.info("Activity found on freq: {}".format(bookmark[0]))
-                    if task.recording:
+                if self._signal_check(task.sgn_level, rigctl, level):
+                    logger.info(
+                        "Activity found on freq: {}".format(bookmark[BM.freq]))
+                    if task.record :
                         rigctl.start_recording()
                         logger.info("Recording started.")
-                    task.new_bookmark_list.append(bookmark)
+                    if task.log :
+                        log.write('B', bookmark, level[0])
                     time.sleep(task.delay)
-                    if task.recording:
+                    while task.wait :
+                        while self._signal_check(
+                                task.sgn_level, rigctl, level): 
+                            continue
+                        time.sleep(task.delay)
+                        if not (self._signal_check(
+                                task.sgn_level, rigctl, level)):
+                            break
+                    if task.record:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
-                if self.scan_active == False :
+                if not self.scan_active :
                     return task
             if pass_count > 0 :
                 pass_count -= 1
-                print("Loop count: ", pass_count)
                 if pass_count == 0 and task.passes > 0:
                     self.scan_active = False
                 else:
