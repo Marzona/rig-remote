@@ -1,8 +1,5 @@
-rig-remote forked version notes
+rig-remote devel version notes
 -------------------------------
-
-a fork of Simone Marzona's rig-remote, initially to add features oriented toward "police scanner" type 
-operation, and expand scanning operation in general. This version is based on his "devel" branch.
 
 Added Features
 --------------
