@@ -36,9 +36,9 @@ CBB_MODES = ('',
 # once tuned a freq, check this number of times for a signal
 SIGNAL_CHECKS=2
 # time to wait between checks on the same frequency
-NO_SIGNAL_DELAY = .2
+NO_SIGNAL_DELAY = .1
 # once we send the cmd for tuning a freq, wait this time
-TIME_WAIT_FOR_TUNE = .1
+TIME_WAIT_FOR_TUNE = .25
 # minimum interval in hertz
 MIN_INTERVAL = 1000
 # fictional mode set for active frequencies
@@ -76,4 +76,9 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "range_max" : "1800,000",
                   "always_on_top" : "True",
                   "save_exit" : "False",
-                  "auto_bookmark" : "False"}
+                  "auto_bookmark" : "False",
+                  "log_filename" : "rig-remote.log"}
+
+LEN_BM = 4
+class BM :
+    freq, mode, desc, lockout = range(LEN_BM)

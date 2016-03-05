@@ -11,6 +11,7 @@ Author: Simone Marzona
 License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
@@ -18,12 +19,27 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    Temporarily disabled freq activity logging and notification.
                    Scan call now a separate thread.
                    Added a "stop" button.
+
 2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
                    choice of variable or infinite looping.
                    Added a "pass count" field in config display.
                    Only done in bookmark scanning, still need to rework
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
+
+2016/02/19 - TAS - Added frequency scan "Stop" button.
+
+2016/02/20 - TAS - Added "wait" checkbox. See scanning.py for notes.
+
+2016/02/22 - TAS - Removed "stop" button and use a "toggle" function for
+                   start/stop of scanning. Add "lock" button to UI as 
+                   placeholder, but haven't implemented lockout yet.
+
+2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
+
+2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
+                   are passed to scan thread. Added support for logging
+                   scanning activity to a file.
 
 """
 
@@ -36,6 +52,8 @@ from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
 from modules.constants import BOOKMARKS_FILE
 from modules.constants import UNKNOWN_MODE
+from modules.constants import LEN_BM
+from modules.constants import BM
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -50,6 +68,7 @@ from Tkinter import LabelFrame
 from Tkinter import Label
 import tkMessageBox
 import threading
+import itertools
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -70,8 +89,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.scan_thread = None
+        self.scan_mode = None
         self.scanning = None
-
+        self.selected_bookmark = None
 
 
     def build(self, ac):  #pragma: no cover
@@ -91,8 +111,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.tree = ttk.Treeview(self,
                                  columns=("frequency",
                                           "mode",
-                                          "description"),
-                                 show="headings")
+                                          "description",
+                                          "lockout"),
+                                 displaycolumns=("frequency",
+                                                 "mode",
+                                                 "description"),
+                                  show="headings")
         self.tree.heading('frequency',
                           text='Frequency',
                           anchor=tk.CENTER)
@@ -251,6 +275,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    text="Get",
                                    width=7,
                                    command=self.cb_get_frequency)
+
         self.btn_load.grid(row=8,
                            column=3,
                            padx=2,
@@ -281,13 +306,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 pady=2,
                                 sticky=tk.W)
         ttk.Label(self.scanning_conf_menu,
-                  text="dBFS").grid(row=10,
+                  text=" dBFS").grid(row=10,
                                   column=2,
                                   padx=0,
                                   sticky=tk.W)
 
         ttk.Label(self.scanning_conf_menu,
-                  text="Delay (Secs):").grid(row=13,
+                  text="Delay:").grid(row=13,
                                       column=0,
                                       sticky=tk.W)
         self.txt_delay = ttk.Entry(self.scanning_conf_menu,
@@ -299,7 +324,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                             pady=2,
                             sticky=tk.W)
         ttk.Label(self.scanning_conf_menu,
-                  text="  -1=Wait").grid(row=13,
+                  text=" seconds").grid(row=13,
                                        padx=0,
                                        column=2,
                                        sticky=tk.EW)
@@ -322,6 +347,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                        column=2,
                                        sticky=tk.EW)
 
+        self.cb_wait = tk.BooleanVar()
+        self.ckb_wait = ttk.Checkbutton(self.scanning_conf_menu,
+                                                 text="Wait",
+                                                 onvalue=True,
+                                                 offvalue=False,
+                                                 variable=self.cb_wait)
+
+        self.ckb_wait.grid(row=15,
+                                    column=0,
+                                    columnspan=1,
+                                    sticky=tk.E)
         self.cb_record = tk.BooleanVar()
         self.ckb_record = ttk.Checkbutton(self.scanning_conf_menu,
                                                  text="Record",
@@ -332,7 +368,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.ckb_record.grid(row=15,
                                     column=1,
                                     columnspan=1,
-                                    sticky=tk.EW)
+                                    sticky=tk.E)
 
         self.cb_log = tk.BooleanVar()
         self.ckb_log = ttk.Checkbutton(self.scanning_conf_menu,
@@ -344,7 +380,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.ckb_log.grid(row=15,
                                     column=2,
                                     columnspan=1,
-                                    sticky=tk.EW)
+                                    sticky=tk.E)
 
 
         self.freq_scanning_menu = LabelFrame(self, text="Frequency scanning")
@@ -352,14 +388,17 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                        column=3,
                        #rowspan=3,
                        stick=tk.NSEW)
-        self.freq_scan_start = ttk.Button(self.freq_scanning_menu,
+
+
+        self.freq_scan_toggle = ttk.Button(self.freq_scanning_menu,
                                           text="Start",
-                                          command=self.frequency_start)
-        self.freq_scan_start.grid(row=16,
+                                          command=self.frequency_toggle,
+                                          )
+        self.freq_scan_toggle.grid(row=16,
                                   column=2,
                                   columnspan=1,
                                   padx=2,
-                                  sticky=tk.NW)
+                                  sticky=tk.W)
 
         ttk.Label(self.freq_scanning_menu,
                   text="Min/Max:").grid(row=12,
@@ -370,8 +409,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    padx=0,
                                    column=3,
                                    sticky=tk.W)
+
         self.txt_range_min = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
+
         self.txt_range_min.grid(row=12,
                                 column=1,
                                 columnspan=1,
@@ -380,6 +421,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 sticky=tk.W)
         self.txt_range_max = ttk.Entry(self.freq_scanning_menu,
                                        width=10)
+
         self.txt_range_max.grid(row=12,
                                 column=2,
                                 columnspan=1,
@@ -415,13 +457,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.ckb_auto_bookmark.grid(row=16,
                                     column=0,
-                                    columnspan=1,
-                                    sticky=tk.EW)
+                                    columnspan=2)
 
         ttk.Frame(self.freq_scanning_menu).grid(row=17,
                                   column=0,
                                   columnspan=3,
                                   pady=5)
+
         self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
         self.book_scanning_menu.grid(row=4,
                                     column=3,
@@ -443,21 +485,21 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                column=2,
                                sticky=tk.NSEW)
 
-        self.book_scan_start = ttk.Button(self.book_scanning_menu,
+        self.book_scan_toggle = ttk.Button(self.book_scanning_menu,
                                           text="Start",
-                                          command=self.bookmark_start,
+                                          command=self.bookmark_toggle,
                                           )
-        self.book_scan_start.grid(row=18,
+        self.book_scan_toggle.grid(row=18,
                                   column=2,
                                   columnspan=1,
                                   padx=2,
                                   sticky=tk.W)
 
-        self.book_scan_stop = ttk.Button(self.book_scanning_menu,
-                                          text="Stop",
-                                          command=self.bookmark_stop,
+        self.book_lockout = ttk.Button(self.book_scanning_menu,
+                                          text="Lock",
+                                          command=self.bookmark_lockout,
                                           )
-        self.book_scan_stop.grid(row=18,
+        self.book_lockout.grid(row=18,
                                   column=3,
                                   columnspan=1,
                                   padx=2,
@@ -595,36 +637,67 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             try:
                 bookmarks.csv_load(self.bookmarks_file, delimiter)
                 for line in bookmarks.row_list:
-                    line[0] = self._frequency_pp(line[0])
-                    self.tree.insert('', tk.END, values=line)
+                    if len(line) < LEN_BM:
+                        line.append("O")
+                    line[BM.freq] = self._frequency_pp(line[BM.freq])
+                    item = self.tree.insert('', tk.END, values=line)
+                    self.bookmark_bg_tag(item, line[BM.lockout])
             except InvalidPathError:
                 logger.info("No bookmarks file found, skipping.")
 
         if task == "save":
             for item in self.tree.get_children():
                 values = self.tree.item(item).get('values')
-                values[0] = self._frequency_pp_parse(values[0])
+                values[BM.freq] = self._frequency_pp_parse(values[BM.freq])
                 bookmarks.row_list.append(values)
             bookmarks.csv_save(self.bookmarks_file, delimiter)
 
-    def bookmark_start(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from bookmarks.
+    def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
+        """Toggle bookmark scan Start/Stop button, changing label text as
+           appropriate.
         """
 
-        self._scan("bookmarks", "start")
+        if self.scan_mode == None or self.scan_mode == "bookmarks" :
+            action = self.book_scan_toggle.cget('text').lower()
+            self.book_scan_toggle.config(text = next(icycle))
+            self._scan("bookmarks", action)
 
-    def bookmark_stop(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from bookmarks.
-
+    def bookmark_bg_tag(self, item, value) :
+        """Set item background color based on lock status
         """
 
-        self._scan("bookmarks", "stop")
+        if value == "L" :
+            self.tree.tag_configure('locked', background = 'red')
+            self.tree.item(item, tags = "locked")
+        else :
+            self.tree.tag_configure('unlocked', background = 'white')
+            self.tree.item(item, tags = "unlocked")
 
-    def frequency_start(self):  #pragma: no cover
-        """Wrapper around _scan() that starts a scan from a frequency range.
+    def bookmark_lockout(self, icycle=itertools.cycle(["L", "O"])):
+        """Toggle lockout of selected bookmark.
+        """
+        
+        if (self.selected_bookmark == None) :
+            # will use this in future to support "current scan" lockout
+            return
+        else:
+            values = list((self.tree.item(self.selected_bookmark, "values")))
+            if values[BM.lockout] == 'L' :
+                values[BM.lockout] = "O"
+            else :
+                values[BM.lockout] = "L"
+            self.tree.item(self.selected_bookmark, values = values)
+            self.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
+
+    def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
+        """Toggle frequency scan Start/Stop button, changing label text as
+           appropriate.
         """
 
-        self._scan("frequency", "start")
+        if self.scan_mode == None or self.scan_mode == "frequency" : 
+            action = self.freq_scan_toggle.cget('text').lower()
+            self.freq_scan_toggle.config(text = next(icycle))
+            self._scan("frequency", action)
 
     def _scan(self, mode, action):  #pragma: no cover
         """Wrapper around the scanning class instance. Creates the task
@@ -639,12 +712,14 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
-            logger.error("Supported actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
+            logger.error("Supported actions:{}".format(
+                         SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
 
         if action.lower() == "stop" and self.scan_thread != None:
             self.scanning.terminate()
             self.scan_thread = None
+            self.scan_mode = None
             return
         
         if (action.lower() == "start" and self.scan_thread != None) :
@@ -652,10 +727,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         if (action.lower() == "stop" and self.scan_thread == None) :
             return
 
-        bookmark_list = []
-        for item in self.tree.get_children():
-            values = self.tree.item(item).get('values')
-            bookmark_list.append(values)
+        self.scan_mode = mode.lower()
+        bookmarks = self.tree
         min_freq = self.txt_range_min.get()
         max_freq = self.txt_range_max.get()
         delay = self.txt_delay.get()
@@ -672,10 +745,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             log = True
         else:
             log = False
+        if (len(self.ckb_wait.state()) == 1 and
+            self.ckb_wait.state()== ('selected',)):
+            wait = True
+        else:
+            wait = False
+        if mode == "frequency" :
+            button = self.freq_scan_toggle
+        else :
+            button = self.book_scan_toggle
 
-        scanning_task = ScanningTask(mode,
-                                     bookmark_list,
-                                     self.book_scan_stop,
+        task = ScanningTask(mode,
+                                     bookmarks,
+                                     button,
                                      min_freq,
                                      max_freq,
                                      delay,
@@ -683,33 +765,20 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      interval,
                                      sgn_level,
                                      record, 
-                                     log)
+                                     log,
+                                     wait)
         self.scanning = Scanning()
         self.scan_thread = threading.Thread(target = self.scanning.scan, 
-                                       args = (scanning_task,))
+                                            args = (task,))
         self.scan_thread.start()
 
-
-#        task = scanning.scan(scanning_task)
-
-        # if (task.mode.lower() == "bookmarks" and 
-        #     len(task.new_bookmark_list) > 0):
-        #     message = self._new_activity_message(task.new_bookmark_list)
-        #     tkMessageBox.showinfo("New activity found", message,
-        #                            parent=self)
-
-        # if (task.mode.lower() == "frequency" and 
-        #     len(task.new_bookmark_list) > 0 and 
-        #     (len(self.ckb_auto_bookmark.state()) == 1 and
-        #     self.ckb_auto_bookmark.state()== ('selected',))):
-        #         self._add_new_bookmarks(task.new_bookmark_list)
-
-        # elif (task.mode.lower() == "frequency" and 
-        #       len(task.new_bookmark_list) > 0 and 
-        #       len(self.ckb_auto_bookmark.state()) == 0):
-        #         message = self._new_activity_message(task.new_bookmark_list)
-        #         tkMessageBox.showinfo("New activity found", message,
-        #                                parent=self)
+# Leaving this code to remind me to deal with this
+#        
+#        if (task.mode.lower() == "frequency" and 
+#            len(task.new_bookmark_list) > 0 and 
+#            (len(self.ckb_auto_bookmark.state()) == 1 and
+#             self.ckb_auto_bookmark.state()== ('selected',))):
+#                 self._add_new_bookmarks(task.new_bookmark_list)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
@@ -813,8 +882,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         :returns: none
         """
 
-        item = self.tree.focus()
-        values = self.tree.item(item).get('values')
+        self.selected_bookmark = self.tree.focus()
+        values = self.tree.item(self.selected_bookmark).get('values')
         self._clear_form()
         self.cbb_mode.insert(0, values[1])
         self.txt_frequency.insert(0, values[0])
@@ -831,12 +900,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         frequency = self._frequency_pp_parse(self.txt_frequency.get())
         mode = self.cbb_mode.get()
         description = self.txt_description.get()
+        lockout = "O"
         # find where to insert (insertion sort)
         idx = tk.END
         for item in self.tree.get_children():
-            freq = self.tree.item(item).get('values')[0]
+            freq = self.tree.item(item).get('values')[BM.freq]
             curr_freq = self._frequency_pp_parse(freq)
-            curr_mode = self.tree.item(item).get('values')[1]
+            curr_mode = self.tree.item(item).get('values')[BM.mode]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
                 break
@@ -852,7 +922,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 idx,
                                 values=[self._frequency_pp(frequency),
                                         mode,
-                                        description])
+                                        description,
+                                        lockout])
 
         self.tree.selection_set(item)
         self.tree.focus(item)

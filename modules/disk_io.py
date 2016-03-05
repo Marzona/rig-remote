@@ -15,12 +15,22 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/02/24 - TAS - Added log file class to handle logging scanning
+                   activity to a file.
+
 """
 
 import csv
 import logging
 import os.path
 from modules.exceptions import InvalidPathError
+from modules.constants import BM
+import datetime
+import time
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -92,3 +102,43 @@ class IO(object):
                          "{}".format(csv_file))
 
 
+class Log_file(object) :
+
+    def __init__(self) :
+        self.log_filename = "rig-remote-log.txt"
+        self.log_file = None
+
+    def open(self, name = None) :
+        if name != None :
+            self.log_filename = name
+        try:
+            self.log_file = open(self.log_filename, 'a')
+        except (IOError, OSError):
+            logger.error("Error while trying to open log file: "\
+                         "{}".format(self.log_filename))
+
+    def write(self, record_type, record, signal) :
+        if record_type == 'B' :
+            lstr = 'B ' + str(datetime.datetime.today().strftime\
+                              ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
+                record[BM.freq] + ' ' + record[BM.mode] + \
+                ' ' + str(signal) + "\n"
+        else :
+            lstr = 'F ' + str(datetime.datetime.today().strftime\
+                              ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
+                record[2] + ' ' + record[1] + \
+                ' ' + str(signal) + "\n"
+        try:
+            self.log_file.write(lstr)
+        except (IOError, OSError):
+            logger.error("Error while trying to write log file: "\
+                         "{}".format(self.log_filename))
+
+    def close(self) :
+        if self.log_file != None :
+            try:
+                self.log_file.close()
+            except (IOError, OSError):
+                logger.error("Error while trying to close log file: "\
+                             "{}".format(self.log_filename))
+           

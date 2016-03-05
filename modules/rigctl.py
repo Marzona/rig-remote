@@ -43,8 +43,8 @@ class RigCtl(object):
         :response type: string
         """
 
-        logger.warning("Connecting the rig at: {}:{}".format(self.hostname,
-                                                            self.port))
+        logger.info("Connecting the rig at: {}:{}".format(self.hostname,
+                                                          self.port))
         con = telnetlib.Telnet(self.hostname, self.port)
         con.write(('%s\n' % request).encode('ascii'))
         response = con.read_some().decode('ascii').strip()
