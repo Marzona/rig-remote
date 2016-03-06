@@ -25,18 +25,28 @@ from modules.exceptions import UnsupportedScanningConfigError
 def scan_task():
     mode = "bookmarks"
     bookmark_list = []
+    stop_scan_button = None
     min_freq = "100"
     max_freq = "50"
     delay = "1"
+    passes = "0"
     sgn_level = "50"
     interval= "100000"
+    record = False
+    log = False
+    wait = False
     scan_task = ScanningTask(mode,
                              bookmark_list,
+                             stop_scan_button,
                              min_freq,
                              max_freq,
                              delay,
+                             passes,
                              interval,
-                             sgn_level)
+                             sgn_level,
+                             record,
+                             log,
+                             wait)
     return scan_task
 
 def test_bad_interval(scan_task):
@@ -55,64 +65,117 @@ def test_good_interval(scan_task):
 def test_unsupported_scan_mode():
     mode = "test"
     bookmark_list = []
+    stop_scan_button = None
     min_freq = "100"
     max_freq = "50"
     delay = "1"
+    passes = "0"
     sgn_level = "50"
     interval= "100000"
+    record = False
+    log = False
+    wait = False
+
     with pytest.raises(UnsupportedScanningConfigError):
         scan_task = ScanningTask(mode,
                                  bookmark_list,
+                                 stop_scan_button,
                                  min_freq,
                                  max_freq,
                                  delay,
+                                 passes,
                                  interval,
-                                 sgn_level)
+                                 sgn_level,
+                                 record,
+                                 log,
+                                 wait)
+
 
 testdata=[("bookmarks",
            [],
+           None,
            "test",
            "50",
            "1",
+           "0",
            "50",
-           "100000"),
+           "100000",
+           False,
+           False,
+           False),
           ("bookmarks",
            [],
+           None,
            "10",
            "test",
            "1",
+           "0",
            "50",
-           "100000"),
-           ("bookmarks",
+           "100000",
+           False,
+           False,
+           False),
+          ("bookmarks",
            [],
+           None,
            "10",
            "50",
            "test",
+           "0",
            "50",
-           "100000"),
-           ("bookmarks",
+           "100000",
+           False,
+           False,
+           False),
+          ("bookmarks",
            [],
+           None,
            "10",
            "50",
            "1",
            "test",
-           "100000"),
-           ("bookmarks",
+           "50",
+           "100000",
+           False,
+           False,
+           False),
+          ("bookmarks",
            [],
+           None,
            "10",
            "50",
            "1",
+           "0",
+           "test",
+           "100000",
+           False,
+           False,
+           False),
+          ("bookmarks",
+           [],
+           None,
+           "10",
            "50",
-           "test")]
+           "1",
+           "0",
+           "50",
+           "test",
+           False,
+           False,
+           False)]
 
-@pytest.mark.parametrize("mode, bookmark_list, min_freq,max_freq,delay,sgn_level,interval", testdata)
-def test_bad_param(mode, bookmark_list, min_freq,max_freq,delay,sgn_level,interval):
+@pytest.mark.parametrize("mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait", testdata)
+def test_bad_param(mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait):
     with pytest.raises(ValueError):
         ScanningTask(mode,
                      bookmark_list,
+                     stop_scan_button,
                      min_freq,
                      max_freq,
                      delay,
+                     passes,
                      interval,
-                     sgn_level)
-
+                     sgn_level,
+                     record,
+                     log,
+                     wait)
