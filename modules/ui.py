@@ -1065,7 +1065,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         :returns: None
         """
         if self.scan_thread != None :
-            print (event_list)
             self.scanq.put(event_list)
             self.params_last_content[event_list[0]] = event_list[1]
 
