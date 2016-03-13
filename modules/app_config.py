@@ -48,7 +48,7 @@ class AppConfig(object):
         self.io = IO()
         self.default_config_file = ".rig-remote/rig-remote.conf"
         self.config_file = None
-        self.config = DEFAULT_CONFIG
+        self.config = dict.copy(DEFAULT_CONFIG)
 
         if alternate_config_file:
             self.config_file = alternate_config_file
