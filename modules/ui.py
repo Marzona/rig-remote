@@ -51,11 +51,17 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    a dict also, and then flesh out skeleton update code
                    in scanning thread. Update config code to add new 
                    checkboxes.
+
+2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
+                   (Github issue #21)
 """
 
 #import modules
 
-# from trepan.api import debug
+try:
+    from trepan.api import debug
+except ImportError:
+    pass
 
 import logging
 import datetime
@@ -66,6 +72,7 @@ from modules.constants import BOOKMARKS_FILE
 from modules.constants import UNKNOWN_MODE
 from modules.constants import LEN_BM
 from modules.constants import BM
+from modules.constants import DEFAULT_CONFIG
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -264,13 +271,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params = {}
         self.params_last_content = {}
         self.build(ac)
-        # Here we create a copy of the params dict to use when
-        # checking validity of new input
-        for key in self.params :            
-            if self.params[key].winfo_class() == "TEntry" :
-                self.params_last_content[key] = self.params[key].get()
-            elif self.params[key].winfo_class() == "TCheckbutton" :
-                self.params_last_content[key] = self.params[key].is_checked()
         self.params["cbb_mode"].current(0)
         # bookmarks loading on start
         self.bookmark("load", ",")
@@ -279,7 +279,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.scanning = None
         self.selected_bookmark = None
         self.scanq = Queue()
-#        self.bind_all("<1>", lambda event:event.widget.focus_set())
         self.bind_all("<1>", lambda event:self.focus_set(event))
 
 
@@ -894,6 +893,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                 self.ckb_top.invoke()
         self.rigctl = RigCtl(self.params["txt_hostname"].get(),
                              self.params["txt_port"].get())
+        # Here we create a copy of the params dict to use when
+        # checking validity of new input
+        for key in self.params :            
+            if self.params[key].winfo_class() == "TEntry" :
+                self.params_last_content[key] = self.params[key].get()
+            elif self.params[key].winfo_class() == "TCheckbutton" :
+                self.params_last_content[key] = self.params[key].is_checked()
 
     def _store_conf(self, ac):  #pragma: no cover
         """populates the ac object reading the info from the UI
@@ -1099,15 +1105,20 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         scanq = self.scanq
         self.scan_mode = mode.lower()
         bookmarks = self.tree
-        min_freq = self.params["txt_range_min"].get()
-        max_freq = self.params["txt_range_max"].get()
-        delay = self.params["txt_delay"].get()
-        passes = self.params["txt_passes"].get()
-        interval = self.params["txt_interval"].get()
-        sgn_level = self.params["txt_sgn_level"].get()
+        min_freq = self.params["txt_range_min"].get() or \
+                   DEFAULT_CONFIG["range_min"]
+        max_freq = self.params["txt_range_max"].get() or \
+                   DEFAULT_CONFIG["range_max"]
+        delay = self.params["txt_delay"].get() or DEFAULT_CONFIG["delay"]
+        passes = self.params["txt_passes"].get() or DEFAULT_CONFIG["passes"]
+        interval = self.params["txt_interval"].get() or \
+                   DEFAULT_CONFIG["interval"]
+        sgn_level = self.params["txt_sgn_level"].get() or \
+                    DEFAULT_CONFIG["sgn_level"]
         record = self.params["ckb_record"].is_checked()
         log = self.params["ckb_log"].is_checked()
         wait = self.params["ckb_wait"].is_checked()
+
         if mode == "frequency" :
             button = self.freq_scan_toggle
         else :

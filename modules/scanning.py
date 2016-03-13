@@ -46,6 +46,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/03/11 - TAS - Added skeleton code to process queue.
                    Still to do: change parameter passing to dict.
                    
+2016/03/13 - TAS - Strip the scan parameters strings completely of
+                   non-numerics to avoid ValueExceptions.                    
 """
 from modules.rigctl import RigCtl
 from modules.disk_io import Log_file
@@ -124,12 +126,14 @@ class ScanningTask(object):
         self.stop_scan_button = stop_scan_button
 
         try:
-            self.range_min = khertz_to_hertz(int(range_min.replace(',', '')))
-            self.range_max = khertz_to_hertz(int(range_max.replace(',', '')))
-            self.interval = int(interval)
-            self.delay = int(delay)
-            self.passes = int(passes)
-            self.sgn_level = int(sgn_level)
+            self.range_min = \
+                            khertz_to_hertz(int(filter(str.isdigit, range_min)))
+            self.range_max = \
+                            khertz_to_hertz(int(filter(str.isdigit, range_max)))
+            self.interval = int(filter(str.isdigit, interval))
+            self.delay = int(filter(str.isdigit, delay))
+            self.passes = int(filter(str.isdigit, passes))
+            self.sgn_level = int(filter(str.isdigit, sgn_level))
         except ValueError:
             """We log some info and re raise."""
             logger.exception("One input values is not of the proper type.")
