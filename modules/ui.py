@@ -41,9 +41,13 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    are passed to scan thread. Added support for logging
                    scanning activity to a file.
 
+2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
+                   (Github issue #21)
 """
 
 # import modules
+
+# from trepan.api import debug
 
 import logging
 import datetime
@@ -54,6 +58,7 @@ from modules.constants import BOOKMARKS_FILE
 from modules.constants import UNKNOWN_MODE
 from modules.constants import LEN_BM
 from modules.constants import BM
+from modules.constants import DEFAULT_CONFIG
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -951,12 +956,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.scan_mode = mode.lower()
         bookmarks = self.tree
-        min_freq = self.txt_range_min.get()
-        max_freq = self.txt_range_max.get()
-        delay = self.txt_delay.get()
-        passes = self.txt_passes.get()
-        interval = self.txt_interval.get()
-        sgn_level = self.txt_sgn_level.get()
+        min_freq = self.txt_range_min.get() or DEFAULT_CONFIG["range_min"]
+        max_freq = self.txt_range_max.get() or DEFAULT_CONFIG["range_max"]
+        delay = self.txt_delay.get() or DEFAULT_CONFIG["delay"]
+        passes = self.txt_passes.get() or DEFAULT_CONFIG["passes"]
+        interval = self.txt_interval.get() or DEFAULT_CONFIG["interval"]
+        sgn_level = self.txt_sgn_level.get() or DEFAULT_CONFIG["sgn_level"]
         if (len(self.ckb_record.state()) == 1 and
             self.ckb_record.state()== ('selected',)):
             record = True
