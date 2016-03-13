@@ -74,9 +74,9 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "sgn_level" : "-30",
                   "range_min" : "24,000",
                   "range_max" : "1800,000",
-                  "always_on_top" : "True",
-                  "save_exit" : "False",
-                  "auto_bookmark" : "False",
+                  "always_on_top" : "true",
+                  "save_exit" : "false",
+                  "auto_bookmark" : "false",
                   "log_filename" : "rig-remote.log"}
 
 LEN_BM = 4

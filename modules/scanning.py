@@ -42,6 +42,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/02/24 - TAS - Added bookmark lockout support. Changed how bookmarks
                    are passed so that on-the-fly lockout will work. Added
                    logging activity to file.
+
+2016/03/11 - TAS - Added skeleton code to process queue.
+                   Still to do: change parameter passing to dict.
                    
 """
 from modules.rigctl import RigCtl
@@ -57,6 +60,7 @@ from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
+from Queue import Queue
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -76,6 +80,7 @@ class ScanningTask(object):
     """
 
     def __init__(self,
+                 scanq,
                  mode,
                  bookmarks,
                  stop_scan_button,
@@ -103,6 +108,7 @@ class ScanningTask(object):
         self.error = None
         self.new_bookmark_list = []
         self.bookmarks = bookmarks
+        self.scanq = scanq
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
             logger.error("Unsupported scanning mode "\
@@ -275,6 +281,7 @@ class Scanning(object):
         level = []
         pass_count = task.passes
         while self.scan_active:
+            self.process_queue(task)
             for item in task.bookmarks.get_children():
                 bookmark = task.bookmarks.item(item).get('values')
                 if (bookmark[BM.lockout]) == "L" :
@@ -318,3 +325,11 @@ class Scanning(object):
         task.stop_scan_button.event_generate("<Button-1>")
         task.stop_scan_button.event_generate("<ButtonRelease-1>")
         return task
+
+    def process_queue(self, task) :
+        
+        while not task.scanq.empty() :
+            name, value = task.scanq.get()
+            if name == "txt_sgn_level" :
+                task.sgn_level = value
+            logger.warning("Queue passed %s %i", name, value)
