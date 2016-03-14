@@ -59,6 +59,7 @@ from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
+import re
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -127,7 +128,7 @@ class ScanningTask(object):
             self.interval = int(filter(str.isdigit, interval))
             self.delay = int(filter(str.isdigit, delay))
             self.passes = int(filter(str.isdigit, passes))
-            self.sgn_level = int(filter(str.isdigit, sgn_level))
+            self.sgn_level = int(re.sub("[^-0-9]", "",sgn_level))
         except ValueError:
             """We log some info and re raise."""
             logger.exception("One input values is not of the proper type.")
