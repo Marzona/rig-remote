@@ -631,7 +631,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                 sticky=tk.W)
         t_txt_range_max = ToolTip(self.txt_range_max,
                                  follow_mouse=1,
-                                 text="Lower bound of the frequency"\
+                                 text="Upper bound of the frequency"\
                                       " band to scan.")
 
         ttk.Label(self.freq_scanning_menu,
@@ -715,7 +715,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                           )
         t_book_lockout = ToolTip(self.book_lockout,
                                      follow_mouse=1,
-                                     text="Lock the bookmark scan.")
+                                     text="Toggle skipping selected bookmark.")
         self.book_lockout.grid(row=18,
                                   column=3,
                                   columnspan=1,
