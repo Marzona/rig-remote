@@ -134,12 +134,12 @@ class ScanningTask(object):
         except ValueError:
             """We log some info and re raise."""
             logger.exception("One input values is not of the proper type.")
-            logger.exception("range_max:{}".format(range_max))
-            logger.exception("range_min:{}".format(range_min))
-            logger.exception("interval:{}".format(interval))
-            logger.exception("delay:{}".format(delay))
-            logger.exception("passes:{}".format(passes))
-            logger.exception("sgn_level:{}".format(sgn_level))
+            logger.exception("range_max:{}".format(self.params["txt_range_max"]))
+            logger.exception("range_min:{}".format(self.params["txt_range_min"]))
+            logger.exception("interval:{}".format(self.params["txt_interval"]))
+            logger.exception("delay:{}".format(self.params["txt_delay"]))
+            logger.exception("passes:{}".format(self.params["txt_passes"]))
+            logger.exception("sgn_level:{}".format(self.params["txt_sgn_level"]))
             raise
 
         if mode == "frequency":
