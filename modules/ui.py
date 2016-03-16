@@ -54,6 +54,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
                    (Github issue #21)
+
+2016/03/15 - TAS - Added more scanning option vaidation. Changed scan initialization to pass
+                   most params in a dict.
 """
 
 #import modules
@@ -1121,19 +1124,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         scanq = self.scanq
         self.scan_mode = mode.lower()
         bookmarks = self.tree
-        min_freq = self.params["txt_range_min"].get() or \
-                   DEFAULT_CONFIG["range_min"]
-        max_freq = self.params["txt_range_max"].get() or \
-                   DEFAULT_CONFIG["range_max"]
-        delay = self.params["txt_delay"].get() or DEFAULT_CONFIG["delay"]
-        passes = self.params["txt_passes"].get() or DEFAULT_CONFIG["passes"]
-        interval = self.params["txt_interval"].get() or \
-                   DEFAULT_CONFIG["interval"]
-        sgn_level = self.params["txt_sgn_level"].get() or \
-                    DEFAULT_CONFIG["sgn_level"]
-        record = self.params["ckb_record"].is_checked()
-        log = self.params["ckb_log"].is_checked()
-        wait = self.params["ckb_wait"].is_checked()
+        pass_params = dict.copy(self.params)
 
         if mode == "frequency" :
             button = self.freq_scan_toggle
@@ -1144,15 +1135,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                             mode,
                             bookmarks,
                             button,
-                            min_freq,
-                            max_freq,
-                            delay,
-                            passes,
-                            interval,
-                            sgn_level,
-                            record, 
-                            log,
-                            wait)
+                            pass_params)
         self.scanning = Scanning()
         self.scan_thread = threading.Thread(target = self.scanning.scan, 
                                             args = (task,))
