@@ -51,6 +51,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/15 - TAS - Recoded to pass most parameters in a dict, which also stores
                    local int versions. TODO: Flesh out queue-based value changes.
+
+2016/03/16 - TAS - Added code to allow parameter updating while scan is active.
 """
 from modules.rigctl import RigCtl
 from modules.disk_io import Log_file
@@ -201,8 +203,16 @@ class Scanning(object):
         pass_count = task.params["passes"]
         while self.scan_active :
             freq = task.params["range_min"]
+            # If the range is negative, silently bail...
+            if freq > task.params["range_max"] :
+                self.scan_active = False
             interval = khertz_to_hertz(task.params["interval"])
             while freq < task.params["range_max"]:
+                if not task.scanq.empty() :
+                    self.process_queue(task)
+                    freq = task.params["range_min"]
+                    pass_count = task.params["passes"]
+                    interval = khertz_to_hertz(task.params["interval"])
                 logger.info("Tuning to {}".format(freq))
                 logger.info("Interval:{}".format(task.params["interval"]))
                 try :
@@ -282,7 +292,9 @@ class Scanning(object):
         level = []
         pass_count = task.params["passes"]
         while self.scan_active:
-            self.process_queue(task)
+            if not task.scanq.empty() :
+                self.process_queue(task)
+                pass_count = task.params["passes"]
             for item in task.bookmarks.get_children():
                 bookmark = task.bookmarks.item(item).get('values')
                 if (bookmark[BM.lockout]) == "L" :
@@ -331,6 +343,10 @@ class Scanning(object):
         
         while not task.scanq.empty() :
             name, value = task.scanq.get()
-            if name == "txt_sgn_level" :
-                task.params["sgn_level"] = value
-            logger.warning("Queue passed %s %i", name, value)
+            key = str(name.split("_",1)[1])
+            if key in ("range_min", "range_max") :
+                task.params[key] = khertz_to_hertz(value)
+            else :
+                task.params[key] = value
+            logger.info("Queue passed %s %i", name, value)
+            logger.info("Params = %s", task.params[key])
