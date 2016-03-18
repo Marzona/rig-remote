@@ -349,4 +349,4 @@ class Scanning(object):
             else :
                 task.params[key] = value
             logger.info("Queue passed %s %i", name, value)
-            logger.info("Params = %s", task.params[key])
+            logger.info("Params[%s] = %s", key, task.params[key])
