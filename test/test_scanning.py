@@ -21,39 +21,54 @@ from modules.scanning import ScanningTask
 from modules.constants import MIN_INTERVAL
 from modules.exceptions import UnsupportedScanningConfigError
 
+class TestStr (str) :
+
+    def __new__(cls, *args, **kw):
+        return str.__new__(cls, *args, **kw)
+
+    def __init__(self, lstr):
+        self.lstr = lstr
+
+    def get(self):
+        return(self.lstr)
+
+class TestBool (object) :
+
+    def __init__(self, lbool):
+        self.lbool = lbool
+
+    def is_checked(self):
+        return(self.lbool)
+
+
 @pytest.fixture
 def scan_task():
+    params = {}
+    scanq = None
     mode = "bookmarks"
     bookmark_list = []
     stop_scan_button = None
-    min_freq = "100"
-    max_freq = "50"
-    delay = "1"
-    passes = "0"
-    sgn_level = "50"
-    interval= "100000"
-    record = False
-    log = False
-    wait = False
-    scan_task = ScanningTask(mode,
+    params["txt_range_min"] = TestStr("100")
+    params["txt_range_max"] = TestStr("50")
+    params["txt_delay"] = TestStr("1")
+    params["txt_passes"] = TestStr("0")
+    params["txt_sgn_level"] = TestStr("50")
+    params["txt_interval"] = TestStr("100000")
+    params["ckb_record"] = TestBool(False)
+    params["ckb_log"] = TestBool(False)
+    params["ckb_wait"] = TestBool(False)
+    scan_task = ScanningTask(scanq,
+                             mode,
                              bookmark_list,
                              stop_scan_button,
-                             min_freq,
-                             max_freq,
-                             delay,
-                             passes,
-                             interval,
-                             sgn_level,
-                             record,
-                             log,
-                             wait)
+                             params)
     return scan_task
 
 def test_bad_interval(scan_task):
 
     scan_task._check_interval()
     minimum_interval = MIN_INTERVAL*100
-    assert (scan_task.interval == minimum_interval)
+    assert (scan_task.params["interval"] == minimum_interval)
 
 def test_good_interval(scan_task):
 
@@ -63,35 +78,32 @@ def test_good_interval(scan_task):
 
 
 def test_unsupported_scan_mode():
+
+    params = {}
+    scanq = None
     mode = "test"
     bookmark_list = []
     stop_scan_button = None
-    min_freq = "100"
-    max_freq = "50"
-    delay = "1"
-    passes = "0"
-    sgn_level = "50"
-    interval= "100000"
-    record = False
-    log = False
-    wait = False
+    params["txt_range_min"] = TestStr("100")
+    params["txt_range_max"] = TestStr("50")
+    params["txt_delay"] = TestStr("1")
+    params["txt_passes"] = TestStr("0")
+    params["txt_sgn_level"] = TestStr("50")
+    params["txt_interval"] = TestStr("100000")
+    params["ckb_record"] = TestBool(False)
+    params["ckb_log"] = TestBool(False)
+    params["ckb_wait"] = TestBool(False)
 
     with pytest.raises(UnsupportedScanningConfigError):
-        scan_task = ScanningTask(mode,
+        scan_task = ScanningTask(scanq,
+                                 mode,
                                  bookmark_list,
                                  stop_scan_button,
-                                 min_freq,
-                                 max_freq,
-                                 delay,
-                                 passes,
-                                 interval,
-                                 sgn_level,
-                                 record,
-                                 log,
-                                 wait)
+                                 params)
 
 
-testdata=[("bookmarks",
+testdata=[(None,
+           "bookmarks",
            [],
            None,
            "test",
@@ -103,7 +115,8 @@ testdata=[("bookmarks",
            False,
            False,
            False),
-          ("bookmarks",
+          (None,
+           "bookmarks",
            [],
            None,
            "10",
@@ -115,7 +128,8 @@ testdata=[("bookmarks",
            False,
            False,
            False),
-          ("bookmarks",
+          (None,
+           "bookmarks",
            [],
            None,
            "10",
@@ -127,7 +141,8 @@ testdata=[("bookmarks",
            False,
            False,
            False),
-          ("bookmarks",
+          (None,
+           "bookmarks",
            [],
            None,
            "10",
@@ -139,7 +154,8 @@ testdata=[("bookmarks",
            False,
            False,
            False),
-          ("bookmarks",
+          (None,
+           "bookmarks",
            [],
            None,
            "10",
@@ -151,7 +167,8 @@ testdata=[("bookmarks",
            False,
            False,
            False),
-          ("bookmarks",
+          (None,
+           "bookmarks",
            [],
            None,
            "10",
@@ -164,18 +181,24 @@ testdata=[("bookmarks",
            False,
            False)]
 
-@pytest.mark.parametrize("mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait", testdata)
-def test_bad_param(mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait):
+@pytest.mark.parametrize(
+"scanq, mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait", testdata)
+def test_bad_param(scanq, mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait):
     with pytest.raises(ValueError):
-        ScanningTask(mode,
+
+        params = {}
+        params["txt_range_min"] = TestStr(min_freq)
+        params["txt_range_max"] = TestStr(max_freq)
+        params["txt_delay"] = TestStr(delay)
+        params["txt_passes"] = TestStr(passes)
+        params["txt_sgn_level"] = TestStr(sgn_level)
+        params["txt_interval"] = TestStr(interval)
+        params["ckb_record"] = TestBool(record)
+        params["ckb_log"] = TestBool(log)
+        params["ckb_wait"] = TestBool(wait)
+
+        ScanningTask(scanq,
+                     mode,
                      bookmark_list,
                      stop_scan_button,
-                     min_freq,
-                     max_freq,
-                     delay,
-                     passes,
-                     interval,
-                     sgn_level,
-                     record,
-                     log,
-                     wait)
+                     params)
