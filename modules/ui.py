@@ -55,8 +55,10 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
                    (Github issue #21)
 
-2016/03/15 - TAS - Added more scanning option vaidation. Changed scan initialization to pass
+2016/03/15 - TAS - Added more scanning option validation. Changed scan initialization to pass
                    most params in a dict.
+
+2016/03/19 - TAS - Added validation of the config file when it is applied.
 """
 
 #import modules
@@ -92,6 +94,7 @@ import tkMessageBox
 import threading
 import itertools
 from Queue import Queue
+import re
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -871,6 +874,20 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         if not isinstance(event.widget, basestring) :
             event.widget.focus_set()
 
+    def is_valid_hostname(self, hostname):
+        """ Checks if hostname is truly a valid FQDN, or IP address.
+        :param hostname:
+        :type hostname: str
+        :return: True if valid, False otherwise.
+        """
+
+        if len(hostname) > 255:
+            return False
+        if hostname[-1] == ".":
+            hostname = hostname[:-1] # strip exactly one dot from the right, if present
+        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        return all(allowed.match(x) for x in hostname.split("."))
+
     def apply_config(self, ac):
         """Applies the config to the UI.
         :param ac: object instance for handling the app config
@@ -880,14 +897,31 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         """
 
         ac.read_conf()
-        self.params["txt_hostname"].insert(0, ac.config["hostname"])
-        self.params["txt_port"].insert(0, ac.config["port"])
-        self.params["txt_interval"].insert(0, ac.config["interval"])
-        self.params["txt_delay"].insert(0, ac.config["delay"])
-        self.params["txt_passes"].insert(0, ac.config["passes"])
-        self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
-        self.params["txt_range_min"].insert(0, ac.config["range_min"])
-        self.params["txt_range_max"].insert(0, ac.config["range_max"])
+        eflag = False
+        if self.is_valid_hostname(ac.config["hostname"]) :
+            self.params["txt_hostname"].insert(0, ac.config["hostname"])
+        else :
+            self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
+            eflag = True
+        # Test positive integer values
+        for key in ("port", "interval", "delay", "passes", "range_min", "range_max") :
+            ekey = "txt_" + key
+            if str.isdigit(ac.config[key].replace(',','')) :
+                self.params[ekey].insert(0, ac.config[key])
+            else:
+                self.params[ekey].insert(0, DEFAULT_CONFIG[key])
+                eflag = True
+        # Test integer values
+        try :
+            int(ac.config["sgn_level"])
+        except ValueError :
+            self.params["txt_sgn_level"].insert(0, DEFAULT_CONFIG["sgn_level"])
+            eflag = True
+        else:
+            self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
+        if eflag :
+            tkMessageBox.showerror("Config File Error", "One of the values in the config file was invalid, "\
+                                   "and the default was used instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
             ac.config["auto_bookmark"].lower())
         self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
