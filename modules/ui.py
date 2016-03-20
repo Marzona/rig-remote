@@ -59,6 +59,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    most params in a dict.
 
 2016/03/19 - TAS - Added validation of the config file when it is applied.
+
+2016/03/20 - TAS - Added some validation of user frequency input, and of the bookmark file when it
+                   is loaded.
 """
 
 #import modules
@@ -278,6 +281,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params_last_content = {}
         self.build(ac)
         self.params["cbb_mode"].current(0)
+        self.focus_force()
+        self.update()
         # bookmarks loading on start
         self.bookmark("load", ",")
         self.scan_thread = None
@@ -437,7 +442,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                               follow_mouse=1,
                               text="Frequency to tune.")
         ttk.Label(self.rig_control_menu,
-                  text="Mhz").grid(row=5,
+                  text="Hz").grid(row=5,
                                    column=3,
                                    sticky=tk.EW)
 
@@ -920,7 +925,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         else:
             self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
         if eflag :
-            tkMessageBox.showerror("Config File Error", "One of the values in the config file was invalid, "\
+            tkMessageBox.showerror("Config File Error", "One (or more) of the values in the config file was invalid, "\
                                    "and the default was used instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
             ac.config["auto_bookmark"].lower())
@@ -992,12 +997,22 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         if task == "load":
             try:
                 bookmarks.csv_load(self.bookmarks_file, delimiter)
+                count = 0
                 for line in bookmarks.row_list:
+                    count += 1
+                    error = False
                     if len(line) < LEN_BM:
                         line.append("O")
+                    if self._frequency_pp_parse(line[BM.freq]) == None :
+                        error = True
                     line[BM.freq] = self._frequency_pp(line[BM.freq])
-                    item = self.tree.insert('', tk.END, values=line)
-                    self.bookmark_bg_tag(item, line[BM.lockout])
+                    if line[BM.mode] not in CBB_MODES :
+                        error = True
+                    if error == True :
+                        tkMessageBox.showerror("Error", "Invalid value in Bookmark #%i. Skipping..." %count)
+                    else :
+                        item = self.tree.insert('', tk.END, values=line)
+                        self.bookmark_bg_tag(item, line[BM.lockout])
             except InvalidPathError:
                 logger.info("No bookmarks file found, skipping.")
 
@@ -1300,6 +1315,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         # get values
         frequency = self._frequency_pp_parse(self.params["txt_frequency"].get())
+        if frequency == None :
+            tkMessageBox.showerror("Error",
+                                   "Invalid value in Frequency field.")
+            self.params["txt_frequency"].focus_set()
+            return
         mode = self.params["cbb_mode"].get()
         description = self.params["txt_description"].get()
         lockout = "O"
@@ -1347,23 +1367,26 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.bookmark("save", ",")
 
     def _frequency_pp(self, frequency):  #pragma: no cover
-        """Add thousands separator.
+        """Filter invalid chars and add thousands separator.
         :param frequency: frequency value
         :type frequency: string
         :return: frequency with separator
         :return type: string
         """
 
-        return '{:,}'.format(int(frequency))
+        return '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
 
     def _frequency_pp_parse(self, frequency):  #pragma: no cover
-        """Remove thousands separator.
+        """Remove thousands separator and check for invalid chars.
         :param frequency: frequency value
         :type frequency: string
-        :return: frequency without separator
-        :return type: string
+        :return: frequency without separator or None if invalid chars present
+        :return type: string or None
         """
-
-        return int(str(frequency).replace(',', ''))
-
+        nocommas = frequency.replace(',', '')
+        results = re.search("[^0-9]", nocommas)
+        if results == None :
+            return (nocommas)
+        else :
+            return (None)
 
