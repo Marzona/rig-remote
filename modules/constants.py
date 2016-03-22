@@ -14,6 +14,7 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
 """
 
 # constant definition
@@ -74,6 +75,9 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "sgn_level" : "-30",
                   "range_min" : "24,000",
                   "range_max" : "1800,000",
+                  "wait" : "false",
+                  "record" : "false",
+                  "log" : "false",
                   "always_on_top" : "true",
                   "save_exit" : "false",
                   "auto_bookmark" : "false",

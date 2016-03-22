@@ -62,6 +62,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/20 - TAS - Added some validation of user frequency input, and of the bookmark file when it
                    is loaded.
+
+2016/03/21 - TAS - Added new checkbutton config data to config file handling methods.
 """
 
 #import modules
@@ -929,6 +931,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    "and the default was used instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
             ac.config["auto_bookmark"].lower())
+        self.params["ckb_record"].set_str_val(ac.config["record"].lower())
+        self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
+        self.params["ckb_log"].set_str_val(ac.config["log"].lower())
         self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.is_checked() == False:
@@ -957,6 +962,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         ac.config["sgn_level"] = self.params["txt_sgn_level"].get()
         ac.config["range_min"] = self.params["txt_range_min"].get()
         ac.config["range_max"] = self.params["txt_range_max"].get()
+        ac.config["wait"] = self.params["ckb_wait"].get_str_val()
+        ac.config["record"] = self.params["ckb_record"].get_str_val()
+        ac.config["log"] = self.params["ckb_log"].get_str_val()
         ac.config["always_on_top"] = self.ckb_top.get_str_val()
         ac.config["save_exit"] = self.ckb_save_exit.get_str_val()
         ac.config["auto_bookmark"] = \

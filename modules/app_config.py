@@ -14,6 +14,12 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
+
+TAS - Tim Sweeney - mainetim@gmail.com
+
+2016/03/21 - TAS - Validate config file entries on read.
+
 """
 
 # import modules
@@ -71,7 +77,8 @@ class AppConfig(object):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
             for row in self.io.row_list:
-                self.config[row[0].strip()] = row[1].strip()
+                if len(row) == 2 and row[0].strip() in self.config.keys() :
+                    self.config[row[0].strip()] = row[1].strip()
         else:
             self.write_conf()
             self.read_conf()
