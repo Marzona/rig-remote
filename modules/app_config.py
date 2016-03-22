@@ -76,9 +76,12 @@ class AppConfig(object):
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
+            error = 0
             for row in self.io.row_list:
                 if len(row) == 2 and row[0].strip() in self.config.keys() :
                     self.config[row[0].strip()] = row[1].strip()
+                else:
+                    logger.warning("Error in config file line: " + str(row))
         else:
             self.write_conf()
             self.read_conf()
