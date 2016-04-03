@@ -86,3 +86,4 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
 LEN_BM = 4
 class BM :
     freq, mode, desc, lockout = range(LEN_BM)
+

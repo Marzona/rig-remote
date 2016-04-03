@@ -113,3 +113,4 @@ class AppConfig(object):
             row.append(self.config[key])
             self.io.row_list.append(row)
         self.io.csv_save(self.config_file, "=")
+
