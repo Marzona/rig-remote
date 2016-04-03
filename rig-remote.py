@@ -43,14 +43,14 @@ def input_arguments():
         http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
         Author: Rafael Marmelo <rafael@defying.me>
-	Author: Simone Marzona
-	Additional features: Tim Sweeney <mainetim@gail.com>
+        Author: Simone Marzona
+        Additional features: Tim Sweeney <mainetim@gail.com>
 
         License: MIT License
 
         Copyright (c) 2014 Rafael Marmelo
-	Copyright (c) 2015 Simone Marzona
-	Copyright (c) 2016 Tim Sweeney""")
+        Copyright (c) 2015 Simone Marzona
+        Copyright (c) 2016 Tim Sweeney""")
 
     parser.add_argument("--file",
                         "-f",

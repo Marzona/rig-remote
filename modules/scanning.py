@@ -45,7 +45,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/11 - TAS - Added skeleton code to process queue.
                    Still to do: change parameter passing to dict.
-                   
+
 2016/03/13 - TAS - Strip the scan parameters strings completely of
                    non-numerics to avoid ValueExceptions.
 
@@ -54,6 +54,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/16 - TAS - Added code to allow parameter updating while scan is active.
 """
+
+# import modules
+
 from modules.rigctl import RigCtl
 from modules.disk_io import Log_file
 from modules.constants import SUPPORTED_SCANNING_MODES
@@ -95,12 +98,20 @@ class ScanningTask(object):
                  pass_params) :
         """We do some checks to see if we are good to go with the scan.
 
+        :param scanq: queue used send/receive events from the UI.
+        :type scanq: Queue object
+        :param stop_scan_button: param pointing to the proper stop button (it 
+        can be Frequency or Bookmarks)
+        :type stop_scan_button:tkk_button
+        :param pass_params: configuration parameters
+        :type pass_params: standard python dictionary
         :param mode: scanning mode, either bookmark or frequency
         :type mode: string
-        :param bookmark_list: the actual list of bookmarks, may be empty
-        :type bookmark_list: list of tuples, every tuple is a bookmark
+        :param bookmark: the actual list of bookmarks, may be empty
+        :type bookmark: list of tuples, every tuple is a bookmark
         :raises: UnsupportedScanningConfigError if action or mode are not
         allowed
+        :raises: ValueError if the pass_params dictionary contains invalid data
         :returns: none
         """
 
@@ -122,13 +133,20 @@ class ScanningTask(object):
 
         try:
             self.params["range_min"] = \
-                            khertz_to_hertz(int(filter(str.isdigit, self.params["txt_range_min"].get())))
+                            khertz_to_hertz(int(filter(str.isdigit,
+                                                       self.params["txt_range_min"].get())))
             self.params["range_max"] = \
-                            khertz_to_hertz(int(filter(str.isdigit, self.params["txt_range_max"].get())))
-            self.params["interval"] = int(filter(str.isdigit, self.params["txt_interval"].get()))
-            self.params["delay"] = int(filter(str.isdigit, self.params["txt_delay"].get()))
-            self.params["passes"] = int(filter(str.isdigit, self.params["txt_passes"].get()))
-            self.params["sgn_level"] = int(re.sub("[^-0-9]", "", self.params["txt_sgn_level"].get()))
+                            khertz_to_hertz(int(filter(str.isdigit,
+                                                       self.params["txt_range_max"].get())))
+            self.params["interval"] = int(filter(str.isdigit,
+                                                 self.params["txt_interval"].get()))
+            self.params["delay"] = int(filter(str.isdigit,
+                                              self.params["txt_delay"].get()))
+            self.params["passes"] = int(filter(str.isdigit,
+                                               self.params["txt_passes"].get()))
+            self.params["sgn_level"] = int(re.sub("[^-0-9]",
+                                           "",
+                                           self.params["txt_sgn_level"].get()))
             self.params["log"] = self.params["ckb_log"].is_checked()
             self.params["wait"] = self.params["ckb_wait"].is_checked()
             self.params["record"] = self.params["ckb_record"].is_checked()

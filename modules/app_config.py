@@ -66,7 +66,8 @@ class AppConfig(object):
     def read_conf(self):  # pragma: no cover
         """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
-        and then we re-read it.
+        and then we re-read it. It logs an error if a line of the file is not
+        valid and moves on to the next one.
 
         :param: none
         :raises: none
