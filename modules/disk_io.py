@@ -141,4 +141,4 @@ class Log_file(object) :
             except (IOError, OSError):
                 logger.error("Error while trying to close log file: "\
                              "{}".format(self.log_filename))
-           
+
