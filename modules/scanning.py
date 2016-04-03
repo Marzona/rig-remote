@@ -303,7 +303,7 @@ class Scanning(object):
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
-        :raises: none
+        :raises Exception: if there is a communication error with the rig.
         :returns: updates the scanning task object with the new activity found
         """
 
