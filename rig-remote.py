@@ -99,3 +99,4 @@ if __name__ == "__main__":
     app.mainloop()
     if app.scan_thread != None :
         app.scanning.terminate()
+
