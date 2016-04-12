@@ -94,6 +94,7 @@ class ScanningTask(object):
                  scanq,
                  mode,
                  bookmarks,
+                 nbl,
                  stop_scan_button,
                  pass_params) :
         """We do some checks to see if we are good to go with the scan.
@@ -116,7 +117,7 @@ class ScanningTask(object):
         """
 
         self.error = None
-        self.new_bookmark_list = []
+        self.new_bookmark_list = nbl
         self.bookmarks = bookmarks
         self.scanq = scanq
 

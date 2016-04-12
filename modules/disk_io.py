@@ -117,11 +117,11 @@ class Log_file(object):
         self.log_file = None
 
     def open(self, name = None):
-    """Opens a log file.
+        """Opens a log file.
 
-    :param name: log file name, defaults to None
-    :type name: string
-    """
+        :param name: log file name, defaults to None
+        :type name: string
+        """
 
         if name != None :
             self.log_filename = name
@@ -132,16 +132,16 @@ class Log_file(object):
                          "{}".format(self.log_filename))
 
     def write(self, record_type, record, signal):
-    """Writes a message to the log file.
+        """Writes a message to the log file.
 
-    :param record_type: type of the record to write
-    :type record_type: string
-    :param record: data to write
-    :type record: tuple
-    :param signal: signal level
-    :type signal: list
-    :raises IOError or OSError for any issue that happens while writing.
-    """
+        :param record_type: type of the record to write
+        :type record_type: string
+        :param record: data to write
+        :type record: tuple
+        :param signal: signal level
+        :type signal: list
+        :raises IOError or OSError for any issue that happens while writing.
+        """
 
         if record_type == 'B' :
             lstr = 'B ' + str(datetime.datetime.today().strftime\
@@ -160,10 +160,10 @@ class Log_file(object):
                          "{}".format(self.log_filename))
 
     def close(self):
-    """Closes the log file.
+        """Closes the log file.
 
-    :raises IOError OSError: if there are issues while closing the log file
-    """
+        :raises IOError OSError: if there are issues while closing the log file
+        """
 
         if self.log_file != None :
             try:

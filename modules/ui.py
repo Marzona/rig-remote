@@ -292,6 +292,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.scanning = None
         self.selected_bookmark = None
         self.scanq = Queue()
+        self.new_bookmark_list = []
         self.bind_all("<1>", lambda event:self.focus_set(event))
 
 
@@ -1169,8 +1170,13 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         if action.lower() == "stop" and self.scan_thread != None:
             self.scanning.terminate()
+            self.scan_thread.join()
             self.scan_thread = None
+            if mode.lower() == "frequency" :
+                self._add_new_bookmarks(self.new_bookmark_list)
+                self.new_bookmark_list = []
             self.scan_mode = None
+
             return
         
         if (action.lower() == "start" and self.scan_thread != None) :
@@ -1183,14 +1189,16 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         bookmarks = self.tree
         pass_params = dict.copy(self.params)
 
-        if mode == "frequency" :
+        if mode.lower() == "frequency" :
             button = self.freq_scan_toggle
+            nbl = self.new_bookmark_list
         else :
             button = self.book_scan_toggle
 
         task = ScanningTask(scanq,
                             mode,
                             bookmarks,
+                            nbl,
                             button,
                             pass_params)
         self.scanning = Scanning()
@@ -1248,7 +1256,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.params["txt_frequency"].insert(0, self._frequency_pp(nb[2]))
             self.params["cbb_mode"].insert(0,nb[1])
             # adding bookmark to the list
-            self.cb_add()
+            self.cb_add(True)
             self._clear_form()
 
     def toggle_cb_top(self, *args):  #pragma: no cover
@@ -1314,7 +1322,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_frequency"].insert(0, values[0])
         self.params["txt_description"].insert(0, values[2])
 
-    def cb_add(self):  #pragma: no cover
+    def cb_add(self, silent = False):  #pragma: no cover
         """Add frequency to tree and saves the bookmarks.
         :param: none
         :raises: none
@@ -1323,7 +1331,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         # get values
         frequency = self._frequency_pp_parse(self.params["txt_frequency"].get())
-        if frequency == None :
+        if (frequency == None) and not (silent) :
             tkMessageBox.showerror("Error",
                                    "Invalid value in Frequency field.")
             self.params["txt_frequency"].focus_set()
@@ -1335,17 +1343,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         idx = tk.END
         for item in self.tree.get_children():
             freq = self.tree.item(item).get('values')[BM.freq]
-            curr_freq = self._frequency_pp_parse(freq)
+            uni_curr_freq = self._frequency_pp_parse(freq)
+            curr_freq = uni_curr_freq.encode("UTF-8")
             curr_mode = self.tree.item(item).get('values')[BM.mode]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
                 break
             elif (frequency == curr_freq and
-                  mode == curr_mode and
-                  mode != UNKNOWN_MODE):
-                tkMessageBox.showerror("Error", "A bookmark with the "\
-                                             "same frequency and mode "\
-                                             "already exists.", parent=self)
+                  mode == curr_mode) :
+#                  mode != UNKNOWN_MODE and
+                if not (silent) :
+                    tkMessageBox.showerror("Error", "A bookmark with the "\
+                                           "same frequency and mode "\
+                                           "already exists.", parent=self)
                 return
         # insert
         item = self.tree.insert('',
