@@ -1385,6 +1385,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.tree.delete(item)
             # save
         self.bookmark("save", ",")
+        self._clear_form()
 
     def _frequency_pp(self, frequency):  #pragma: no cover
         """Filter invalid chars and add thousands separator.
