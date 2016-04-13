@@ -47,6 +47,7 @@ def scan_task():
     scanq = None
     mode = "bookmarks"
     bookmark_list = []
+    new_bookmark_list = []
     stop_scan_button = None
     params["txt_range_min"] = TestStr("100")
     params["txt_range_max"] = TestStr("50")
@@ -57,9 +58,11 @@ def scan_task():
     params["ckb_record"] = TestBool(False)
     params["ckb_log"] = TestBool(False)
     params["ckb_wait"] = TestBool(False)
+    params["ckb_auto_bookmark"] = TestBool(False)
     scan_task = ScanningTask(scanq,
                              mode,
                              bookmark_list,
+                             new_bookmark_list,
                              stop_scan_button,
                              params)
     return scan_task
@@ -83,6 +86,7 @@ def test_unsupported_scan_mode():
     scanq = None
     mode = "test"
     bookmark_list = []
+    new_bookmark_list = []
     stop_scan_button = None
     params["txt_range_min"] = TestStr("100")
     params["txt_range_max"] = TestStr("50")
@@ -93,11 +97,13 @@ def test_unsupported_scan_mode():
     params["ckb_record"] = TestBool(False)
     params["ckb_log"] = TestBool(False)
     params["ckb_wait"] = TestBool(False)
+    params["ckb_auto_bookmark"] = TestBool(False)
 
     with pytest.raises(UnsupportedScanningConfigError):
         scan_task = ScanningTask(scanq,
                                  mode,
                                  bookmark_list,
+                                 new_bookmark_list,
                                  stop_scan_button,
                                  params)
 
@@ -105,6 +111,7 @@ def test_unsupported_scan_mode():
 testdata=[(None,
            "bookmarks",
            [],
+           [],
            None,
            "test",
            "50",
@@ -114,9 +121,11 @@ testdata=[(None,
            "100000",
            False,
            False,
+           False,
            False),
           (None,
            "bookmarks",
+           [],
            [],
            None,
            "10",
@@ -127,9 +136,11 @@ testdata=[(None,
            "100000",
            False,
            False,
+           False,
            False),
           (None,
            "bookmarks",
+           [],
            [],
            None,
            "10",
@@ -140,9 +151,11 @@ testdata=[(None,
            "100000",
            False,
            False,
+           False,
            False),
           (None,
            "bookmarks",
+           [],
            [],
            None,
            "10",
@@ -153,9 +166,11 @@ testdata=[(None,
            "100000",
            False,
            False,
+           False,
            False),
           (None,
            "bookmarks",
+           [],
            [],
            None,
            "10",
@@ -166,9 +181,11 @@ testdata=[(None,
            "100000",
            False,
            False,
+           False,
            False),
           (None,
            "bookmarks",
+           [],
            [],
            None,
            "10",
@@ -177,13 +194,14 @@ testdata=[(None,
            "0",
            "50",
            "test",
+           False,
            False,
            False,
            False)]
 
 @pytest.mark.parametrize(
-"scanq, mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait", testdata)
-def test_bad_param(scanq, mode, bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait):
+"scanq, mode, bookmark_list, new_bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark", testdata)
+def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark):
     with pytest.raises(ValueError):
 
         params = {}
@@ -196,9 +214,11 @@ def test_bad_param(scanq, mode, bookmark_list, stop_scan_button, min_freq, max_f
         params["ckb_record"] = TestBool(record)
         params["ckb_log"] = TestBool(log)
         params["ckb_wait"] = TestBool(wait)
+        params["ckb_auto_bookmark"] = TestBool(auto_bookmark)
 
         ScanningTask(scanq,
                      mode,
                      bookmark_list,
+                     new_bookmark_list,
                      stop_scan_button,
                      params)
