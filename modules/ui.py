@@ -64,6 +64,10 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    is loaded.
 
 2016/03/21 - TAS - Added new checkbutton config data to config file handling methods.
+
+2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan. Bookmarks are processed once the
+                   scan thread has completed. Only one bookmark per frequency. (If logging enabled, all
+                   occurences are logged.)
 """
 
 #import modules
@@ -74,7 +78,6 @@ except ImportError:
     pass
 
 import logging
-import datetime
 from modules.constants import ALLOWED_BOOKMARK_TASKS
 from modules.constants import SUPPORTED_SCANNING_ACTIONS
 from modules.constants import CBB_MODES
@@ -1250,11 +1253,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         """
 
         self._clear_form()
-        now = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
         for nb in nbl:
-            self.params["txt_description"].insert(0, "activity on {}".format(now))
-            self.params["txt_frequency"].insert(0, self._frequency_pp(nb[2]))
-            self.params["cbb_mode"].insert(0,nb[1])
+            self.params["txt_description"].insert(0, "activity on {}".format(nb["time"]))
+            self.params["txt_frequency"].insert(0, self._frequency_pp(str(nb["freq"])))
+            self.params["cbb_mode"].insert(0,nb["mode"])
             # adding bookmark to the list
             self.cb_add(True)
             self._clear_form()
