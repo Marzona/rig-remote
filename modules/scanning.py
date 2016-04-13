@@ -53,10 +53,15 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    local int versions. TODO: Flesh out queue-based value changes.
 
 2016/03/16 - TAS - Added code to allow parameter updating while scan is active.
+
+2016/04/12 - TAS - Auto-bookmarking option restored on frequency scans. Proper time and mode
+                   now recorded. New bookmarks are held in a list of dicts and processed by
+                   the main thread once this thread has completed.
 """
 
 # import modules
 
+import datetime
 from modules.rigctl import RigCtl
 from modules.disk_io import Log_file
 from modules.constants import SUPPORTED_SCANNING_MODES
@@ -64,13 +69,11 @@ from modules.constants import TIME_WAIT_FOR_TUNE
 from modules.constants import SIGNAL_CHECKS
 from modules.constants import NO_SIGNAL_DELAY
 from modules.constants import MIN_INTERVAL
-from modules.constants import UNKNOWN_MODE
 from modules.constants import MONITOR_MODE_DELAY
 from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
 import logging
 import time
-from Queue import Queue
 import re
 
 # logging configuration
@@ -151,6 +154,7 @@ class ScanningTask(object):
             self.params["log"] = self.params["ckb_log"].is_checked()
             self.params["wait"] = self.params["ckb_wait"].is_checked()
             self.params["record"] = self.params["ckb_record"].is_checked()
+            self.params["auto_bookmark"] = self.params["ckb_auto_bookmark"].is_checked()
 
         except ValueError:
             """We log some info and re raise."""
@@ -247,10 +251,14 @@ class Scanning(object):
                     if task.params["record"]:
                         rigctl.start_recording()
                         logger.info("Recording started.")
-                    triple = (freq, UNKNOWN_MODE, str(freq))
-                    task.new_bookmark_list.append(triple)
+                    if task.params["auto_bookmark"] :
+                        nbm = {}
+                        nbm["freq"] = freq
+                        nbm["mode"] = rigctl.get_mode()
+                        nbm["time"] = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
+                    task.new_bookmark_list.append(nbm)
                     if task.params["log"] :
-                        log.write('F', triple, level[0])
+                        log.write('F', nbm, level[0])
                     time.sleep(task.params["delay"])
                     if task.params["record"]:
                         rigctl.stop_recording()
