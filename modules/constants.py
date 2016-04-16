@@ -84,7 +84,10 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "log_filename" : "rig-remote.log"}
 
 LEN_BM = 4
-class BM :
+
+class BM(object):
+    "Helper class with 4 attribs."
+
     freq, mode, desc, lockout = range(LEN_BM)
 
 LOG_FILE_NAME="rig-remote-log.txt"
