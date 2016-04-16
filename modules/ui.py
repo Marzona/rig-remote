@@ -1154,7 +1154,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.scanq.put(event_list)
             self.params_last_content[event_list[0]] = event_list[1]
 
-    def _scan(self, mode, action):  #pragma: no cover
+    def _scan(self, mode, action):
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
         :param mode: bookmark or frequency
@@ -1181,7 +1181,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.scan_mode = None
 
             return
-        
+
         if (action.lower() == "start" and self.scan_thread != None) :
             return
         if (action.lower() == "stop" and self.scan_thread == None) :
@@ -1194,9 +1194,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         if mode.lower() == "frequency" :
             button = self.freq_scan_toggle
-            nbl = self.new_bookmark_list
         else :
             button = self.book_scan_toggle
+
+        nbl = self.new_bookmark_list
 
         task = ScanningTask(scanq,
                             mode,
@@ -1205,7 +1206,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                             button,
                             pass_params)
         self.scanning = Scanning()
-        self.scan_thread = threading.Thread(target = self.scanning.scan, 
+        self.scan_thread = threading.Thread(target = self.scanning.scan,
                                             args = (task,))
         self.scan_thread.start()
 
