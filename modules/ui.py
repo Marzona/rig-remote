@@ -70,7 +70,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    occurences are logged.)
 """
 
-#import modules
+# import modules
 
 try:
     from trepan.api import debug
@@ -271,14 +271,14 @@ class ToolTip:
         label = tk.Label(self._tipwindow, **opts)
         label.pack()
 
-class RigRemote(ttk.Frame):  #pragma: no cover
+class RigRemote(ttk.Frame):
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
     :raises: none
     :returns: none
     """
 
-    def __init__(self, root, ac):  #pragma: no cover
+    def __init__(self, root, ac):
         ttk.Frame.__init__(self, root)
         self.bookmarks_file = BOOKMARKS_FILE
         self.log_file = None
@@ -299,7 +299,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.bind_all("<1>", lambda event:self.focus_set(event))
 
 
-    def build(self, ac):  #pragma: no cover
+    def build(self, ac):
         """Build and initialize the GUI widgets.
         :param: none
         :raises: none
@@ -365,7 +365,6 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                  )
         self.tree.configure(
                             yscroll=ysb.set,
-                            #xscroll=xsb.set
                             )
         self.tree.grid(row=0,
                        column=0,
@@ -382,9 +381,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                              column=2,
                              rowspan=5,
                              padx=5)
-#        # right-side container
+        # right-side container
         self.rig_config_menu = LabelFrame(self,
-                               text="Rig configuration")
+                                          text="Rig configuration")
         self.rig_config_menu.grid(row=0,
                                   column=3,
                                   sticky=tk.NSEW)
@@ -396,11 +395,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_hostname"] = ttk.Entry(self.rig_config_menu,
                                                 name="txt_hostname")
         self.params["txt_hostname"].grid(row=1,
-                               column=3,
-                               columnspan=2,
-                               padx=2,
-                               pady=2,
-                               sticky=tk.EW)
+                                         column=3,
+                                         columnspan=2,
+                                         padx=2,
+                                         pady=2,
+                                        sticky=tk.EW)
         t_txt_hostname = ToolTip(self.params["txt_hostname"],
                                  follow_mouse=1,
                                  text="Hostname to connect.")
@@ -412,19 +411,19 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_port"] = ttk.Entry(self.rig_config_menu,
                                             name="txt_port")
         self.params["txt_port"].grid(row=2,
-                           column=3,
-                           padx=2,
-                           pady=2,
-                           sticky=tk.EW)
+                                     column=3,
+                                     padx=2,
+                                     pady=2,
+                                   sticky=tk.EW)
         t_txt_port = ToolTip(self.params["txt_port"],
-                                 follow_mouse=1,
-                                 text="Port to connect.")
+                             follow_mouse=1,
+                             text="Port to connect.")
 
         # horizontal separator
         ttk.Frame(self.rig_config_menu).grid(row=3,
-                                  column=0,
-                                  columnspan=3,
-                                  pady=5)
+                                             column=0,
+                                             columnspan=3,
+                                             pady=5)
 
         self.rig_control_menu = LabelFrame(self,
                                            text="Rig Control")
@@ -439,14 +438,14 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_frequency"] = ttk.Entry(self.rig_control_menu,
                                                  name="txt_frequency")
         self.params["txt_frequency"].grid(row=5,
-                                column=1,
-                                columnspan=3,
-                                padx=2,
-                                pady=2,
-                                sticky=tk.W)
+                                          column=1,
+                                          columnspan=3,
+                                          padx=2,
+                                          pady=2,
+                                          sticky=tk.W)
         t_txt_frequency = ToolTip(self.params["txt_frequency"],
-                              follow_mouse=1,
-                              text="Frequency to tune.")
+                                  follow_mouse=1,
+                                  text="Frequency to tune.")
         ttk.Label(self.rig_control_menu,
                   text="Hz").grid(row=5,
                                    column=3,
@@ -459,11 +458,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["cbb_mode"] = ttk.Combobox(self.rig_control_menu, 
                                                name="cbb_mode",width=15)
         self.params["cbb_mode"].grid(row=6,
-                           column=1,
-                           columnspan=3,
-                           padx=2,
-                           pady=2,
-                           sticky=tk.EW)
+                                     column=1,
+                                     columnspan=3,
+                                     padx=2,
+                                     pady=2,
+                                     sticky=tk.EW)
         t_cbb_mode = ToolTip(self.params["cbb_mode"],
                               follow_mouse=1,
                               text="Mode to use for tuning the frequency.")
@@ -476,11 +475,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_description"] = ttk.Entry(self.rig_control_menu,
                                                    name="txt_description")
         self.params["txt_description"].grid(row=7,
-                                  column=1,
-                                  columnspan=3,
-                                  padx=2,
-                                  pady=2,
-                                  sticky=tk.EW)
+                                            column=1,
+                                            columnspan=3,
+                                            padx=2,
+                                            pady=2,
+                                            sticky=tk.EW)
         t_txt_description = ToolTip(self.params["txt_description"],
                                     follow_mouse=1,
                                     text="Description of the bookmark.")
@@ -490,8 +489,8 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                   width=7,
                                   command=self.cb_add)
         t_btn_add = ToolTip(self.btn_add,
-                    follow_mouse=1,
-                    text="Bookmark this frequency.")
+                            follow_mouse=1,
+                            text="Bookmark this frequency.")
         self.btn_add.grid(row=8,
                           column=1,
                           padx=2,
@@ -514,26 +513,25 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    width=7,
                                    command=self.cb_get_frequency)
         t_btn_load = ToolTip(self.btn_load,
-                    follow_mouse=1,
-                    text="Get the frequency and mode from the rig.")
+                             follow_mouse=1,
+                             text="Get the frequency and mode from the rig.")
 
         self.btn_load.grid(row=8,
                            column=3,
                            padx=2,
                            pady=2)
 
-#        # horizontal separator
+        # horizontal separator
         ttk.Frame(self.rig_control_menu).grid(row=9,
-                                  column=0,
-                                  columnspan=3,
-                                  pady=5)
+                                              column=0,
+                                              columnspan=3,
+                                              pady=5)
 
 
         self.scanning_conf_menu = LabelFrame(self, text="Scanning options")
         self.scanning_conf_menu.grid(row=2,
-                       column=3,
-                       #rowspan=3,
-                       stick=tk.NSEW)
+                                    column=3,
+                                    stick=tk.NSEW)
 
         ttk.Label(self.scanning_conf_menu,
                   text="Signal level:").grid(row=10,
@@ -570,11 +568,11 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                               follow_mouse=1,
                               text="Delay after finding a signal.")
         self.params["txt_delay"].grid(row=13,
-                            column=1,
-                            columnspan=1,
-                            padx=2,
-                            pady=2,
-                            sticky=tk.W)
+                                      column=1,
+                                      columnspan=1,
+                                      padx=2,
+                                      pady=2,
+                                      sticky=tk.W)
         ttk.Label(self.scanning_conf_menu,
                   text=" seconds").grid(row=13,
                                        padx=0,
@@ -585,77 +583,77 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         ttk.Label(self.scanning_conf_menu,
                   text="Passes:").grid(row=14,
-                                      column=0,
-                                      sticky=tk.W)
+                                       column=0,
+                                       sticky=tk.W)
         self.params["txt_passes"] = ttk.Entry(self.scanning_conf_menu,
                                               name="txt_passes", width=10)
         self.params["txt_passes"].grid(row=14,
-                            column=1,
-                            columnspan=1,
-                            padx=2,
-                            pady=2,
-                            sticky=tk.W)
+                                       column=1,
+                                       columnspan=1,
+                                       padx=2,
+                                       pady=2,
+                                       sticky=tk.W)
         t_txt_passes = ToolTip(self.params["txt_passes"],
-                                     follow_mouse=1,
-                                     text="Number of scans.")
+                              follow_mouse=1,
+                              text="Number of scans.")
         ttk.Label(self.scanning_conf_menu,
                   text="  0=Infinite").grid(row=14,
-                                       padx=0,
-                                       column=2,
-                                       sticky=tk.EW)
+                                            padx=0,
+                                            column=2,
+                                            sticky=tk.EW)
         self.params["txt_passes"].bind("<Return>", self.process_entry)
         self.params["txt_passes"].bind("<FocusOut>", self.process_entry)
 
         self.cb_wait = tk.BooleanVar()
         self.params["ckb_wait"] = RCCheckbutton(self.scanning_conf_menu,
-                                                 name="ckb_wait",
-                                                 text="Wait",
-                                                 onvalue=True,
-                                                 offvalue=False,
-                                                 variable=self.cb_wait)
+                                                name="ckb_wait",
+                                                text="Wait",
+                                                onvalue=True,
+                                                offvalue=False,
+                                                variable=self.cb_wait)
         self.params["ckb_wait"].grid(row=15,
-                                    column=0,
-                                    columnspan=1,
-                                    sticky=tk.E)
+                                     column=0,
+                                     columnspan=1,
+                                     sticky=tk.E)
         t_ckb_wait = ToolTip(self.params["ckb_wait"],
-                                     follow_mouse=1,
-                                     text="Waits after having found an active"\
-                                          " frequency.")
+                             follow_mouse=1,
+                             text="Waits after having found an active"\
+                                  " frequency.")
         self.params["ckb_wait"].val = self.cb_wait
         self.cb_wait.trace("w", self.process_wait)
 
         self.cb_record = tk.BooleanVar()
         self.params["ckb_record"] = RCCheckbutton(self.scanning_conf_menu,
-                                                 name="ckb_record",
-                                                 text="Record",
-                                                 onvalue=True,
-                                                 offvalue=False,
-                                                 variable=self.cb_record)
+                                                  name="ckb_record",
+                                                  text="Record",
+                                                  onvalue=True,
+                                                  offvalue=False,
+                                                  variable=self.cb_record)
         self.params["ckb_record"].grid(row=15,
-                                    column=1,
-                                    columnspan=1,
-                                    sticky=tk.E)
+                                       column=1,
+                                       columnspan=1,
+                                       sticky=tk.E)
         t_ckb_record = ToolTip(self.params["ckb_record"],
-                                     follow_mouse=1,
-                                     text="Enable the recording of signal to"\
-                                     " a file.")
+                               follow_mouse=1,
+                               text="Enable the recording of signal to"\
+                                    " a file.")
         self.params["ckb_record"].val = self.cb_record
         self.cb_record.trace("w", self.process_record)
 
         self.cb_log = tk.BooleanVar()
         self.params["ckb_log"] = RCCheckbutton(self.scanning_conf_menu,
-                                                 name="ckd_log",
-                                                 text="Log",
-                                                 onvalue=True,
-                                                 offvalue=False,
-                                                 variable=self.cb_log)
+                                               name="ckd_log",
+                                               text="Log",
+                                               onvalue=True,
+                                               offvalue=False,
+                                               variable=self.cb_log)
         t_ckb_log = ToolTip(self.params["ckb_log"],
                             follow_mouse=1,
                             text="Logs the activities to a file.")
         self.params["ckb_log"].grid(row=15,
-                          column=2,
-                          columnspan=1,
-                          sticky=tk.E)
+                                    column=2,
+                                    columnspan=1,
+                                    sticky=tk.E)
         self.params["ckb_log"].val = self.cb_log
         self.cb_log.trace("w", self.process_log)
 
@@ -673,10 +671,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                      follow_mouse=1,
                                      text="Starts a frequency scan.")
         self.freq_scan_toggle.grid(row=16,
-                                  column=2,
-                                  columnspan=1,
-                                  padx=2,
-                                  sticky=tk.W)
+                                   column=2,
+                                   columnspan=1,
+                                   padx=2,
+                                   sticky=tk.W)
 
         ttk.Label(self.freq_scanning_menu,
                   text="Min/Max:").grid(row=12,
@@ -691,15 +689,15 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                                  name="txt_range_min",
                                                  width=10)
         self.params["txt_range_min"].grid(row=12,
-                                column=1,
-                                columnspan=1,
-                                padx=2,
-                                pady=2,
-                                sticky=tk.W)
+                                          column=1,
+                                          columnspan=1,
+                                          padx=2,
+                                          pady=2,
+                                          sticky=tk.W)
         t_txt_range_min = ToolTip(self.params["txt_range_min"],
-                                 follow_mouse=1,
-                                 text="Lower bound of the frequency"\
-                                      " band to scan.")
+                                  follow_mouse=1,
+                                  text="Lower bound of the frequency"\
+                                       " band to scan.")
         self.params["txt_range_min"].bind("<Return>", self.process_entry)
         self.params["txt_range_min"].bind("<FocusOut>", self.process_entry)
 
@@ -707,15 +705,15 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                                  name="txt_range_max",
                                                  width=10)
         self.params["txt_range_max"].grid(row=12,
-                                column=2,
-                                columnspan=1,
-                                padx=0,
-                                pady=0,
-                                sticky=tk.W)
+                                          column=2,
+                                          columnspan=1,
+                                          padx=0,
+                                          pady=0,
+                                          sticky=tk.W)
         t_txt_range_max = ToolTip(self.params["txt_range_max"],
-                                 follow_mouse=1,
-                                 text="Upper bound of the frequency"\
-                                      " band to scan.")
+                                  follow_mouse=1,
+                                  text="Upper bound of the frequency"\
+                                       " band to scan.")
         self.params["txt_range_max"].bind("<Return>", self.process_entry)
         self.params["txt_range_max"].bind("<FocusOut>", self.process_entry)
 
@@ -746,86 +744,84 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.cb_auto_bookmark = tk.BooleanVar()
         self.params["ckb_auto_bookmark"] = \
             RCCheckbutton(self.freq_scanning_menu,
-                            name="ckb_auto_bookmark",
-                            text="auto bookmark",
-                            onvalue=True,
-                            offvalue=False,
-                            variable=self.cb_auto_bookmark)
+                          name="ckb_auto_bookmark",
+                          text="auto bookmark",
+                          onvalue=True,
+                          offvalue=False,
+                          variable=self.cb_auto_bookmark)
         t_ckb_auto_bookmark = ToolTip(self.params["ckb_auto_bookmark"],
                                       follow_mouse=1,
-                                       text="Bookmark any active frequency"\
-                                            " found.")
+                                      text="Bookmark any active frequency"\
+                                           " found.")
         self.params["ckb_auto_bookmark"].grid(row=16,
-                                    column=0,
-                                    columnspan=2)
+                                              column=0,
+                                              columnspan=2)
         self.params["ckb_auto_bookmark"].val = self.cb_auto_bookmark
         self.cb_auto_bookmark.trace("w", self.process_auto_bookmark)
 
         ttk.Frame(self.freq_scanning_menu).grid(row=17,
-                                  column=0,
-                                  columnspan=3,
-                                  pady=5)
+                                                column=0,
+                                                columnspan=3,
+                                                pady=5)
 
         self.book_scanning_menu = LabelFrame(self, text="Bookmark scanning")
         self.book_scanning_menu.grid(row=4,
-                                    column=3,
-                                    #rowspan=3,
-                                    stick=tk.NSEW)
+                                     column=3,
+                                     stick=tk.NSEW)
 
-#        #horrible horizontal placeholder
+        #horrible horizontal placeholder
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=18,
-                               column=0,
-                               sticky=tk.NSEW)
+                                column=0,
+                                sticky=tk.NSEW)
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=18,
-                               column=1,
-                               sticky=tk.NSEW)
+                                column=1,
+                                sticky=tk.NSEW)
 
         ttk.Label(self.book_scanning_menu,
                   width=8).grid(row=18,
-                               column=2,
-                               sticky=tk.NSEW)
+                                column=2,
+                                sticky=tk.NSEW)
 
         self.book_scan_toggle = ttk.Button(self.book_scanning_menu,
-                                          text="Start",
-                                          command=self.bookmark_toggle,
-                                          )
+                                           text="Start",
+                                           command=self.bookmark_toggle,
+                                           )
         t_book_scan_toggle = ToolTip(self.book_scan_toggle,
                                      follow_mouse=1,
                                      text="Start a bookmark scan.")
         self.book_scan_toggle.grid(row=18,
-                                  column=2,
-                                  columnspan=1,
-                                  padx=2,
-                                  sticky=tk.W)
+                                   column=2,
+                                   columnspan=1,
+                                   padx=2,
+                                   sticky=tk.W)
 
         self.book_lockout = ttk.Button(self.book_scanning_menu,
-                                          text="Lock",
-                                          command=self.bookmark_lockout,
-                                          )
+                                       text="Lock",
+                                       command=self.bookmark_lockout,
+                                      )
         t_book_lockout = ToolTip(self.book_lockout,
-                                     follow_mouse=1,
-                                     text="Toggle skipping selected bookmark.")
+                                 follow_mouse=1,
+                                 text="Toggle skipping selected bookmark.")
         self.book_lockout.grid(row=18,
-                                  column=3,
-                                  columnspan=1,
-                                  padx=2,
-                                  sticky=tk.W)
+                               column=3,
+                               columnspan=1,
+                               padx=2,
+                               sticky=tk.W)
 
         # horizontal separator
         ttk.Frame(self.book_scanning_menu).grid(row=19,
-                                  column=0,
-                                  columnspan=3,
-                                  rowspan=1,
-                                  pady=5)
+                                                column=0,
+                                                columnspan=3,
+                                                rowspan=1,
+                                                pady=5)
 
         self.control_menu = LabelFrame(self, text="Options")
 
         self.control_menu.grid(row=5,
-                       column=3,
-                        #rowspan=3,
-                       stick=tk.NSEW)
+                               column=3,
+                               stick=tk.NSEW)
 
         self.cb_top = tk.BooleanVar()
         self.ckb_top = RCCheckbutton(self.control_menu,
@@ -846,10 +842,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.cb_save_exit = tk.BooleanVar()
         self.ckb_save_exit = RCCheckbutton(self.control_menu,
-                                             text="Save on exit",
-                                             onvalue=True,
-                                             offvalue=False,
-                                             variable=self.cb_save_exit)
+                                           text="Save on exit",
+                                           onvalue=True,
+                                           offvalue=False,
+                                           variable=self.cb_save_exit)
         self.ckb_save_exit.grid(row=21,
                                 column=1,
                                 columnspan=1,
@@ -864,18 +860,18 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                                    text="Quit",
                                    command=lambda: self.shutdown(ac))
         t_btn_quit = ToolTip(self.btn_quit,
-                    follow_mouse=1,
-                    text="Exit rig-remote.")
+                             follow_mouse=1,
+                             text="Exit rig-remote.")
         self.btn_quit.grid(row=21,
                            column=3,
                            columnspan=1,
                            sticky=tk.SE)
 
-#        # horizontal separator
+        # horizontal separator
         ttk.Frame(self.control_menu).grid(row=22,
-                                  column=0,
-                                  columnspan=3,
-                                  pady=5)
+                                          column=0,
+                                          columnspan=3,
+                                          pady=5)
 
     def focus_set(self, event) :
         """Give focus to screen object in click event. Used to
@@ -915,7 +911,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
             eflag = True
         # Test positive integer values
-        for key in ("port", "interval", "delay", "passes", "range_min", "range_max") :
+        for key in ("port",
+                    "interval",
+                    "delay",
+                    "passes",
+                    "range_min",
+                    "range_max") :
             ekey = "txt_" + key
             if str.isdigit(ac.config[key].replace(',','')) :
                 self.params[ekey].insert(0, ac.config[key])
@@ -931,10 +932,12 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         else:
             self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
         if eflag :
-            tkMessageBox.showerror("Config File Error", "One (or more) of the values in the config file was invalid, "\
-                                   "and the default was used instead.", parent = self)
+            tkMessageBox.showerror("Config File Error", "One (or more) "\
+                                   "of the values in the config file was "\
+                                   "invalid, and the default was used "\
+                                   "instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
-            ac.config["auto_bookmark"].lower())
+                ac.config["auto_bookmark"].lower())
         self.params["ckb_record"].set_str_val(ac.config["record"].lower())
         self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
         self.params["ckb_log"].set_str_val(ac.config["log"].lower())
@@ -952,7 +955,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             elif self.params[key].winfo_class() == "TCheckbutton" :
                 self.params_last_content[key] = self.params[key].is_checked()
 
-    def _store_conf(self, ac):  #pragma: no cover
+    def _store_conf(self, ac):
         """populates the ac object reading the info from the UI
         :param ac: object used to hold the app configuration.
         :type ac: AppConfig() object
@@ -976,7 +979,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         return ac
 
 
-    def shutdown(self,ac):  #pragma: no cover
+    def shutdown(self,ac):
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
         :param ac: object that represent the UI configuration
@@ -990,7 +993,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             ac.write_conf()
         self.master.destroy()
 
-    def bookmark(self, task, delimiter):  #pragma: no cover
+    def bookmark(self, task, delimiter):
         """Bookmarks handling. loads and saves the bookmarks as
         a csv file.
         :param task: either load or save
@@ -1021,7 +1024,9 @@ class RigRemote(ttk.Frame):  #pragma: no cover
                     if line[BM.mode] not in CBB_MODES :
                         error = True
                     if error == True :
-                        tkMessageBox.showerror("Error", "Invalid value in Bookmark #%i. Skipping..." %count)
+                        tkMessageBox.showerror("Error", "Invalid value in "\
+                                               "Bookmark #%i. "\
+                                               "Skipping..." %count)
                     else :
                         item = self.tree.insert('', tk.END, values=line)
                         self.bookmark_bg_tag(item, line[BM.lockout])
@@ -1234,7 +1239,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         logger.warning(message)
         return message
 
-    def _clear_form(self):  #pragma: no cover
+    def _clear_form(self):
         """Clear the form.. nothing more.
         :param: none
         :raises: none
@@ -1245,7 +1250,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_description"].delete(0, tk.END)
         self.params["cbb_mode"].delete(0, tk.END)
 
-    def _add_new_bookmarks(self, nbl):  #pragma: no cover
+    def _add_new_bookmarks(self, nbl):
         """Fill in the data, calls uses cb_add() and calls clear_form.
         :param nbl: list of new frequencies to bookmark
         :type nbl: list
@@ -1255,14 +1260,16 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self._clear_form()
         for nb in nbl:
-            self.params["txt_description"].insert(0, "activity on {}".format(nb["time"]))
-            self.params["txt_frequency"].insert(0, self._frequency_pp(str(nb["freq"])))
+            self.params["txt_description"].insert(0,
+                                                  "activity on {}".format(nb["time"]))
+            self.params["txt_frequency"].insert(0,
+                                                self._frequency_pp(str(nb["freq"])))
             self.params["cbb_mode"].insert(0,nb["mode"])
             # adding bookmark to the list
             self.cb_add(True)
             self._clear_form()
 
-    def toggle_cb_top(self, *args):  #pragma: no cover
+    def toggle_cb_top(self, *args):
         """Set window property to be always on top.
         :param: none
         :raises: none
@@ -1271,7 +1278,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         self.master.attributes("-topmost", self.ckb_top.val.get())
 
-    def cb_get_frequency(self):  #pragma: no cover
+    def cb_get_frequency(self):
         """Get current rig frequency and mode.
         :param: none
         :raises: none
@@ -1284,14 +1291,15 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             frequency = self.rigctl.get_frequency()
             mode = self.rigctl.get_mode()
             # update fields
-            self.params["txt_frequency"].insert(0, self._frequency_pp(frequency))
+            self.params["txt_frequency"].insert(0,
+                                                self._frequency_pp(frequency))
             self.params["cbb_mode"].insert(0, mode)
         except Exception as err:
             tkMessageBox.showerror("Error",
-                                         "Could not connect to rig.\n%s" % err,
-                                         parent=self)
+                                   "Could not connect to rig.\n%s" % err,
+                                   parent=self)
 
-    def cb_set_frequency(self, event):  #pragma: no cover
+    def cb_set_frequency(self, event):
         """Set the rig frequency and mode.
         :param event: not used?
         :type event:
@@ -1306,10 +1314,10 @@ class RigRemote(ttk.Frame):  #pragma: no cover
             self.rigctl.set_mode((values[1]))
         except Exception as err:
             tkMessageBox.showerror("Error",
-                                         "Could not set frequency.\n%s" % err,
-                                         parent=self)
+                                   "Could not set frequency.\n%s" % err,
+                                   parent=self)
 
-    def cb_autofill_form(self, event):  #pragma: no cover
+    def cb_autofill_form(self, event):
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
         :param event: not used?
@@ -1325,7 +1333,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.params["txt_frequency"].insert(0, values[0])
         self.params["txt_description"].insert(0, values[2])
 
-    def cb_add(self, silent = False):  #pragma: no cover
+    def cb_add(self, silent = False):
         """Add frequency to tree and saves the bookmarks.
         :param: none
         :raises: none
@@ -1374,7 +1382,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         # save
         self.bookmark("save", ",")
 
-    def cb_delete(self):  #pragma: no cover
+    def cb_delete(self):
         """Delete frequency from tree.
         :param: none
         :raises: none
@@ -1388,7 +1396,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
         self.bookmark("save", ",")
         self._clear_form()
 
-    def _frequency_pp(self, frequency):  #pragma: no cover
+    def _frequency_pp(self, frequency):
         """Filter invalid chars and add thousands separator.
         :param frequency: frequency value
         :type frequency: string
@@ -1398,7 +1406,7 @@ class RigRemote(ttk.Frame):  #pragma: no cover
 
         return '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
 
-    def _frequency_pp_parse(self, frequency):  #pragma: no cover
+    def _frequency_pp_parse(self, frequency):
         """Remove thousands separator and check for invalid chars.
         :param frequency: frequency value
         :type frequency: string
