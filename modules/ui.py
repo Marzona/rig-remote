@@ -1167,7 +1167,7 @@ class RigRemote(ttk.Frame):
 
         :param mode: bookmark or frequency
         :type mode: string
-        :param action: only start, for now
+        :param action: supported actions defined in UPPORTED_SCANNING_ACTIONS
         :type action: string
         :raises: NotImplementedError if action different than "start" is passed
         :returns: None
@@ -1180,6 +1180,7 @@ class RigRemote(ttk.Frame):
             raise UnsupportedScanningConfigError
 
         if action.lower() == "stop" and self.scan_thread != None:
+            # there is a scan ongoing and we want to terminate it
             self.scanning.terminate()
             self.scan_thread.join()
             self.scan_thread = None
@@ -1191,32 +1192,36 @@ class RigRemote(ttk.Frame):
             return
 
         if (action.lower() == "start" and self.scan_thread != None) :
+            # we are already scanning, so another start is ignored
             return
+
         if (action.lower() == "stop" and self.scan_thread == None) :
+            # we already stopped scanning, another stop is ignored
             return
 
-        scanq = self.scanq
-        self.scan_mode = mode.lower()
-        bookmarks = self.tree
-        pass_params = dict.copy(self.params)
+        if (action.lower() == "start" and self.scan_thread == None) :
+            # there is no ongoing scan task and we want to start one
+            scanq = self.scanq
+            bookmarks = self.tree
+            pass_params = dict.copy(self.params)
 
-        if mode.lower() == "frequency" :
-            button = self.freq_scan_toggle
-        else :
-            button = self.book_scan_toggle
+            if mode == "frequency" :
+                button = self.freq_scan_toggle
+            else :
+                button = self.book_scan_toggle
 
-        nbl = self.new_bookmark_list
+            nbl = self.new_bookmark_list
 
-        task = ScanningTask(scanq,
-                            mode,
-                            bookmarks,
-                            nbl,
-                            button,
-                            pass_params)
-        self.scanning = Scanning()
-        self.scan_thread = threading.Thread(target = self.scanning.scan,
-                                            args = (task,))
-        self.scan_thread.start()
+            task = ScanningTask(scanq,
+                                mode,
+                                bookmarks,
+                                nbl,
+                                button,
+                                pass_params)
+            self.scanning = Scanning()
+            self.scan_thread = threading.Thread(target = self.scanning.scan,
+                                                args = (task,))
+            self.scan_thread.start()
 
 # Leaving this code to remind me to deal with this
 #        
