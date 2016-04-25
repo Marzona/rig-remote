@@ -68,6 +68,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan. Bookmarks are processed once the
                    scan thread has completed. Only one bookmark per frequency. (If logging enabled, all
                    occurences are logged.)
+
+2016/04/29 - TAS - Changed communications between main and scan threads to use STMessenger class, to
+                   enable thread-safe notification of scan thread termination (Issue #30).
 """
 
 # import modules
@@ -103,6 +106,7 @@ import threading
 import itertools
 from Queue import Queue
 import re
+from modules.stmessenger import STMessenger
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -280,6 +284,7 @@ class RigRemote(ttk.Frame):
 
     def __init__(self, root, ac):
         ttk.Frame.__init__(self, root)
+        self.root = root
         self.bookmarks_file = BOOKMARKS_FILE
         self.log_file = None
         self.params = {}
@@ -294,10 +299,9 @@ class RigRemote(ttk.Frame):
         self.scan_mode = None
         self.scanning = None
         self.selected_bookmark = None
-        self.scanq = Queue()
+        self.scanq = STMessenger()
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event:self.focus_set(event))
-
 
     def build(self, ac):
         """Build and initialize the GUI widgets.
@@ -1127,7 +1131,7 @@ class RigRemote(ttk.Frame):
             return
         if self.scan_thread != None :
             event_list = (event_name, event_value)
-            self.scanq.put(event_list)
+            self.scanq.send_event_update(event_list)
             self.params_last_content[event_name] = event_value
 
     """ Methods to handle checkbutton updates
@@ -1160,8 +1164,20 @@ class RigRemote(ttk.Frame):
         :returns: None
         """
         if self.scan_thread != None :
-            self.scanq.put(event_list)
+            self.scanq.send_event_update(event_list)
             self.params_last_content[event_list[0]] = event_list[1]
+
+    def check_scanthread(self):
+        """Check it the scan thread has sent us a termination signal.
+        :returns: None
+        """
+        if self.scanq.check_end_of_scan():
+            if self.scan_mode == 'frequency':
+                self.frequency_toggle()
+            else:
+                self.bookmark_toggle()
+        else:
+            self.after(1000, self.check_scanthread)
 
     def _scan(self, mode, action):
         """Wrapper around the scanning class instance. Creates the task
@@ -1190,7 +1206,6 @@ class RigRemote(ttk.Frame):
                 self._add_new_bookmarks(self.new_bookmark_list)
                 self.new_bookmark_list = []
             self.scan_mode = None
-
             return
 
         if (action.lower() == "start" and self.scan_thread != None) :
@@ -1203,35 +1218,22 @@ class RigRemote(ttk.Frame):
 
         if (action.lower() == "start" and self.scan_thread == None) :
             # there is no ongoing scan task and we want to start one
+            self.scan_mode = mode
             scanq = self.scanq
             bookmarks = self.tree
             pass_params = dict.copy(self.params)
-
-            if mode == "frequency" :
-                button = self.freq_scan_toggle
-            else :
-                button = self.book_scan_toggle
-
             nbl = self.new_bookmark_list
 
             task = ScanningTask(scanq,
                                 mode,
                                 bookmarks,
                                 nbl,
-                                button,
                                 pass_params)
             self.scanning = Scanning()
             self.scan_thread = threading.Thread(target = self.scanning.scan,
                                                 args = (task,))
             self.scan_thread.start()
-
-# Leaving this code to remind me to deal with this
-#        
-#        if (task.mode.lower() == "frequency" and 
-#            len(task.new_bookmark_list) > 0 and 
-#            (len(self.params["ckb_auto_bookmark"].state()) == 1 and
-#             self.params["ckb_auto_bookmark"].state()== ('selected',))):
-#                 self._add_new_bookmarks(task.new_bookmark_list)
+            self.after(0, self.check_scanthread)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
@@ -1441,4 +1443,3 @@ class RigRemote(ttk.Frame):
             return (nocommas)
         else :
             return (None)
-

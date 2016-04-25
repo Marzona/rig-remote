@@ -57,6 +57,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/04/12 - TAS - Auto-bookmarking option restored on frequency scans. Proper time and mode
                    now recorded. New bookmarks are held in a list of dicts and processed by
                    the main thread once this thread has completed.
+
+2016/04/29 - TAS - Changed thread communications to use STMessenger class in support of resolving
+                   Issue #30. GUI interaction removed.
 """
 
 # import modules
@@ -72,6 +75,7 @@ from modules.constants import MIN_INTERVAL
 from modules.constants import MONITOR_MODE_DELAY
 from modules.constants import BM
 from modules.exceptions import UnsupportedScanningConfigError
+from modules.stmessenger import STMessenger
 import logging
 import time
 import re
@@ -98,15 +102,11 @@ class ScanningTask(object):
                  mode,
                  bookmarks,
                  nbl,
-                 stop_scan_button,
                  pass_params):
         """We do some checks to see if we are good to go with the scan.
 
         :param scanq: queue used send/receive events from the UI.
         :type scanq: Queue object
-        :param stop_scan_button: param pointing to the proper stop button (it
-        can be Frequency or Bookmarks)
-        :type stop_scan_button:tkk_button
         :param pass_params: configuration parameters
         :type pass_params: standard python dictionary
         :param mode: scanning mode, either bookmark or frequency
@@ -132,7 +132,6 @@ class ScanningTask(object):
             raise UnsupportedScanningConfigError
 
         self.mode = mode
-        self.stop_scan_button = stop_scan_button
         self.params = pass_params
 
         try:
@@ -231,7 +230,7 @@ class Scanning(object):
                 self.scan_active = False
             interval = khertz_to_hertz(task.params["interval"])
             while freq < task.params["range_max"]:
-                if not task.scanq.empty():
+                if task.scanq.update_queued():
                     self.process_queue(task)
                     freq = task.params["range_min"]
                     pass_count = task.params["passes"]
@@ -272,8 +271,7 @@ class Scanning(object):
                     self.scan_active = False
                 else:
                     time.sleep(MONITOR_MODE_DELAY)
-        task.stop_scan_button.event_generate("<Button-1>")
-        task.stop_scan_button.event_generate("<ButtonRelease-1>")
+        task.scanq.notify_end_of_scan()
         return task
 
     def _signal_check(self, sgn_level, rigctl, detected_level):
@@ -319,7 +317,7 @@ class Scanning(object):
         level = []
         pass_count = task.params["passes"]
         while self.scan_active:
-            if not task.scanq.empty():
+            if task.scanq.update_queued():
                 self.process_queue(task)
                 pass_count = task.params["passes"]
             for item in task.bookmarks.get_children():
@@ -362,14 +360,13 @@ class Scanning(object):
                     self.scan_active = False
                 else:
                     time.sleep(MONITOR_MODE_DELAY)
-        task.stop_scan_button.event_generate("<Button-1>")
-        task.stop_scan_button.event_generate("<ButtonRelease-1>")
+        task.scanq.notify_end_of_scan()
         return task
 
     def process_queue(self, task):
 
-        while not task.scanq.empty():
-            name, value = task.scanq.get()
+        while task.scanq.update_queued():
+            name, value = task.scanq.get_event_update()
             key = str(name.split("_", 1)[1])
             if key in ("range_min", "range_max"):
                 task.params[key] = khertz_to_hertz(value)
@@ -377,5 +374,4 @@ class Scanning(object):
                 task.params[key] = value
             logger.info("Queue passed %s %i", name, value)
             logger.info("Params[%s] = %s", key, task.params[key])
-            task.scanq.task_done()
 

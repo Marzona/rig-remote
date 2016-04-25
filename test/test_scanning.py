@@ -48,7 +48,6 @@ def scan_task():
     mode = "bookmarks"
     bookmark_list = []
     new_bookmark_list = []
-    stop_scan_button = None
     params["txt_range_min"] = TestStr("100")
     params["txt_range_max"] = TestStr("50")
     params["txt_delay"] = TestStr("1")
@@ -63,7 +62,6 @@ def scan_task():
                              mode,
                              bookmark_list,
                              new_bookmark_list,
-                             stop_scan_button,
                              params)
     return scan_task
 
@@ -87,7 +85,6 @@ def test_unsupported_scan_mode():
     mode = "test"
     bookmark_list = []
     new_bookmark_list = []
-    stop_scan_button = None
     params["txt_range_min"] = TestStr("100")
     params["txt_range_max"] = TestStr("50")
     params["txt_delay"] = TestStr("1")
@@ -104,7 +101,6 @@ def test_unsupported_scan_mode():
                                  mode,
                                  bookmark_list,
                                  new_bookmark_list,
-                                 stop_scan_button,
                                  params)
 
 
@@ -112,7 +108,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "test",
            "50",
            "1",
@@ -127,7 +122,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "10",
            "test",
            "1",
@@ -142,7 +136,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "10",
            "50",
            "test",
@@ -157,7 +150,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "10",
            "50",
            "1",
@@ -172,7 +164,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "10",
            "50",
            "1",
@@ -187,7 +178,6 @@ testdata=[(None,
            "bookmarks",
            [],
            [],
-           None,
            "10",
            "50",
            "1",
@@ -200,8 +190,8 @@ testdata=[(None,
            False)]
 
 @pytest.mark.parametrize(
-"scanq, mode, bookmark_list, new_bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark", testdata)
-def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, stop_scan_button, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark):
+"scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark", testdata)
+def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark):
     with pytest.raises(ValueError):
 
         params = {}
@@ -220,5 +210,4 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, stop_scan_butt
                      mode,
                      bookmark_list,
                      new_bookmark_list,
-                     stop_scan_button,
                      params)
