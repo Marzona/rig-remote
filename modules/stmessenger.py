@@ -43,7 +43,7 @@ class STMessenger (object):
         if isinstance(event_list, tuple) and len(event_list) == 2:
             self.mqueue.send_to_child(event_list)
         else:
-            logger.error:("Event list:{}".format(event_list))
+            logger.error("Event list:{}".format(event_list))
             raise ValueError("Bad event update attempt.")
 
     def update_queued(self):
