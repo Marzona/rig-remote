@@ -258,7 +258,8 @@ class Scanning(object):
                     task.new_bookmark_list.append(nbm)
                     if task.params["log"]:
                         log.write('F', nbm, level[0])
-                    time.sleep(task.params["delay"])
+                    if self.scan_active:
+                        time.sleep(task.params["delay"])
                     if task.params["record"]:
                         rigctl.stop_recording()
                         logger.info("Recording stopped.")
@@ -340,12 +341,14 @@ class Scanning(object):
                         logger.info("Recording started.")
                     if task.params["log"]:
                         log.write('B', bookmark, level[0])
-                    time.sleep(task.params["delay"])
+                    if self.scan_active:
+                        time.sleep(task.params["delay"])
                     while task.params["wait"]:
                         while self._signal_check(
                                 task.params["sgn_level"], rigctl, level) and self.scan_active:
                             continue
-                        time.sleep(task.params["delay"])
+                        if self.scan_active:
+                            time.sleep(task.params["delay"])
                         if not (self._signal_check(
                                 task.params["sgn_level"], rigctl, level)) or not self.scan_active:
                             break
