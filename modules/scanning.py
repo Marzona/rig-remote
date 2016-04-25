@@ -343,11 +343,11 @@ class Scanning(object):
                     time.sleep(task.params["delay"])
                     while task.params["wait"]:
                         while self._signal_check(
-                                task.params["sgn_level"], rigctl, level):
+                                task.params["sgn_level"], rigctl, level) and self.scan_active:
                             continue
                         time.sleep(task.params["delay"])
                         if not (self._signal_check(
-                                task.params["sgn_level"], rigctl, level)):
+                                task.params["sgn_level"], rigctl, level)) or not self.scan_active:
                             break
                     if task.params["record"]:
                         rigctl.stop_recording()
