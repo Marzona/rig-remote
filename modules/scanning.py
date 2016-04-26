@@ -255,7 +255,7 @@ class Scanning(object):
                         nbm["freq"] = freq
                         nbm["mode"] = rigctl.get_mode()
                         nbm["time"] = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
-                    task.new_bookmark_list.append(nbm)
+                        task.new_bookmark_list.append(nbm)
                     if task.params["log"]:
                         log.write('F', nbm, level[0])
                     if self.scan_active:
