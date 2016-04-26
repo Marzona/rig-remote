@@ -1177,8 +1177,7 @@ class RigRemote(ttk.Frame):
             else:
                 self.bookmark_toggle()
         else:
-            if self.scan_thread != None:
-                self.after(1000, self.check_scanthread)
+            self.after(1000, self.check_scanthread)
 
     def _scan(self, mode, action):
         """Wrapper around the scanning class instance. Creates the task

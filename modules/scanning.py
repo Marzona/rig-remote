@@ -240,7 +240,7 @@ class Scanning(object):
                 try:
                     rigctl.set_frequency(freq)
                 except Exception:
-                    logger.exception("Communications Error!")
+                    logger.warning("Communications Error!")
                     self.scan_active = False
                     break
                 time.sleep(TIME_WAIT_FOR_TUNE)
@@ -329,7 +329,7 @@ class Scanning(object):
                 try:
                     rigctl.set_frequency(bookmark[BM.freq].replace(',', ''))
                 except Exception:
-                    logger.exception("Communications Error!")
+                    logger.warning("Communications Error!")
                     self.scan_active = False
                     break
                 time.sleep(TIME_WAIT_FOR_TUNE)
