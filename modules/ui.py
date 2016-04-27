@@ -89,6 +89,7 @@ from modules.constants import UNKNOWN_MODE
 from modules.constants import LEN_BM
 from modules.constants import BM
 from modules.constants import DEFAULT_CONFIG
+from modules.constants import UI_EVENT_TIMER_DELAY
 from modules.app_config import AppConfig
 from modules.exceptions import UnsupportedScanningConfigError
 from modules.exceptions import InvalidPathError
@@ -1178,7 +1179,7 @@ class RigRemote(ttk.Frame):
                 self.bookmark_toggle()
         else:
             if self.scan_thread != None:
-                self.after(1000, self.check_scanthread)
+                self.after(TIMER_DELAY self.check_scanthread)
 
     def _scan(self, mode, action):
         """Wrapper around the scanning class instance. Creates the task
