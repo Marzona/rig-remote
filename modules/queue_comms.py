@@ -17,7 +17,7 @@ Copyright (c) 2106 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
-2016/04/29 - TAS - Generic thread queue class QueueComms created. Instantiates two queues and
+2016/04/24 - TAS - Generic thread queue class QueueComms created. Instantiates two queues and
                    provides simple access methods for them.
 
 """
