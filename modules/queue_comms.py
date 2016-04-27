@@ -110,8 +110,8 @@ class QueueComms (object):
             not isinstance (queue, Queue)):
             logger.error("Value error while inserting a signal into a queue.")
             logger.error("Value to be inserted isn't int.")
-            logger.error("Value type: {}".format (type(signal_number))
-            raise ValueError
+            logger.error("Value type: {}".format (type(signal_number)))
+            raise ValueError()
 
         queue.put(signal_number)
 
