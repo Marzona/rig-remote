@@ -69,7 +69,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    scan thread has completed. Only one bookmark per frequency. (If logging enabled, all
                    occurences are logged.)
 
-2016/04/29 - TAS - Changed communications between main and scan threads to use STMessenger class, to
+2016/04/24 - TAS - Changed communications between main and scan threads to use STMessenger class, to
                    enable thread-safe notification of scan thread termination (Issue #30).
 """
 

@@ -17,9 +17,8 @@ Copyright (c) 2106 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
-2016/04/29 - TAS - STMessenger class created to facilitate specific comm needs between scan and
+2016/04/24 - TAS - STMessenger class created to facilitate specific comm needs between scan and
                    main threads, using QueueComms class.
-
 """
 
 
