@@ -22,7 +22,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 # import modules
-from Queue import Queue, Empty
+from Queue import Queue, Empty, Full
 import logging
 
 # logging configuration
@@ -66,7 +66,7 @@ class QueueComms (object):
 
 
     def _get_from_queue(self, queue):
-        """ retrieve an item from the queue.Wrapped by get_from_child and
+        """ retrieve an item from the queue. Wrapped by get_from_child and
         get_from_parent.
 
         :returns: item or None
@@ -94,6 +94,32 @@ class QueueComms (object):
         """
 
         return self._get_from_queue(self.child_queue)
+
+
+    def _send_to_queue(self, queue, item):
+        """ place an item on the queue. Wrapped by send_to_child and
+        send_to_parent.
+
+        :param queue: queue to put item on.
+        :type: Queue
+        :returns: None
+        """
+        try:
+            queue.put(item, False)
+        except Full:
+            logger.warning("Queue {} is full.".format(queue) )
+
+
+    def send_to_parent(self, item):
+        """Wrapper for _send_to_queue"""
+
+        self._send_to_queue(self.parent_queue, item)
+
+
+    def send_to_child(self, item):
+        """Wrapper for _send_to_queue"""
+
+        self._send_to_queue(self.child_queue, item)
 
 
     def _signal(self, queue, signal_number):
