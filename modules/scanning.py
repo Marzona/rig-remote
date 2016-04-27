@@ -369,7 +369,10 @@ class Scanning(object):
     def process_queue(self, task):
 
         while task.scanq.update_queued():
-            name, value = task.scanq.get_event_update()
+            try:
+                name, value = task.scanq.get_event_update()
+            except NoneType:
+                name = value = None
             key = str(name.split("_", 1)[1])
             if key in ("range_min", "range_max"):
                 task.params[key] = khertz_to_hertz(value)
