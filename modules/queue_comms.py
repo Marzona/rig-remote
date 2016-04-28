@@ -24,6 +24,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 # import modules
 from Queue import Queue, Empty, Full
 import logging
+from modules.constants import QUEUE_MAX_SIZE
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -37,8 +38,8 @@ class QueueComms (object):
         if we reach it we are in big trouble..
         """
 
-        self.parent_queue = Queue(maxsize=10)
-        self.child_queue = Queue(maxsize=10)
+        self.parent_queue = Queue(maxsize=QUEUE_MAX_SIZE)
+        self.child_queue = Queue(maxsize=QUEUE_MAX_SIZE)
 
     def queued_for_child(self):
         """wrapper on self._queue_for()
@@ -54,7 +55,7 @@ class QueueComms (object):
 
         return self._queued_for(self.parent_queue)
 
-    def _queued_for(self, queue):
+    def _queued_for(self, queue_name):
         """Check if item is waiting on a queue.
 
         :returns: True if item waiting
@@ -62,7 +63,7 @@ class QueueComms (object):
         :type queue: Queue() object
         """
 
-        return (not queue.empty())
+        return (not queue_name.empty())
 
 
     def _get_from_queue(self, queue):
@@ -108,6 +109,7 @@ class QueueComms (object):
             queue.put(item, False)
         except Full:
             logger.warning("Queue {} is full.".format(queue) )
+            raise
 
 
     def send_to_parent(self, item):
@@ -139,7 +141,7 @@ class QueueComms (object):
             logger.error("Value type: {}".format (type(signal_number)))
             raise ValueError()
 
-        queue.put(signal_number)
+        queue.put(signal_number, False)
 
 
     def signal_parent(self, signal_number):

@@ -93,3 +93,4 @@ class BM(object):
 LOG_FILE_NAME="rig-remote-log.txt"
 
 UI_EVENT_TIMER_DELAY = 1000
+QUEUE_MAX_SIZE = 10
