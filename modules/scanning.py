@@ -70,7 +70,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 import datetime
 from modules.rigctl import RigCtl
-from modules.disk_io import Log_file
+from modules.disk_io import LogFile
 from modules.constants import SUPPORTED_SCANNING_MODES
 from modules.constants import TIME_WAIT_FOR_TUNE
 from modules.constants import SIGNAL_CHECKS
@@ -224,7 +224,7 @@ class Scanning(object):
         """
 
         rigctl = RigCtl()
-        log = Log_file()
+        log = LogFile()
         log.open()
         if task and task.mode.lower() == "bookmarks":
             task = self._bookmarks(task, rigctl, log)

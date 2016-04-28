@@ -38,7 +38,7 @@ class AppConfig(object):
 
     """
 
-    def __init__(self, alternate_config_file):  #pragma: no cover
+    def __init__(self, alternate_config_file):
         """Default config, they will be overwritten when a conf is loaded
         this will be used to write a default config file.
         If the command line specifies a config file we note it in
@@ -63,7 +63,7 @@ class AppConfig(object):
             self.config_file = os.path.join(os.path.expanduser('~'),
                                             self.default_config_file)
 
-    def read_conf(self):  # pragma: no cover
+    def read_conf(self):
         """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
         and then we re-read it. It logs an error if a line of the file is not
@@ -73,7 +73,6 @@ class AppConfig(object):
         :raises: none
         :returns: none
         """
-
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")

@@ -69,7 +69,6 @@ class IO(object):
         """
 
         self._path_check(csv_file)
-
         try:
             with open(csv_file, 'r') as data_file:
                 reader = csv.reader(data_file, delimiter=delimiter)
@@ -77,13 +76,13 @@ class IO(object):
                     self.row_list.append(line)
 
         except csv.Error:
-            logger.error("The file  provided({})"\
-                         " is not a file with values "\
-                         "separated by {}.".format(csv_file, delimiter))
+            logger.exception("The file  provided({})"\
+                             " is not a file with values "\
+                             "separated by {}.".format(csv_file, delimiter))
 
         except (IOError, OSError):
-            logger.error("Error while trying to read the file: "\
-                         "{}".format(csv_file))
+            logger.exception("Error while trying to read the file: "\
+                             "{}".format(csv_file))
 
     def csv_save(self, csv_file, delimiter):
         """Save current frequencies to disk.
@@ -103,7 +102,7 @@ class IO(object):
                          "{}".format(csv_file))
 
 
-class Log_file(object):
+class LogFile(object):
     """Handles the a tasks of logging to a file.
 
     """
@@ -122,7 +121,6 @@ class Log_file(object):
         :param name: log file name, defaults to None
         :type name: string
         """
-
         if name != None :
             self.log_filename = name
         try:
@@ -143,6 +141,11 @@ class Log_file(object):
         :raises IOError or OSError for any issue that happens while writing.
         """
 
+        if record_type not in ["B","F"]:
+            logger.error("Record type not supported, must be 'B' or 'F'"\
+                         "got {}".format(record_type))
+            raise TypeError
+
         if record_type == 'B' :
             lstr = 'B ' + str(datetime.datetime.today().strftime\
                               ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
@@ -155,9 +158,21 @@ class Log_file(object):
                 ' ' + str(signal) + "\n"
         try:
             self.log_file.write(lstr)
+        except AttributeError:
+            logger.exception("No log file provided, but log feature selected.")
+            raise
         except (IOError, OSError):
-            logger.error("Error while trying to write log file: "\
+            logger.exception("Error while trying to write log file: "\
                          "{}".format(self.log_filename))
+        except (TypeError, IndexError):
+            logger.exception("At least one of the parameter isn't of the "\
+                             "expected type:"\
+                             "record_type {},"\
+                             "record {},"\
+                             "signal {}".format(type(record_type),
+                                                type(record),
+                                                type(signal)))
+            raise
 
     def close(self):
         """Closes the log file.

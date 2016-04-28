@@ -114,13 +114,12 @@ logger = logging.getLogger(__name__)
 
 # class definition
 
-"""
-RCCheckbutton is derived from ttk.Checkbutton, and adds an 
-"is_checked" method to simplify checking instance's state, and
-new methods to return string state values for config file.
-"""
-
 class RCCheckbutton(ttk.Checkbutton) :
+    """
+    RCCheckbutton is derived from ttk.Checkbutton, and adds an 
+    "is_checked" method to simplify checking instance's state, and
+    new methods to return string state values for config file.
+    """
     def __init__(self,*args,**kwargs) :
         self.var = kwargs.get('variable', tk.BooleanVar())
         kwargs['variable'] = self.var
