@@ -379,7 +379,8 @@ class Scanning(object):
 
     def _process_queue(self, task):
         """Process the scan thread queue, updating parameter values
-           from the UI.
+           from the UI. Checks to make sure the event is a valid one,
+           else it's logged and dropped.
 
         :param: task: current task object
         :type: ScanningTask object
@@ -389,16 +390,26 @@ class Scanning(object):
 
         processed_something = False
         while task.scanq.update_queued():
-            processed_something = True
             try:
                 name, value = task.scanq.get_event_update()
             except NoneType:
-                name = value = None
-            key = str(name.split("_", 1)[1])
-            if key in ('range_min', 'range_max'):
-                task.params[key] = _khertz_to_hertz(value)
-            else:
-                task.params[key] = value
+                logger.warning("Event update attempt returned None.")
+                break
+            try:
+                key = str(name.split("_", 1)[1])
+                if key in task.params:
+                    if key in ('range_min', 'range_max'):
+                        task.params[key] = _khertz_to_hertz(value)
+                    else:
+                        task.params[key] = value
+                else:
+                    logger.warning("Invalid key in event update: {}".format(key))
+                    break
+            except Exception as e:
+                 logger.warning("Processing event update failed with {}".format(e))
+                 logger.warning("Event list: {} {}".format(name, value))
+                 break
+            processed_something = True
             logger.info("Queue passed %s %i", name, value)
             logger.info("Params[%s] = %s", key, task.params[key])
         return processed_something
