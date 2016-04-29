@@ -914,6 +914,11 @@ class RigRemote(ttk.Frame):
         else :
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
             eflag = True
+        if eflag :
+            tkMessageBox.showerror("Config File Error", "One (or more) "\
+                                   "of the values in the config file was "\
+                                   "invalid, and the default was used "\
+                                   "instead.", parent = self)
         # Test positive integer values
         for key in ("port",
                     "interval",
