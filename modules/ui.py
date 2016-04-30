@@ -1224,22 +1224,27 @@ class RigRemote(ttk.Frame):
 
         if (action.lower() == "start" and self.scan_thread == None) :
             # there is no ongoing scan task and we want to start one
-            self.scan_mode = mode
-            scanq = self.scanq
-            bookmarks = self.tree
-            pass_params = dict.copy(self.params)
-            nbl = self.new_bookmark_list
+            if len(self.tree.get_children()) == 0 and mode == "bookmarks":
+                tkMessageBox.showerror("Error",
+                                       "No bookmarks to scan.")
+                self.bookmark_toggle()
+            else:
+                self.scan_mode = mode
+                scanq = self.scanq
+                bookmarks = self.tree
+                pass_params = dict.copy(self.params)
+                nbl = self.new_bookmark_list
 
-            task = ScanningTask(scanq,
-                                mode,
-                                bookmarks,
-                                nbl,
-                                pass_params)
-            self.scanning = Scanning()
-            self.scan_thread = threading.Thread(target = self.scanning.scan,
-                                                args = (task,))
-            self.scan_thread.start()
-            self.after(0, self.check_scanthread)
+                task = ScanningTask(scanq,
+                                    mode,
+                                    bookmarks,
+                                    nbl,
+                                    pass_params)
+                self.scanning = Scanning()
+                self.scan_thread = threading.Thread(target = self.scanning.scan,
+                                                    args = (task,))
+                self.scan_thread.start()
+                self.after(0, self.check_scanthread)
 
     def _new_activity_message(self, nbl):
         """Provides a little formatting from the new bookmark list.
