@@ -73,7 +73,13 @@ def log_configuration(verbose):
     """
 
     os.environ["TZ"] = "UTC"
-    time.tzset()
+
+    # Windows doesn't support tzset. Ignore for now.
+    try:
+        time.tzset()
+    except AttributeError:
+        pass
+
     if verbose:
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s %(message)s",
