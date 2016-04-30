@@ -1111,7 +1111,7 @@ class RigRemote(ttk.Frame):
         event_value = event.widget.get()
         ekey = str(event_name.split("_",1)[1])
         if (event_value == "") or event_value.isspace() :
-            answer = tkMessageBox.askyesno("Error {} must have a value "\
+            answer = tkMessageBox.askyesno("Error", "{} must have a value "\
                                            "entered. Use the "\
                                            "default?".format(ekey))
             if answer :
@@ -1128,16 +1128,16 @@ class RigRemote(ttk.Frame):
                     event.widget.focus_set()
                     return
         try :
-            event_value = int(event.widget.get().replace(',',''))
+            event_value_int = int(event.widget.get().replace(',',''))
         except ValueError:
             tkMessageBox.showerror("Error",
                                    "Invalid input value in %s" % event_name)
             event.widget.focus_set()
             return
+        self.params_last_content[event_name] = event_value
         if self.scan_thread != None :
-            event_list = (event_name, event_value)
+            event_list = (event_name, event_value_int)
             self.scanq.send_event_update(event_list)
-            self.params_last_content[event_name] = event_value
 
     """ Methods to handle checkbutton updates
 
