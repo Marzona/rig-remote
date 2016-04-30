@@ -15,6 +15,7 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
 """
 
 import argparse
@@ -24,7 +25,6 @@ import time
 import Tkinter as tk
 from modules.ui import RigRemote
 from modules.app_config import AppConfig
-
 
 def input_arguments():
     """Argument parser.
@@ -43,9 +43,14 @@ def input_arguments():
         http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
         Author: Rafael Marmelo <rafael@defying.me>
+        Author: Simone Marzona
+        Additional features: Tim Sweeney <mainetim@gail.com>
+
         License: MIT License
 
-        Copyright (c) 2014 Rafael Marmelo""")
+        Copyright (c) 2014 Rafael Marmelo
+        Copyright (c) 2015 Simone Marzona
+        Copyright (c) 2016 Tim Sweeney""")
 
     parser.add_argument("--file",
                         "-f",
@@ -92,3 +97,6 @@ if __name__ == "__main__":
     app = RigRemote(root, ac)
     app.apply_config(ac)
     app.mainloop()
+    if app.scan_thread != None :
+        app.scanning.terminate()
+

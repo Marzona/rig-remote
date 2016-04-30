@@ -1,14 +1,21 @@
-rig-remote
-===========
+rig-remote devel version notes
+-------------------------------
 
-started as a fork of https://github.com/marmelo/gqrx-remote, in https://github.com/marzona/gqrx-remote I ended up adding features and rewriting all of the previous code exiting the original scope of the tool.
-After sending some pull request I created this new repo with an updated project name.
+Added Features
+--------------
 
+- Threaded scanning of bookmarks or frequency blocks, in "police scanner" fashion.
+- Selectable infinite or limited passes.
+- Selectable fixed pause on signal detection, or "wait on signal", where the scan will pause on a detected signal until the frequency is clear for a specified time.
+- Lockout of selected bookmarks.
+- Selectable logging of scanning activity to a file.
+- On-the-fly updates of scanning parameters during active scan operation.
+- Additional user input validation checks and validation of config and bookmark files.
 
-Remotely control software radio receivers that implement rigctl protocol, like [gqrx](http://gqrx.dk/),
-while keeping your bookmarks in order.
+TODOs/desired enhancements are listed in the issues section.
+If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
-rigctl: (http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation) protocol (which is [partially implemented since gqrx v2.3](http://gqrx.dk/doc/remote-control)).
+All implemented features are functional and tested, but likely that bugs are hiding in there somewhere.
 
 ![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
@@ -93,4 +100,5 @@ The file ```rig-bookmarks.csv``` consists on a standard comma-separated values f
 
 1090000000,FM,ADBS
 ```
+=======
 
