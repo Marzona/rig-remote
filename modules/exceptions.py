@@ -32,3 +32,4 @@ class UnsupportedScanningConfigError(NonRetriableError):
 
 class RetriableError (object):
     pass
+
