@@ -1,4 +1,4 @@
-rig-remote devel version notes
+rig-remote Version 2
 -------------------------------
 
 Added Features
@@ -15,10 +15,10 @@ Added Features
 TODOs/desired enhancements are listed in the issues section.
 If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
-All implemented features are functional and tested, but likely that bugs are hiding in there somewhere.
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote-fork.png)
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
+Version 1
 
 Features/changes
 --
