@@ -25,10 +25,4 @@ def test_get_connection_refused(hostname, port):
     with pytest.raises(socket.error):
         rigctl.get_frequency()
 
-#@pytest.mark.parametrize("cmd", testdata2)
-#def test_request(hostname, port):
-#    DEFAULT_CONFIG["hostname"] = "test"
-#    DEFAULT_CONFIG["port"] = "test"
-#    rigctl = RigCtl()
-#    with pytest.raises(socket.error):
-#        rigctl._request("F 10000")
+
