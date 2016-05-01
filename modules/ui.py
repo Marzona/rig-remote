@@ -407,6 +407,8 @@ class RigRemote(ttk.Frame):
         t_txt_hostname = ToolTip(self.params["txt_hostname"],
                                  follow_mouse=1,
                                  text="Hostname to connect.")
+        self.params["txt_hostname"].bind("<Return>", self.process_rig_config_entry)
+        self.params["txt_hostname"].bind("<FocusOut>", self.process_rig_config_entry)
 
         ttk.Label(self.rig_config_menu,
                   text="Port:").grid(row=2,
@@ -422,6 +424,8 @@ class RigRemote(ttk.Frame):
         t_txt_port = ToolTip(self.params["txt_port"],
                              follow_mouse=1,
                              text="Port to connect.")
+        self.params["txt_port"].bind("<Return>", self.process_rig_config_entry)
+        self.params["txt_port"].bind("<FocusOut>", self.process_rig_config_entry)
 
         # horizontal separator
         ttk.Frame(self.rig_config_menu).grid(row=3,
@@ -958,8 +962,8 @@ class RigRemote(ttk.Frame):
                              self.params["txt_port"].get())
         # Here we create a copy of the params dict to use when
         # checking validity of new input
-        for key in self.params :            
-            if self.params[key].winfo_class() == "TEntry" :
+        for key in self.params :
+            if self.params[key].winfo_class() == "TEntry":
                 self.params_last_content[key] = self.params[key].get()
             elif self.params[key].winfo_class() == "TCheckbutton" :
                 self.params_last_content[key] = self.params[key].is_checked()
@@ -1096,6 +1100,55 @@ class RigRemote(ttk.Frame):
             self.freq_scan_toggle.config(text = next(icycle))
             self._scan("frequency", action)
 
+    def process_rig_config_entry(self, event):
+
+        event_name = str(event.widget).split('.')[-1]
+        event_value = event.widget.get()
+        if event_name == "txt_hostname":
+            self._process_hostname_entry(event_value)
+        if event_name == "txt_port":
+            self._process_port_entry(event_value)
+        event.widget.focus_set()
+
+    def is_valid_port(self, port):
+        """Checks if the provided port is a valid one.
+
+        :param: port to connect to
+        :type port: str as provided by tkinter
+        :raises: ValueError if the string can't be converted to integer and
+        if the converted ingeger is lesser than 2014 (privileged port)
+        """
+
+        try:
+            int(port)
+        except ValueError:
+            logger.exception("Incorrect data: port number must be int.")
+            raise
+        if int(port) < 1024:
+            logger.error("Privileged port used: {}".format(port))
+            raise ValueError
+
+
+    def _process_port_entry(self, event_value):
+        try:
+            self.is_valid_port(event_value)
+        except ValueError:
+            tkMessageBox.showerror("Error",
+                                   "Invalid input value in "\
+                                   "port. Must be integer and greater than "\
+                                   "1024")
+            return
+        self.rigctl.port=event_value
+
+    def _process_hostname_entry(self, event_value):
+        if not self.is_valid_hostname(event_value):
+            tkMessageBox.showerror("Error",
+                                   "Invalid input value in %s" % event_name)
+
+            return
+        else:
+            self.rigctl.hostname=event_value
+
     def process_entry(self, event) :
         """Process a change in an entry widget. Check validity of
            numeric data. If empty field, offer the default or return to
@@ -1139,25 +1192,43 @@ class RigRemote(ttk.Frame):
             event_list = (event_name, event_value_int)
             self.scanq.send_event_update(event_list)
 
-    """ Methods to handle checkbutton updates
 
-    :param *args: ignored
-    :returns: None
-    """
+    def process_wait(self, *args):
+        """ Methods to handle checkbutton updates
 
-    def process_wait(self, *args) :
+        :param *args: ignored
+        :returns: None
+        """
         event_list = ("ckb_wait", self.cb_wait.get())
         self.process_checkbutton(event_list)
 
     def process_record(self, *args) :
+        """ Methods to handle checkbutton updates
+
+        :param *args: ignored
+        :returns: None
+        """
+
         event_list = ("ckb_record", self.cb_record.get())
         self.process_checkbutton(event_list)
 
     def process_log(self, *args) :
+        """ Methods to handle checkbutton updates
+
+        :param *args: ignored
+        :returns: None
+        """
+
         event_list = ("ckb_log", self.cb_log.get())
         self.process_checkbutton(event_list)
 
     def process_auto_bookmark(self, *args) :
+        """ Methods to handle checkbutton updates
+
+        :param *args: ignored
+        :returns: None
+        """
+
         event_list = ("ckb_auto_bookmark", self.cb_auto_bookmark.get())
         self.process_checkbutton(event_list)
 
@@ -1239,7 +1310,8 @@ class RigRemote(ttk.Frame):
                                     mode,
                                     bookmarks,
                                     nbl,
-                                    pass_params)
+                                    pass_params,
+                                    self.rigctl)
                 self.scanning = Scanning()
                 self.scan_thread = threading.Thread(target = self.scanning.scan,
                                                     args = (task,))
