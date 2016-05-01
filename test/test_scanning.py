@@ -215,3 +215,4 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_
                      new_bookmark_list,
                      params,
                      RigCtl())
+
