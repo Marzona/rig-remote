@@ -150,3 +150,14 @@ def test_ok_is_valid_port():
     rr = RigRemote(root, ac)
 
     assert(rr.is_valid_port("1025") == None)
+
+testdata = [(""), ("string"), [("123,333")]]
+@pytest.mark.parametrize("entry", testdata)
+def test_cb_add(entry):
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+    rr.apply_config(ac)
+    rr.params["txt_frequency"].insert(0, entry)
+
+    rr.cb_add(rr)
