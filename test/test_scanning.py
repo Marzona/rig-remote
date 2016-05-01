@@ -17,6 +17,7 @@ Copyright (c) 2015 Simone Marzona
 """
 # import modules
 import pytest
+from modules.rigctl import RigCtl
 from modules.scanning import ScanningTask
 from modules.constants import MIN_INTERVAL
 from modules.exceptions import UnsupportedScanningConfigError
@@ -62,7 +63,8 @@ def scan_task():
                              mode,
                              bookmark_list,
                              new_bookmark_list,
-                             params)
+                             params,
+                             RigCtl())
     return scan_task
 
 def test_bad_interval(scan_task):
@@ -101,7 +103,8 @@ def test_unsupported_scan_mode():
                                  mode,
                                  bookmark_list,
                                  new_bookmark_list,
-                                 params)
+                                 params,
+                                 RigCtl())
 
 
 testdata=[(None,
@@ -210,4 +213,5 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_
                      mode,
                      bookmark_list,
                      new_bookmark_list,
-                     params)
+                     params,
+                     RigCtl())
