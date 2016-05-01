@@ -1124,7 +1124,7 @@ class RigRemote(ttk.Frame):
         except ValueError:
             logger.exception("Incorrect data: port number must be int.")
             raise
-        if int(port) < 1024:
+        if int(port) <= 1024:
             logger.error("Privileged port used: {}".format(port))
             raise ValueError
 
@@ -1140,6 +1140,7 @@ class RigRemote(ttk.Frame):
             return
         self.rigctl.port=event_value
 
+
     def _process_hostname_entry(self, event_value):
         if not self.is_valid_hostname(event_value):
             tkMessageBox.showerror("Error",
@@ -1148,6 +1149,7 @@ class RigRemote(ttk.Frame):
             return
         else:
             self.rigctl.hostname=event_value
+
 
     def process_entry(self, event) :
         """Process a change in an entry widget. Check validity of

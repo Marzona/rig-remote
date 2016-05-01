@@ -134,4 +134,19 @@ def test_load_conf16():
     assert (rr.params["cbb_mode"].config()["values"][4] == ('', 'OFF', 'RAW', 'AM', 'FM', 'WFM', 'WFM_ST', 'LSB', 'USB', 'CW', 'CWL', 'CWU'))
 
 
+testdata = [("80"), ("test"), ("1024")]
+@pytest.mark.parametrize("port", testdata)
+def test_ko_is_valid_port(port):
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+    with pytest.raises(ValueError):
+        rr.is_valid_port(port)
 
+
+def test_ok_is_valid_port():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+
+    assert(rr.is_valid_port("1025") == None)
