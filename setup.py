@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name = "rig-remote",
-    Download-url = "https://github.com/Marzona/rig-remote/releases",
+    download_url = ["https://github.com/Marzona/rig-remote/releases"],
     version = "2.0",
     description = "Remote control a radio transceiver through RigCtl.",
     author="Simone Marzona",
