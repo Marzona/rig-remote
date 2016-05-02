@@ -23,8 +23,8 @@ import logging
 import os
 import time
 import Tkinter as tk
-from rig_remote.ui import RigRemote
-from rig_remote.app_config import AppConfig
+from modules.ui import RigRemote
+from modules.app_config import AppConfig
 
 def input_arguments():
     """Argument parser.
