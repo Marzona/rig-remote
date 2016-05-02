@@ -6,21 +6,25 @@ def readme():
 
 setup(
     name = "rig-remote",
+    Download-url = "https://github.com/Marzona/rig-remote/releases",
     version = "2.0",
-    description = "Remote control for radio transceiver through RigCtl.",
+    description = "Remote control a radio transceiver through RigCtl.",
     author="Simone Marzona",
     author_email="marzona@knoway.info",
     url = "https://github.com/Marzona/rig-remote/",
     packages = ["rig_remote"],
-    long_description = """\
-        Rig-Remote is a tool for remotely control \
+    long_description = """
+        Rig-Remote is a tool for remotely control 
         a radio transceiver using RigCtl protocol over TCP/IP. 
         Rig Remote provides frequency scanning and monitoring,
         frequency bookmarks.
         """,
     classifiers = [
         "Programming Language :: Python",
-        "Topic :: ham"
+        "Topic :: Communications",
+        "Development Status :: 4 - Beta",
+        "Framework :: Pytest",
+        "Intended Audience :: Information Technology",
     ],
     keywords = "rigctl, ham, radio, bookmarks, scanner",
     license = "MIT",
