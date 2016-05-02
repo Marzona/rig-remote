@@ -227,7 +227,6 @@ class Scanning(object):
 
         log = LogFile()
         log.open()
-        print task.rig.port
         if task and task.mode.lower() == "bookmarks":
             task = self._bookmarks(task, log)
         elif task and task.mode.lower() == "frequency":
@@ -336,7 +335,6 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        print task.rig.port
         level = []
         old_pass_count = pass_count = task.params['passes']
         while self.scan_active:
