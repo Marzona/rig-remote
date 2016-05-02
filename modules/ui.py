@@ -1122,7 +1122,7 @@ class RigRemote(ttk.Frame):
         try:
             int(port)
         except ValueError:
-            logger.exception("Incorrect data: port number must be int.")
+            logger.error("Incorrect data: port number must be int.")
             raise
         if int(port) <= 1024:
             logger.error("Privileged port used: {}".format(port))
@@ -1447,10 +1447,13 @@ class RigRemote(ttk.Frame):
 
         # get values
         frequency = self._frequency_pp_parse(self.params["txt_frequency"].get())
-        if (frequency == None) and not (silent) :
-            tkMessageBox.showerror("Error",
-                                   "Invalid value in Frequency field.")
-            self.params["txt_frequency"].focus_set()
+        try:
+            int(frequency)
+        except (ValueError, TypeError):
+            if not (silent) :
+                tkMessageBox.showerror("Error",
+                                       "Invalid value in Frequency field.")
+                self.params["txt_frequency"].focus_set()
             return
         mode = self.params["cbb_mode"].get()
         description = self.params["txt_description"].get()
