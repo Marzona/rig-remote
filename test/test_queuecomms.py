@@ -2,8 +2,8 @@
 
 # import modules
 import pytest
-from modules.queue_comms import QueueComms
-from modules.constants import QUEUE_MAX_SIZE
+from rig_remote.queue_comms import QueueComms
+from rig_remote.constants import QUEUE_MAX_SIZE
 from Queue import Queue, Empty, Full
 def test_queued_for_parent1():
     qc=QueueComms()
