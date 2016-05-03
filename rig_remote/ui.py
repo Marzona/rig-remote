@@ -75,22 +75,16 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 # import modules
 
-try:
-    from trepan.api import debug
-except ImportError:
-    pass
 
 import logging
 from rig_remote.constants import ALLOWED_BOOKMARK_TASKS
 from rig_remote.constants import SUPPORTED_SCANNING_ACTIONS
 from rig_remote.constants import CBB_MODES
 from rig_remote.constants import BOOKMARKS_FILE
-from rig_remote.constants import UNKNOWN_MODE
 from rig_remote.constants import LEN_BM
 from rig_remote.constants import BM
 from rig_remote.constants import DEFAULT_CONFIG
 from rig_remote.constants import UI_EVENT_TIMER_DELAY
-from rig_remote.app_config import AppConfig
 from rig_remote.exceptions import UnsupportedScanningConfigError
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.disk_io import IO
@@ -99,14 +93,12 @@ from rig_remote.scanning import ScanningTask
 from rig_remote.scanning import Scanning
 import Tkinter as tk
 import ttk
-from Tkinter import Text
 from Tkinter import LabelFrame
-from Tkinter import Label
 import tkMessageBox
 import threading
 import itertools
-from Queue import Queue
 import re
+from socket import gethostbyname
 from rig_remote.stmessenger import STMessenger
 
 # logging configuration
@@ -893,15 +885,17 @@ class RigRemote(ttk.Frame):
         """ Checks if hostname is truly a valid FQDN, or IP address.
         :param hostname:
         :type hostname: str
-        :return: True if valid, False otherwise.
+        :raises: ValueError if hostname is empty string
+        :raises: Exception based on result of gethostbyname() call
         """
 
-        if len(hostname) > 255:
-            return False
-        if hostname[-1] == ".":
-            hostname = hostname[:-1] # strip exactly one dot from the right, if present
-        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-        return all(allowed.match(x) for x in hostname.split("."))
+        if hostname == '' :
+            raise ValueError
+        try:
+            address = gethostbyname(hostname)
+        except Exception as e:
+            logger.error("Hostname error: {}".format(e))
+            raise
 
     def apply_config(self, ac):
         """Applies the config to the UI.
@@ -911,18 +905,18 @@ class RigRemote(ttk.Frame):
         :returns : none
         """
 
-        ac.read_conf()
         eflag = False
-        if self.is_valid_hostname(ac.config["hostname"]) :
-            self.params["txt_hostname"].insert(0, ac.config["hostname"])
-        else :
+        ac.read_conf()
+        try:
+            self.is_valid_hostname(ac.config["hostname"])
+        except Exception:
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
-            eflag = True
-        if eflag :
-            tkMessageBox.showerror("Config File Error", "One (or more) "\
-                                   "of the values in the config file was "\
-                                   "invalid, and the default was used "\
-                                   "instead.", parent = self)
+            tkMessageBox.showerror("Config File Error", "One (or more) " \
+                                                        "of the values in the config file was " \
+                                                        "invalid, and the default was used " \
+                                                        "instead.", parent=self)
+        else:
+            self.params["txt_hostname"].insert(0, ac.config["hostname"])
         # Test positive integer values
         for key in ("port",
                     "interval",
@@ -1142,13 +1136,13 @@ class RigRemote(ttk.Frame):
 
 
     def _process_hostname_entry(self, event_value):
-        if not self.is_valid_hostname(event_value):
+        try:
+            self.is_valid_hostname(event_value)
+        except Exception:
             tkMessageBox.showerror("Error",
-                                   "Invalid input value in %s" % event_name)
-
+                                   "Invalid Hostname")
             return
-        else:
-            self.rigctl.hostname=event_value
+        self.rigctl.hostname=event_value
 
 
     def process_entry(self, event) :
@@ -1470,7 +1464,6 @@ class RigRemote(ttk.Frame):
                 break
             elif (frequency == curr_freq and
                   mode == curr_mode) :
-#                  mode != UNKNOWN_MODE and
                 if not (silent) :
                     tkMessageBox.showerror("Error", "A bookmark with the "\
                                            "same frequency and mode "\
