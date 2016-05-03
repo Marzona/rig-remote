@@ -4,8 +4,8 @@
 import pytest
 import socket
 import csv
-from modules.disk_io import IO, LogFile
-from modules.exceptions import InvalidPathError
+from rig_remote.disk_io import IO, LogFile
+from rig_remote.exceptions import InvalidPathError
 
 def test_non_existent_path():
     io=IO()

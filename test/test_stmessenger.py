@@ -2,7 +2,7 @@
 
 # import modules
 import pytest
-from modules.stmessenger import STMessenger
+from rig_remote.stmessenger import STMessenger
 
 fake_event_list=[("test"), ([1,2,3])]
 @pytest.mark.parametrize("fake_event", fake_event_list)

@@ -3,8 +3,8 @@
 # import modules
 import pytest
 import socket
-from modules.ui import RigRemote
-from modules.app_config import AppConfig
+from rig_remote.ui import RigRemote
+from rig_remote.app_config import AppConfig
 import Tkinter as tk
 
 #def test_bad_signal_conf():

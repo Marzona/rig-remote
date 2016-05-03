@@ -17,10 +17,10 @@ Copyright (c) 2015 Simone Marzona
 """
 # import modules
 import pytest
-from modules.rigctl import RigCtl
-from modules.scanning import ScanningTask
-from modules.constants import MIN_INTERVAL
-from modules.exceptions import UnsupportedScanningConfigError
+from rig_remote.rigctl import RigCtl
+from rig_remote.scanning import ScanningTask
+from rig_remote.constants import MIN_INTERVAL
+from rig_remote.exceptions import UnsupportedScanningConfigError
 
 class TestStr (str) :
 

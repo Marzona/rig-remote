@@ -3,8 +3,8 @@
 # import modules
 import pytest
 import socket
-from modules.rigctl import RigCtl
-from modules.constants import DEFAULT_CONFIG
+from rig_remote.rigctl import RigCtl
+from rig_remote.constants import DEFAULT_CONFIG
 
 testdata = [("test", "80"), ("127.0.0.1","test"), ("test", "test")]
 testdata2 = [("F 100000"), ("M 100000")]
