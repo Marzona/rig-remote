@@ -19,6 +19,7 @@ def test_load_conf1():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_hostname"].get() == "127.0.0.1")
+    rr.root.destroy()
 
 def test_load_conf2():
     root = tk.Tk()
@@ -26,6 +27,7 @@ def test_load_conf2():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_port"].get() == "7356")
+    rr.root.destroy()
 
 def test_load_conf3():
     root = tk.Tk()
@@ -33,6 +35,7 @@ def test_load_conf3():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_range_max"].get() == "160,000")
+    rr.root.destroy()
 
 def test_load_conf4():
     root = tk.Tk()
@@ -40,6 +43,7 @@ def test_load_conf4():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_range_min"].get() == "159,000")
+    rr.root.destroy()
 
 def test_load_conf5():
     root = tk.Tk()
@@ -47,6 +51,7 @@ def test_load_conf5():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["cbb_mode"].get() == "")
+    rr.root.destroy()
 
 def test_load_conf6():
     root = tk.Tk()
@@ -54,6 +59,7 @@ def test_load_conf6():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_interval"].get() == "100")
+    rr.root.destroy()
 
 def test_load_conf7():
     root = tk.Tk()
@@ -61,6 +67,7 @@ def test_load_conf7():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_passes"].get() == "0")
+    rr.root.destroy()
 
 def test_load_conf8():
     root = tk.Tk()
@@ -68,6 +75,7 @@ def test_load_conf8():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert(rr.params["ckb_auto_bookmark"].is_checked() == 0)
+    rr.root.destroy()
 
 def test_load_conf9():
     root = tk.Tk()
@@ -75,6 +83,7 @@ def test_load_conf9():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_frequency"].get() == "")
+    rr.root.destroy()
 
 def test_load_conf10():
     root = tk.Tk()
@@ -82,6 +91,7 @@ def test_load_conf10():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert(rr.params["ckb_wait"].is_checked() == 0)
+    rr.root.destroy()
 
 def test_load_conf11():
     root = tk.Tk()
@@ -89,6 +99,7 @@ def test_load_conf11():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_sgn_level"].get() == "-40")
+    rr.root.destroy()
 
 def test_load_conf12():
     root = tk.Tk()
@@ -96,6 +107,7 @@ def test_load_conf12():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert(rr.params["ckb_log"].is_checked() == 0)
+    rr.root.destroy()
 
 def test_load_conf13():
     root = tk.Tk()
@@ -103,6 +115,7 @@ def test_load_conf13():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert(rr.params["ckb_record"].is_checked() == 0)
+    rr.root.destroy()
 
 
 def test_load_conf13():
@@ -111,6 +124,7 @@ def test_load_conf13():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert(rr.params["ckb_auto_bookmark"].is_checked() == 0)
+    rr.root.destroy()
 
 def test_load_conf14():
     root = tk.Tk()
@@ -118,6 +132,7 @@ def test_load_conf14():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["txt_description"].get() == "")
+    rr.root.destroy()
 
 def test_load_conf15():
     root = tk.Tk()
@@ -125,6 +140,7 @@ def test_load_conf15():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["cbb_mode"].current() == 0)
+    rr.root.destroy()
 
 def test_load_conf16():
     root = tk.Tk()
@@ -132,7 +148,7 @@ def test_load_conf16():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     assert (rr.params["cbb_mode"].config()["values"][4] == ('', 'OFF', 'RAW', 'AM', 'FM', 'WFM', 'WFM_ST', 'LSB', 'USB', 'CW', 'CWL', 'CWU'))
-
+    rr.root.destroy()
 
 testdata = [("80"), ("test"), ("1024")]
 @pytest.mark.parametrize("port", testdata)
@@ -142,14 +158,15 @@ def test_ko_is_valid_port(port):
     rr = RigRemote(root, ac)
     with pytest.raises(ValueError):
         rr.is_valid_port(port)
+    rr.root.destroy()
 
 
 def test_ok_is_valid_port():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
-
     assert(rr.is_valid_port("1025") == None)
+    rr.root.destroy()
 
 testdata = [(""), ("string"), [("123,333")]]
 @pytest.mark.parametrize("entry", testdata)
@@ -159,5 +176,15 @@ def test_cb_add(entry):
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     rr.params["txt_frequency"].insert(0, entry)
+    rr.cb_add(True)
+    rr.root.destroy()
 
-    rr.cb_add(rr)
+testdata = [(""), ("string"), [("123.123"), ("123.123."), ("google.com"), ("127.0.0.1")]]
+@pytest.mark.parametrize("entry", testdata)
+def test_processs_hostname_entry(entry):
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+    rr.apply_config(ac)
+    rr._process_hostname_entry(entry)
+    rr.root.destroy()
