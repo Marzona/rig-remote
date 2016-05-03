@@ -23,7 +23,6 @@ setup(
         "Programming Language :: Python",
         "Topic :: Communications",
         "Development Status :: 4 - Beta",
-        "Framework :: Pytest",
         "Intended Audience :: Information Technology",
     ],
     keywords = "rigctl, ham, radio, bookmarks, scanner",
