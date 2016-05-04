@@ -71,6 +71,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/04/24 - TAS - Changed communications between main and scan threads to use STMessenger class, to
                    enable thread-safe notification of scan thread termination (Issue #30).
+
+2016/05/02 - TAS - Refactor is_valid_hostname(), and the methods that call it, to properly handle bad input.
+
 """
 
 # import modules
@@ -881,7 +884,7 @@ class RigRemote(ttk.Frame):
         if not isinstance(event.widget, basestring) :
             event.widget.focus_set()
 
-    def is_valid_hostname(self, hostname):
+    def _is_valid_hostname(self, hostname):
         """ Checks if hostname is truly a valid FQDN, or IP address.
         :param hostname:
         :type hostname: str
@@ -897,10 +900,12 @@ class RigRemote(ttk.Frame):
             logger.error("Hostname error: {}".format(e))
             raise
 
-    def apply_config(self, ac):
+    def apply_config(self, ac, silent = False):
         """Applies the config to the UI.
         :param ac: object instance for handling the app config
         :type ac: AppConfig object
+        :param silent: suppress messagebox
+        :type silent: boolean
         :raises : none
         :returns : none
         """
@@ -908,10 +913,11 @@ class RigRemote(ttk.Frame):
         eflag = False
         ac.read_conf()
         try:
-            self.is_valid_hostname(ac.config["hostname"])
+            self._is_valid_hostname(ac.config["hostname"])
         except Exception:
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
-            tkMessageBox.showerror("Config File Error", "One (or more) " \
+            if not silent:
+                tkMessageBox.showerror("Config File Error", "One (or more) " \
                                                         "of the values in the config file was " \
                                                         "invalid, and the default was used " \
                                                         "instead.", parent=self)
@@ -939,7 +945,8 @@ class RigRemote(ttk.Frame):
         else:
             self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
         if eflag :
-            tkMessageBox.showerror("Config File Error", "One (or more) "\
+            if not silent:
+                tkMessageBox.showerror("Config File Error", "One (or more) "\
                                    "of the values in the config file was "\
                                    "invalid, and the default was used "\
                                    "instead.", parent = self)
@@ -1000,13 +1007,15 @@ class RigRemote(ttk.Frame):
             ac.write_conf()
         self.master.destroy()
 
-    def bookmark(self, task, delimiter):
+    def bookmark(self, task, delimiter, silent = False):
         """Bookmarks handling. loads and saves the bookmarks as
         a csv file.
         :param task: either load or save
         :type task: string
         :param delimiter: delimiter to use for creating the csv file
         :type delimiter: string
+        :param silent: suppress messagebox
+        :type silent: boolean
         :raises : none
         :returns : none
         """
@@ -1031,7 +1040,8 @@ class RigRemote(ttk.Frame):
                     if line[BM.mode] not in CBB_MODES :
                         error = True
                     if error == True :
-                        tkMessageBox.showerror("Error", "Invalid value in "\
+                        if not silent:
+                            tkMessageBox.showerror("Error", "Invalid value in "\
                                                "Bookmark #%i. "\
                                                "Skipping..." %count)
                     else :
@@ -1123,11 +1133,20 @@ class RigRemote(ttk.Frame):
             raise ValueError
 
 
-    def _process_port_entry(self, event_value):
+    def _process_port_entry(self, event_value, silent = False):
+        """ Process event for port number entry
+        :param event_value: new port number
+        :type event_value: str
+        :param silent: suppress messagebox
+        :type silent: boolean
+        :return:
+        """
+
         try:
             self.is_valid_port(event_value)
         except ValueError:
-            tkMessageBox.showerror("Error",
+            if not silent:
+                tkMessageBox.showerror("Error",
                                    "Invalid input value in "\
                                    "port. Must be integer and greater than "\
                                    "1024")
@@ -1135,17 +1154,25 @@ class RigRemote(ttk.Frame):
         self.rigctl.port=event_value
 
 
-    def _process_hostname_entry(self, event_value):
+    def _process_hostname_entry(self, event_value, silent = False):
+        """ Process event for hostname entry
+        :param event_value: new hostname
+        :type event_value: str
+        :param silent: suppress messagebox
+        :type silent: boolean
+        :return:
+        """
         try:
-            self.is_valid_hostname(event_value)
+            self._is_valid_hostname(event_value)
         except Exception:
-            tkMessageBox.showerror("Error",
+            if not silent:
+                tkMessageBox.showerror("Error",
                                    "Invalid Hostname")
             return
         self.rigctl.hostname=event_value
 
 
-    def process_entry(self, event) :
+    def process_entry(self, event, silent = False) :
         """Process a change in an entry widget. Check validity of
            numeric data. If empty field, offer the default or return to
            edit. If not valid, display a message and reset
@@ -1153,6 +1180,8 @@ class RigRemote(ttk.Frame):
            change onto the queue.
 
         :param event: event dict generated by widget handler
+        :param silent: suppress messagebox
+        :type silent: boolean
         :returns: None
         """
 
@@ -1160,9 +1189,12 @@ class RigRemote(ttk.Frame):
         event_value = event.widget.get()
         ekey = str(event_name.split("_",1)[1])
         if (event_value == "") or event_value.isspace() :
-            answer = tkMessageBox.askyesno("Error", "{} must have a value "\
+            if not silent:
+                answer = tkMessageBox.askyesno("Error", "{} must have a value "\
                                            "entered. Use the "\
                                            "default?".format(ekey))
+            else:
+                answer = True     #default answer for testing
             if answer :
                 event_value = DEFAULT_CONFIG[ekey]
                 event.widget.delete(0, 'end')
@@ -1179,7 +1211,8 @@ class RigRemote(ttk.Frame):
         try :
             event_value_int = int(event.widget.get().replace(',',''))
         except ValueError:
-            tkMessageBox.showerror("Error",
+            if not silent:
+                tkMessageBox.showerror("Error",
                                    "Invalid input value in %s" % event_name)
             event.widget.focus_set()
             return
@@ -1292,7 +1325,8 @@ class RigRemote(ttk.Frame):
         if (action.lower() == "start" and self.scan_thread == None) :
             # there is no ongoing scan task and we want to start one
             if len(self.tree.get_children()) == 0 and mode == "bookmarks":
-                tkMessageBox.showerror("Error",
+                if not silent:
+                    tkMessageBox.showerror("Error",
                                        "No bookmarks to scan.")
                 self.bookmark_toggle()
             else:
@@ -1373,10 +1407,11 @@ class RigRemote(ttk.Frame):
 
         self.master.attributes("-topmost", self.ckb_top.val.get())
 
-    def cb_get_frequency(self):
+    def cb_get_frequency(self, silent = False):
         """Get current rig frequency and mode.
 
-        :param: none
+        :param silent: suppress messagebox
+        :type silent: boolean
         :raises: none
         :returns: none
         """
@@ -1391,15 +1426,18 @@ class RigRemote(ttk.Frame):
                                                 self._frequency_pp(frequency))
             self.params["cbb_mode"].insert(0, mode)
         except Exception as err:
-            tkMessageBox.showerror("Error",
+            if not silent:
+                tkMessageBox.showerror("Error",
                                    "Could not connect to rig.\n%s" % err,
                                    parent=self)
 
-    def cb_set_frequency(self, event):
+    def cb_set_frequency(self, event, silent = False):
         """Set the rig frequency and mode.
 
         :param event: not used?
         :type event:
+        :param silent: suppress messagebox
+        :type silent: boolean
         :raises: none
         :returns: none
         """
@@ -1410,7 +1448,8 @@ class RigRemote(ttk.Frame):
             self.rigctl.set_frequency(values[0].replace(',', ''))
             self.rigctl.set_mode((values[1]))
         except Exception as err:
-            tkMessageBox.showerror("Error",
+            if not silent:
+                tkMessageBox.showerror("Error",
                                    "Could not set frequency.\n%s" % err,
                                    parent=self)
 
