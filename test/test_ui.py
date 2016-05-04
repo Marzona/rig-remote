@@ -186,5 +186,5 @@ def test_processs_hostname_entry(entry):
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    rr._process_hostname_entry(entry)
+    rr._process_hostname_entry(entry, True)
     rr.root.destroy()
