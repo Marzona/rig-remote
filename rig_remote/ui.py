@@ -402,8 +402,8 @@ class RigRemote(ttk.Frame):
         t_txt_hostname = ToolTip(self.params["txt_hostname"],
                                  follow_mouse=1,
                                  text="Hostname to connect.")
-        self.params["txt_hostname"].bind("<Return>", self.process_rig_config_entry)
-        self.params["txt_hostname"].bind("<FocusOut>", self.process_rig_config_entry)
+        self.params["txt_hostname"].bind("<Return>", self.process_entry)
+        self.params["txt_hostname"].bind("<FocusOut>", self.process_entry)
 
         ttk.Label(self.rig_config_menu,
                   text="Port:").grid(row=2,
@@ -419,8 +419,8 @@ class RigRemote(ttk.Frame):
         t_txt_port = ToolTip(self.params["txt_port"],
                              follow_mouse=1,
                              text="Port to connect.")
-        self.params["txt_port"].bind("<Return>", self.process_rig_config_entry)
-        self.params["txt_port"].bind("<FocusOut>", self.process_rig_config_entry)
+        self.params["txt_port"].bind("<Return>", self.process_entry)
+        self.params["txt_port"].bind("<FocusOut>", self.process_entry)
 
         # horizontal separator
         ttk.Frame(self.rig_config_menu).grid(row=3,
@@ -992,7 +992,6 @@ class RigRemote(ttk.Frame):
                                 self.params["ckb_auto_bookmark"].get_str_val()
         return ac
 
-
     def shutdown(self,ac):
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
@@ -1094,6 +1093,7 @@ class RigRemote(ttk.Frame):
             self.tree.item(self.selected_bookmark, values = values)
             self.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
 
+
     def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle frequency scan Start/Stop button, changing label text as
            appropriate.
@@ -1104,15 +1104,6 @@ class RigRemote(ttk.Frame):
             self.freq_scan_toggle.config(text = next(icycle))
             self._scan("frequency", action)
 
-    def process_rig_config_entry(self, event):
-
-        event_name = str(event.widget).split('.')[-1]
-        event_value = event.widget.get()
-        if event_name == "txt_hostname":
-            self._process_hostname_entry(event_value)
-        if event_name == "txt_port":
-            self._process_port_entry(event_value)
-        event.widget.focus_set()
 
     def is_valid_port(self, port):
         """Checks if the provided port is a valid one.
@@ -1131,7 +1122,6 @@ class RigRemote(ttk.Frame):
         if int(port) <= 1024:
             logger.error("Privileged port used: {}".format(port))
             raise ValueError
-
 
     def _process_port_entry(self, event_value, silent = False):
         """ Process event for port number entry
@@ -1152,7 +1142,6 @@ class RigRemote(ttk.Frame):
                                    "1024")
             return
         self.rigctl.port=event_value
-
 
     def _process_hostname_entry(self, event_value, silent = False):
         """ Process event for hostname entry
@@ -1208,6 +1197,12 @@ class RigRemote(ttk.Frame):
                 else :
                     event.widget.focus_set()
                     return
+        if event_name == "txt_hostname":
+            self._process_hostname_entry(event_value)
+            return
+        if event_name == "txt_port":
+            self._process_port_entry(event_value)
+            return
         try :
             event_value_int = int(event.widget.get().replace(',',''))
         except ValueError:
@@ -1220,7 +1215,6 @@ class RigRemote(ttk.Frame):
         if self.scan_thread != None :
             event_list = (event_name, event_value_int)
             self.scanq.send_event_update(event_list)
-
 
     def process_wait(self, *args):
         """ Methods to handle checkbutton updates
