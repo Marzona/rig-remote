@@ -83,7 +83,6 @@ import logging
 from rig_remote.constants import ALLOWED_BOOKMARK_TASKS
 from rig_remote.constants import SUPPORTED_SCANNING_ACTIONS
 from rig_remote.constants import CBB_MODES
-from rig_remote.constants import BOOKMARKS_FILE
 from rig_remote.constants import LEN_BM
 from rig_remote.constants import BM
 from rig_remote.constants import DEFAULT_CONFIG
@@ -94,14 +93,15 @@ from rig_remote.disk_io import IO
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import ScanningTask
 from rig_remote.scanning import Scanning
+from rig_remote.utility import frequency_pp, frequency_pp_parse, is_valid_port, is_valid_hostname
 import Tkinter as tk
 import ttk
+import os
 from Tkinter import LabelFrame
 import tkMessageBox
 import threading
 import itertools
-import re
-from socket import gethostbyname
+
 from rig_remote.stmessenger import STMessenger
 
 # logging configuration
@@ -280,10 +280,11 @@ class RigRemote(ttk.Frame):
     def __init__(self, root, ac):
         ttk.Frame.__init__(self, root)
         self.root = root
-        self.bookmarks_file = BOOKMARKS_FILE
-        self.log_file = None
         self.params = {}
         self.params_last_content = {}
+        self.alt_files = {}
+        self.bookmarks_file = ac.config["bookmark_filename"]
+        self.log_file = ac.config["log_filename"]
         self.build(ac)
         self.params["cbb_mode"].current(0)
         self.focus_force()
@@ -884,22 +885,6 @@ class RigRemote(ttk.Frame):
         if not isinstance(event.widget, basestring) :
             event.widget.focus_set()
 
-    def _is_valid_hostname(self, hostname):
-        """ Checks if hostname is truly a valid FQDN, or IP address.
-        :param hostname:
-        :type hostname: str
-        :raises: ValueError if hostname is empty string
-        :raises: Exception based on result of gethostbyname() call
-        """
-
-        if hostname == '' :
-            raise ValueError
-        try:
-            address = gethostbyname(hostname)
-        except Exception as e:
-            logger.error("Hostname error: {}".format(e))
-            raise
-
     def apply_config(self, ac, silent = False):
         """Applies the config to the UI.
         :param ac: object instance for handling the app config
@@ -913,7 +898,7 @@ class RigRemote(ttk.Frame):
         eflag = False
         ac.read_conf()
         try:
-            self._is_valid_hostname(ac.config["hostname"])
+            is_valid_hostname(ac.config["hostname"])
         except Exception:
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
             if not silent:
@@ -961,6 +946,9 @@ class RigRemote(ttk.Frame):
                 self.ckb_top.invoke()
         self.rigctl = RigCtl(self.params["txt_hostname"].get(),
                              self.params["txt_port"].get())
+        for key in ('alternate_config_file', 'alternate_bookmark_file', 'alternate_log_file'):
+            self.alt_files[key] = key in ac.config
+            ac.config.pop(key, None)
         # Here we create a copy of the params dict to use when
         # checking validity of new input
         for key in self.params :
@@ -990,9 +978,11 @@ class RigRemote(ttk.Frame):
         ac.config["save_exit"] = self.ckb_save_exit.get_str_val()
         ac.config["auto_bookmark"] = \
                                 self.params["ckb_auto_bookmark"].get_str_val()
+        ac.config["bookmark_filename"] = self.bookmarks_file
+        ac.config["log_filename"] = self.log_file
         return ac
 
-    def shutdown(self,ac):
+    def shutdown(self,ac, silent = False):
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
         :param ac: object that represent the UI configuration
@@ -1001,8 +991,21 @@ class RigRemote(ttk.Frame):
         """
 
         if self.cb_save_exit.get():
-            self.bookmark("save", ",")
+            if ((not self.alt_files['alternate_bookmark_file']) and
+                os.path.basename(self.bookmarks_file) == 'rig-bookmarks.csv'):
+                old_bookmark_path = self.bookmarks_file
+                self.bookmarks_file = os.path.join(os.path.expanduser('~'),
+                                            '.rig-remote/rig-remote-bookmarks.csv')
+                self.bookmark("save", ",")
+                try:
+                    os.remove(old_bookmark_path)
+                except OSError:
+                    logger.info("Failed to remove old bookmark file: %s", old_bookmark_path)
             ac = self._store_conf(ac)
+            if ((not self.alt_files['alternate_config_file']) and
+                os.path.join(os.path.split(os.path.dirname(ac.config_file))[1],
+                os.path.basename(ac.config_file)) == ".rig_remote/rig_remote.conf"):
+                ac.old_path = True
             ac.write_conf()
         self.master.destroy()
 
@@ -1033,9 +1036,9 @@ class RigRemote(ttk.Frame):
                     error = False
                     if len(line) < LEN_BM:
                         line.append("O")
-                    if self._frequency_pp_parse(line[BM.freq]) == None :
+                    if frequency_pp_parse(line[BM.freq]) == None :
                         error = True
-                    line[BM.freq] = self._frequency_pp(line[BM.freq])
+                    line[BM.freq] = frequency_pp(line[BM.freq])
                     if line[BM.mode] not in CBB_MODES :
                         error = True
                     if error == True :
@@ -1052,8 +1055,16 @@ class RigRemote(ttk.Frame):
         if task == "save":
             for item in self.tree.get_children():
                 values = self.tree.item(item).get('values')
-                values[BM.freq] = self._frequency_pp_parse(values[BM.freq])
+                values[BM.freq] = frequency_pp_parse(values[BM.freq])
                 bookmarks.row_list.append(values)
+            # Not where we want to do this, and will be fixed with BookmarkSet
+            try:
+                os.makedirs(os.path.dirname(self.bookmarks_file))
+            except IOError:
+                logger.info("Error while trying to create bookmark " \
+                    "path as {}".format(self.bookmarks_file))
+            except OSError:
+                logger.info("The bookmark directory already exists.")
             bookmarks.csv_save(self.bookmarks_file, delimiter)
 
     def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
@@ -1104,25 +1115,6 @@ class RigRemote(ttk.Frame):
             self.freq_scan_toggle.config(text = next(icycle))
             self._scan("frequency", action)
 
-
-    def is_valid_port(self, port):
-        """Checks if the provided port is a valid one.
-
-        :param: port to connect to
-        :type port: str as provided by tkinter
-        :raises: ValueError if the string can't be converted to integer and
-        if the converted ingeger is lesser than 2014 (privileged port)
-        """
-
-        try:
-            int(port)
-        except ValueError:
-            logger.error("Incorrect data: port number must be int.")
-            raise
-        if int(port) <= 1024:
-            logger.error("Privileged port used: {}".format(port))
-            raise ValueError
-
     def _process_port_entry(self, event_value, silent = False):
         """ Process event for port number entry
         :param event_value: new port number
@@ -1133,7 +1125,7 @@ class RigRemote(ttk.Frame):
         """
 
         try:
-            self.is_valid_port(event_value)
+            is_valid_port(event_value)
         except ValueError:
             if not silent:
                 tkMessageBox.showerror("Error",
@@ -1152,7 +1144,7 @@ class RigRemote(ttk.Frame):
         :return:
         """
         try:
-            self._is_valid_hostname(event_value)
+            is_valid_hostname(event_value)
         except Exception:
             if not silent:
                 tkMessageBox.showerror("Error",
@@ -1279,7 +1271,7 @@ class RigRemote(ttk.Frame):
             if self.scan_thread != None:
                 self.after(UI_EVENT_TIMER_DELAY, self.check_scanthread)
 
-    def _scan(self, mode, action):
+    def _scan(self, mode, action, silent = False):
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
 
@@ -1335,7 +1327,8 @@ class RigRemote(ttk.Frame):
                                     bookmarks,
                                     nbl,
                                     pass_params,
-                                    self.rigctl)
+                                    self.rigctl,
+                                    self.log_file)
                 self.scanning = Scanning()
                 self.scan_thread = threading.Thread(target = self.scanning.scan,
                                                     args = (task,))
@@ -1385,7 +1378,7 @@ class RigRemote(ttk.Frame):
             self.params["txt_description"].insert(0,
                                                   "activity on {}".format(nb["time"]))
             self.params["txt_frequency"].insert(0,
-                                                self._frequency_pp(str(nb["freq"])))
+                                                frequency_pp(str(nb["freq"])))
             self.params["cbb_mode"].insert(0,nb["mode"])
             # adding bookmark to the list
             self.cb_add(True)
@@ -1417,7 +1410,7 @@ class RigRemote(ttk.Frame):
             mode = self.rigctl.get_mode()
             # update fields
             self.params["txt_frequency"].insert(0,
-                                                self._frequency_pp(frequency))
+                                                frequency_pp(frequency))
             self.params["cbb_mode"].insert(0, mode)
         except Exception as err:
             if not silent:
@@ -1473,7 +1466,7 @@ class RigRemote(ttk.Frame):
         """
 
         # get values
-        frequency = self._frequency_pp_parse(self.params["txt_frequency"].get())
+        frequency = frequency_pp_parse(self.params["txt_frequency"].get())
         try:
             int(frequency)
         except (ValueError, TypeError):
@@ -1489,7 +1482,7 @@ class RigRemote(ttk.Frame):
         idx = tk.END
         for item in self.tree.get_children():
             freq = self.tree.item(item).get('values')[BM.freq]
-            uni_curr_freq = self._frequency_pp_parse(freq)
+            uni_curr_freq = frequency_pp_parse(freq)
             curr_freq = uni_curr_freq.encode("UTF-8")
             curr_mode = self.tree.item(item).get('values')[BM.mode]
             if frequency < curr_freq:
@@ -1505,7 +1498,7 @@ class RigRemote(ttk.Frame):
         # insert
         item = self.tree.insert('',
                                 idx,
-                                values=[self._frequency_pp(frequency),
+                                values=[frequency_pp(frequency),
                                         mode,
                                         description,
                                         lockout])
@@ -1530,30 +1523,3 @@ class RigRemote(ttk.Frame):
             # save
         self.bookmark("save", ",")
         self._clear_form()
-
-    def _frequency_pp(self, frequency):
-        """Filter invalid chars and add thousands separator.
-
-        :param frequency: frequency value
-        :type frequency: string
-        :return: frequency with separator
-        :return type: string
-        """
-
-        return '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
-
-    def _frequency_pp_parse(self, frequency):
-        """Remove thousands separator and check for invalid chars.
-
-        :param frequency: frequency value
-        :type frequency: string
-        :return: frequency without separator or None if invalid chars present
-        :return type: string or None
-        """
-
-        nocommas = frequency.replace(',', '')
-        results = re.search("[^0-9]", nocommas)
-        if results == None :
-            return (nocommas)
-        else :
-            return (None)

@@ -64,7 +64,8 @@ def scan_task():
                              bookmark_list,
                              new_bookmark_list,
                              params,
-                             RigCtl())
+                             RigCtl(),
+                             "")
     return scan_task
 
 def test_bad_interval(scan_task):
@@ -104,7 +105,8 @@ def test_unsupported_scan_mode():
                                  bookmark_list,
                                  new_bookmark_list,
                                  params,
-                                 RigCtl())
+                                 RigCtl(),
+                                 "")
 
 
 testdata=[(None,
@@ -214,5 +216,6 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_
                      bookmark_list,
                      new_bookmark_list,
                      params,
-                     RigCtl())
+                     RigCtl(),
+                     "")
 

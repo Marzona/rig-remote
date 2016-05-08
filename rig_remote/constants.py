@@ -66,7 +66,6 @@ SUPPORTED_SCANNING_ACTIONS = ("start",
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-BOOKMARKS_FILE = "rig-bookmarks.csv"
 DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "port" : "7356",
                   "interval" : "1",
@@ -81,7 +80,8 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "always_on_top" : "true",
                   "save_exit" : "false",
                   "auto_bookmark" : "false",
-                  "log_filename" : "rig-remote.log"}
+                  "log_filename" : "noname",
+                  "bookmark_filename" : "noname"}
 
 LEN_BM = 4
 
@@ -89,8 +89,6 @@ class BM(object):
     "Helper class with 4 attribs."
 
     freq, mode, desc, lockout = range(LEN_BM)
-
-LOG_FILE_NAME="rig-remote-log.txt"
 
 UI_EVENT_TIMER_DELAY = 1000
 QUEUE_MAX_SIZE = 10
