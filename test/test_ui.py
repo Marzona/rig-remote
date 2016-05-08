@@ -5,6 +5,7 @@ import pytest
 import socket
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
+from rig_remote.utility import is_valid_hostname, is_valid_port
 import Tkinter as tk
 
 #def test_bad_signal_conf():
@@ -153,19 +154,15 @@ def test_load_conf16():
 testdata = [("80"), ("test"), ("1024")]
 @pytest.mark.parametrize("port", testdata)
 def test_ko_is_valid_port(port):
-    root = tk.Tk()
-    ac = AppConfig("./test/test-config.file")
-    rr = RigRemote(root, ac)
     with pytest.raises(ValueError):
-        rr.is_valid_port(port)
-    rr.root.destroy()
+        is_valid_port(port)
 
 
 def test_ok_is_valid_port():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
-    assert(rr.is_valid_port("1025") == None)
+    assert(is_valid_port("1025") == None)
     rr.root.destroy()
 
 testdata = [(""), ("string"), [("123,333")]]

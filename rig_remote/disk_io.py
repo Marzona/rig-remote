@@ -29,7 +29,6 @@ import logging
 import os.path
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.constants import BM
-from rig_remote.constants import LOG_FILE_NAME
 import datetime
 import time
 
@@ -112,7 +111,7 @@ class LogFile(object):
         sets the fhandler self.log_file to None.
         """
 
-        self.log_filename = LOG_FILE_NAME
+        self.log_filename = None
         self.log_file = None
 
     def open(self, name = None):
@@ -154,7 +153,7 @@ class LogFile(object):
         else :
             lstr = 'F ' + str(datetime.datetime.today().strftime\
                               ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                record[2] + ' ' + record[1] + \
+                str(record['freq']) + ' ' + record['mode'] + \
                 ' ' + str(signal) + "\n"
         try:
             self.log_file.write(lstr)

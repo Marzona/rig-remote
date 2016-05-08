@@ -51,8 +51,9 @@ class AppConfig(object):
         :returns:none
         """
 
+        self.old_path = False
         self.io = IO()
-        self.default_config_file = ".rig_remote/rig_remote.conf"
+        self.default_config_file = ".rig-remote/rig-remote.conf"
         self.config_file = None
         self.config = dict.copy(DEFAULT_CONFIG)
 
@@ -98,14 +99,25 @@ class AppConfig(object):
 
         self.io.row_list = []
         # checking the directory path for default config file
+        if self.old_path:
+            self.old_pathname = self.config_file
+            self.config_file = os.path.join(os.path.expanduser('~'), self.default_config_file)
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
             logger.info("Error while trying to create default config "\
                               "path as {}".format(self.config_file))
         except OSError:
-            logger.info("The default config directory already exists..")
-
+            logger.info("The default config directory already exists.")
+        if self.old_path:
+            try:
+                os.remove(self.old_pathname)
+            except OSError:
+                logger.info("Could not remove old config file.")
+            try:
+                os.rmdir(os.path.dirname(self.old_pathname))
+            except OSError:
+                logger.info("Could not remove old config directory.")
         for key in self.config.keys():
             row = []
             row.append(key)
