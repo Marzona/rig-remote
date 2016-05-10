@@ -1,8 +1,40 @@
 from setuptools import setup, find_packages
+import os
+import sys
 
 def readme():
     with open('README.md') as f:
         return f.read()
+
+if sys.argv[-1] == 'test':
+    test_requirements = [
+        'pytest',
+        'flake8',
+        'coverage'
+    ]
+    try:
+        modules = map(__import__, test_requirements)
+    except ImportError as e:
+        err_msg = e.message.replace("No module named ", "")
+        msg = "%s is not installed. Install your test requirments." % err_msg
+        raise ImportError(msg)
+    os.system('py.test --cov-report term-missing  --cov rig_remote')
+    sys.exit()
+
+
+if sys.argv[-1] == 'publish':
+    os.system("python setup.py sdist upload")
+    os.system("python setup.py bdist_wheel upload")
+    print("You probably want to also tag the version now:")
+    print("  git tag -a %s -m 'version %s'" % (version, version))
+    print("  git push --tags")
+    print(" or use the tag option with this script.")
+    sys.exit()
+
+if sys.argv[-1] == 'tag':
+    os.system("git tag -a %s -m 'version %s'" % (version, version))
+    os.system("git push --tags")
+    sys.exit()
 
 setup(
     name = "rig-remote",
