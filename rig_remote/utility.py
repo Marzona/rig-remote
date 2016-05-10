@@ -20,7 +20,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 
 import re
-from socket import gethostbyname
+from socket import gethostbyname, gaierror
 import logging
 
 
@@ -82,7 +82,7 @@ def is_valid_hostname(hostname):
         raise ValueError
     try:
         address = gethostbyname(hostname)
-    except Exception as e:
+    except gaierror as e:
         logger.error("Hostname error: {}".format(e))
         raise
 
