@@ -13,4 +13,4 @@ read a
 python setup.py sdist upload
 
 
-echo "Upload should be completed, please review it at https://pypi.python.org/pypi/rig-remote/2.0"
+echo "Upload should be completed, please review it at https://pypi.python.org/pypi/rig-remote"
