@@ -120,7 +120,7 @@ def test_load_conf13():
     rr.root.destroy()
 
 
-def test_load_conf13():
+def test_load_conf14():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
@@ -128,7 +128,7 @@ def test_load_conf13():
     assert(rr.params["ckb_auto_bookmark"].is_checked() == 0)
     rr.root.destroy()
 
-def test_load_conf14():
+def test_load_conf15():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
@@ -136,7 +136,7 @@ def test_load_conf14():
     assert (rr.params["txt_description"].get() == "")
     rr.root.destroy()
 
-def test_load_conf15():
+def test_load_conf16():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
@@ -144,7 +144,7 @@ def test_load_conf15():
     assert (rr.params["cbb_mode"].current() == 0)
     rr.root.destroy()
 
-def test_load_conf16():
+def test_load_conf17():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
     rr = RigRemote(root, ac)
@@ -167,7 +167,7 @@ def test_ok_is_valid_port():
     rr.root.destroy()
 
 
-testdata = [(""), ("string"), [("123,333")]]
+testdata = ['', 'string', '123,333']
 @pytest.mark.parametrize("entry", testdata)
 def test_cb_add(entry):
     root = tk.Tk()
@@ -179,7 +179,7 @@ def test_cb_add(entry):
     rr.root.destroy()
 
 
-testdata = [(""), ("string"), [("123.123"), ("123.123."), ("google.com"), ("127.0.0.1")]]
+testdata = ['', 'string', '123.123', '123.123.', 'google.com', '127.0.0.1']
 @pytest.mark.parametrize("entry", testdata)
 def test_processs_hostname_entry(entry):
     root = tk.Tk()
