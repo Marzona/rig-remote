@@ -25,6 +25,9 @@ class NonRetriableError (Exception):
 class InvalidPathError (NonRetriableError):
     pass
 
+class InvalidScanModeError (NonRetriableError):
+    pass
+
 class UnsupportedScanningConfigError(NonRetriableError):
     pass
 

@@ -78,7 +78,8 @@ from rig_remote.constants import NO_SIGNAL_DELAY
 from rig_remote.constants import MIN_INTERVAL
 from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
-from rig_remote.exceptions import UnsupportedScanningConfigError
+from rig_remote.constants import ALLOWED_SCAN_TYPES
+from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
 from rig_remote.stmessenger import STMessenger
 import socket
 import logging
@@ -229,6 +230,10 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
+        if task.mode.lower() not in ALLOWED_SCAN_TYPES:
+            logger.exception("Invalid scan mode provided:{}".format(task.mode))
+            raise InvalidScanModeError
+
         log = LogFile()
         log.open(task.log_filename)
         if task and task.mode.lower() == "bookmarks":
@@ -354,7 +359,7 @@ class Scanning(object):
             if level > sgn:
                 signal_found += 1
             time.sleep(NO_SIGNAL_DELAY)
-        logger.info("Activity found on freq: {}".format(freq))
+        logger.info("Activity found, signal level: {}".format(level))
         if signal_found > 1:
             detected_level.append(level)
             return True
