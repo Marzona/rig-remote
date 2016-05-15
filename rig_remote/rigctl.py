@@ -139,8 +139,8 @@ class RigCtl(object):
         """
 
         output = self._request('l')
-        if not isinstance(output, int):
-            logger.error("Expected string while getting radio signal level, "\
+        if not isinstance(output, float):
+            logger.error("Expected float while getting radio signal level, "\
                          "got {}".format(output))
             raise ValueError
 
