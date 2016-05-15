@@ -17,9 +17,12 @@ Copyright (c) 2015 Simone Marzona
 """
 # import modules
 import pytest
+from rig_remote.disk_io import LogFile
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import ScanningTask
+from rig_remote.scanning import Scanning
 from rig_remote.constants import MIN_INTERVAL
+from rig_remote.stmessenger import STMessenger
 from rig_remote.exceptions import UnsupportedScanningConfigError
 
 class TestStr (str) :
@@ -41,12 +44,20 @@ class TestBool (object) :
     def is_checked(self):
         return(self.lbool)
 
+@pytest.fixture
+def fake_rig():
+    class fake_rig(object):
+        def set_frequency(self, freq):
+            pass
+    return fake_rig()
+
 
 @pytest.fixture
 def scan_task():
     params = {}
-    scanq = None
+    scanq = STMessenger()
     mode = "bookmarks"
+    rig = None
     bookmark_list = []
     new_bookmark_list = []
     params["txt_range_min"] = TestStr("100")
@@ -219,3 +230,37 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_
                      RigCtl(),
                      "")
 
+def test_tune():
+    st = scan_task()
+    st.passes = 4
+    log = LogFile()
+    #freq = st.params["range_min"]
+    freq = "test"
+    s = Scanning()
+    with pytest.raises(ValueError):
+        s._tune(st, log, freq, 4)
+
+def test_2_tune():
+    st = scan_task()
+    st.passes = 4
+    log = LogFile()
+    freq = st.params["range_min"]
+    s = Scanning()
+    try:
+        s._tune(st, log, freq, 4)
+    except Exception:
+        pass
+    assert (s.scan_active == False)
+
+def test_3_tune(fake_rig):
+    def do_nothing(**args):
+        pass
+    st = scan_task()
+    st.rig = fake_rig
+    st.passes = 4
+    freq = 27
+    log = LogFile()
+    freq = st.params["range_min"]
+    s = Scanning()
+
+    assert (s._tune(st, log, freq, 4) == 4)

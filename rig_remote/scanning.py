@@ -80,6 +80,7 @@ from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
 from rig_remote.exceptions import UnsupportedScanningConfigError
 from rig_remote.stmessenger import STMessenger
+import socket
 import logging
 import time
 import re
@@ -208,6 +209,7 @@ class Scanning(object):
         :type: Scanningtask object
         :returns: None
         """
+
         length = task.params['delay']
         while True:
             if task.scanq.update_queued():
@@ -235,6 +237,31 @@ class Scanning(object):
             task = self._frequency(task, log)
         log.close()
 
+    def _tune(self, task, log, freq, pass_count):
+        """helper function called inside _frequency().
+        This is for reducing the code inside the while true loops
+        """
+
+        if self._process_queue(task):
+            freq = task.params["range_min"]
+            pass_count = task.params["passes"]
+            interval = _khertz_to_hertz(task.params["interval"])
+            logger.info("Interval:{}".format(task.params["interval"]))
+
+        logger.info("Tuning to {}".format(freq))
+
+        try:
+            task.rig.set_frequency(freq)
+        except ValueError:
+            logger.warning ("Bad frequency parameter passed.")
+            raise
+        except (socket.error, socket.timeout):
+            logger.warning("Communications Error!")
+            self.scan_active = False
+            raise
+        time.sleep(TIME_WAIT_FOR_TUNE)
+        return pass_count
+
     def _frequency(self, task, log):
         """Performs a frequency scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
@@ -244,6 +271,7 @@ class Scanning(object):
         :raises: none
         :returns: updates the scanning task object with the new activity found
         """
+
         level = []
         pass_count = task.params["passes"]
         while self.scan_active:
@@ -253,19 +281,10 @@ class Scanning(object):
                 self.scan_active = False
             interval = _khertz_to_hertz(task.params["interval"])
             while freq < task.params["range_max"]:
-                if self._process_queue(task):
-                    freq = task.params["range_min"]
-                    pass_count = task.params["passes"]
-                    interval = _khertz_to_hertz(task.params["interval"])
-                logger.info("Tuning to {}".format(freq))
-                logger.info("Interval:{}".format(task.params["interval"]))
                 try:
-                    task.rig.set_frequency(freq)
-                except Exception:
-                    logger.warning("Communications Error!")
-                    self.scan_active = False
+                    pass_count = self._tune(task, log, freq, pass_count)
+                except (socket.error, socket.timeout):
                     break
-                time.sleep(TIME_WAIT_FOR_TUNE)
 
                 if self._signal_check(task.params["sgn_level"],
                                       task.rig,
