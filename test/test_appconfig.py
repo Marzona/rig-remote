@@ -22,3 +22,5 @@ def test_app_config4():
     ac = AppConfig("/tmp/test")
     ac.read_conf()
     assert(len(ac.config) == 16)
+
+
