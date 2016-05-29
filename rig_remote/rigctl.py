@@ -83,8 +83,8 @@ class RigCtl(object):
         """
 
         output = self._request('f')
-        if not isinstance(output, str):
-            logger.error("Expected string while getting radio freqnency, "\
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting radio frequency, "\
                          "got {}".format(output))
             raise ValueError
 
@@ -110,8 +110,8 @@ class RigCtl(object):
         """
 
         output = self._request('m')
-        if not isinstance(output, str):
-            logger.error("Expected string while getting radio mode, "\
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting radio mode, "\
                          "got {}".format(output))
             raise ValueError
         return output
@@ -139,8 +139,8 @@ class RigCtl(object):
         """
 
         output = self._request('l')
-        if not isinstance(output, float):
-            logger.error("Expected float while getting radio signal level, "\
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting radio signal level, "\
                          "got {}".format(output))
             raise ValueError
 

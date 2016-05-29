@@ -18,7 +18,6 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 # constant definition
-ALLOWED_SCAN_TYPES = ["bookmark", "frequency"]
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
 DIRMODE = 644
 CBB_MODES = ('',
