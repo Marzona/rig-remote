@@ -241,7 +241,7 @@ def test_tune():
     freq = "test"
     s = Scanning()
     with pytest.raises(ValueError):
-        s._frequency_tune(st, log, freq, 4)
+        s._frequency_tune(st, freq)
 
 def test_2_tune():
     st = scan_task()
@@ -250,23 +250,10 @@ def test_2_tune():
     freq = st.params["range_min"]
     s = Scanning()
     try:
-        s._frequency_tune(st, log, freq, 4)
+        s._frequency_tune(st, freq)
     except Exception:
         pass
     assert (s.scan_active == False)
-
-def test_3_tune(fake_rig):
-    def do_nothing(**args):
-        pass
-    st = scan_task()
-    st.rig = fake_rig
-    st.passes = 4
-    freq = 27
-    log = LogFile()
-    freq = st.params["range_min"]
-    s = Scanning()
-
-    assert (s._frequency_tune(st, log, freq, 4) == 4)
 
 def test_new_bookmarks(fake_rig):
     st = scan_task()
