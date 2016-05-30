@@ -21,6 +21,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/02/24 - TAS - Added log file class to handle logging scanning
                    activity to a file.
+2016/05/30 - TAS - Clean up some log formatting issues.
 
 """
 
@@ -52,7 +53,7 @@ class IO(object):
         """
 
         if not os.path.exists(csv_file):
-            logger.warning("Invalid path provided:{}".format(csv_file))
+            logger.info("Invalid path provided:{}".format(csv_file))
             raise InvalidPathError
 
 
@@ -102,7 +103,7 @@ class IO(object):
 
 
 class LogFile(object):
-    """Handles the a tasks of logging to a file.
+    """Handles the tasks of logging to a file.
 
     """
 
@@ -122,6 +123,13 @@ class LogFile(object):
         """
         if name != None :
             self.log_filename = name
+        try:
+            os.makedirs(os.path.dirname(self.log_filename))
+        except IOError:
+            logger.info("Error while trying to create log file " \
+                        "path as {}".format(self.log_filename))
+        except OSError:
+            logger.info("The log directory already exists.")
         try:
             self.log_file = open(self.log_filename, 'a')
         except (IOError, OSError):
@@ -148,7 +156,7 @@ class LogFile(object):
         if record_type == 'B' :
             lstr = 'B ' + str(datetime.datetime.today().strftime\
                               ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                record[BM.freq] + ' ' + record[BM.mode] + \
+                record[BM.freq].replace(',', '') + ' ' + record[BM.mode] + \
                 ' ' + str(signal) + "\n"
         else :
             lstr = 'F ' + str(datetime.datetime.today().strftime\

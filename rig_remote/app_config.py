@@ -19,6 +19,7 @@ Copyright (c) 2016 Tim Sweeney
 TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/03/21 - TAS - Validate config file entries on read.
+2016/05/30 - TAS - Config path now established in main module. Stripped out old file support.
 
 """
 
@@ -38,7 +39,7 @@ class AppConfig(object):
 
     """
 
-    def __init__(self, alternate_config_file):
+    def __init__(self, config_file):
         """Default config, they will be overwritten when a conf is loaded
         this will be used to write a default config file.
         If the command line specifies a config file we note it in
@@ -51,18 +52,9 @@ class AppConfig(object):
         :returns:none
         """
 
-        self.old_path = False
         self.io = IO()
-        self.default_config_file = ".rig-remote/rig-remote.conf"
-        self.config_file = None
+        self.config_file = config_file
         self.config = dict.copy(DEFAULT_CONFIG)
-
-        if alternate_config_file:
-            self.config_file = alternate_config_file
-        else:
-            logger.info("No custom config file specified...")
-            self.config_file = os.path.join(os.path.expanduser('~'),
-                                            self.default_config_file)
 
     def read_conf(self):
         """Read the configuration file.
@@ -98,30 +90,16 @@ class AppConfig(object):
         """
 
         self.io.row_list = []
-        # checking the directory path for default config file
-        if self.old_path:
-            self.old_pathname = self.config_file
-            self.config_file = os.path.join(os.path.expanduser('~'), self.default_config_file)
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
-            logger.info("Error while trying to create default config "\
+            logger.info("Error while trying to create config "\
                               "path as {}".format(self.config_file))
         except OSError:
-            logger.info("The default config directory already exists.")
-        if self.old_path:
-            try:
-                os.remove(self.old_pathname)
-            except OSError:
-                logger.info("Could not remove old config file.")
-            try:
-                os.rmdir(os.path.dirname(self.old_pathname))
-            except OSError:
-                logger.info("Could not remove old config directory.")
+            logger.info("The config directory already exists.")
         for key in self.config.keys():
             row = []
             row.append(key)
             row.append(self.config[key])
             self.io.row_list.append(row)
         self.io.csv_save(self.config_file, "=")
-

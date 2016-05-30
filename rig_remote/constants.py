@@ -92,3 +92,8 @@ class BM(object):
 
 UI_EVENT_TIMER_DELAY = 1000
 QUEUE_MAX_SIZE = 10
+
+DEFAULT_PREFIX = '~/.rig-remote'
+DEFAULT_CONFIG_FILENAME = 'rig-remote.conf'
+DEFAULT_LOG_FILENAME = 'rig-remote-log.txt'
+DEFAULT_BOOKMARK_FILENAME = 'rig-remote-bookmarks.csv'

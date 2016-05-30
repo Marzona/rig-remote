@@ -20,15 +20,12 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 2016/02/16 - TAS - Added code to support continuous bookmark scanning.
                    scan method modified to support threading.
-
 2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
                    choice of variable or infinite looping.
                    Only done in bookmark scanning, still need to rework
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
-
 2016/02/19 - TAS - Fixed code for frequency scan to support threading.
-
 2016/02/20 - TAS - Recoded signal_check to help prevent false positives.
                    Implemented "wait for signal" style pause in bookmark
                    scanning. Selectable via the "wait" checkbox. When
@@ -36,34 +33,26 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    the frequency has been been clear for "Delay" seconds.
                    When off, scanning will resume after "Delay" seconds no
                    matter if a signal is still present or not.
-
 2016/02/21 - TAS - Added error handling for initial rig_control call.
-
 2016/02/24 - TAS - Added bookmark lockout support. Changed how bookmarks
                    are passed so that on-the-fly lockout will work. Added
                    logging activity to file.
-
 2016/03/11 - TAS - Added skeleton code to process queue.
                    Still to do: change parameter passing to dict.
-
 2016/03/13 - TAS - Strip the scan parameters strings completely of
                    non-numerics to avoid ValueExceptions.
-
 2016/03/15 - TAS - Recoded to pass most parameters in a dict, which also stores
                    local int versions. TODO: Flesh out queue-based value changes.
-
 2016/03/16 - TAS - Added code to allow parameter updating while scan is active.
-
 2016/04/12 - TAS - Auto-bookmarking option restored on frequency scans. Proper time and mode
                    now recorded. New bookmarks are held in a list of dicts and processed by
                    the main thread once this thread has completed.
-
 2016/04/24 - TAS - Changed thread communications to use STMessenger class in support of resolving
                    Issue #30. GUI interaction removed.
-
 2106/04/27 - TAS - Rewrote bookmark scanning to streamline logic (slightly), and include additional
                    opportunities for queue processing. Added _queue_sleep method for queue processing
                    while pausing. Related to Issue #43.
+2016/05/30 - TAS - Small fixes and modify _create_new_bookmark for multiple uses.
 """
 
 # import modules
@@ -260,13 +249,12 @@ class Scanning(object):
             raise
         time.sleep(TIME_WAIT_FOR_TUNE)
 
-    def _new_bookmarks(self, task, freq):
+    def _create_new_bookmark(self, task, freq):
         nbm = {}
         nbm["freq"] = freq
         nbm["mode"] = task.rig.get_mode()
         nbm["time"] = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
-        task.new_bookmark_list.append(nbm)
-        return task
+        return nbm
 
     def _start_recording(self):
         task.rig.start_recording()
@@ -314,9 +302,11 @@ class Scanning(object):
                         self._start_recording()
 
                     if task.params["auto_bookmark"]:
-                        self._new_bookmarks(task, freq)
+                        nbm = self._create_new_bookmark(task, freq)
+                        task.new_bookmark_list.append(nbm)
 
                     if task.params["log"]:
+                        nbm = self._create_new_bookmark(task, freq)
                         log.write('F', nbm, level[0])
 
                     if self.scan_active:
@@ -387,7 +377,7 @@ class Scanning(object):
                     continue
                 freq = bookmark[BM.freq].replace(',', '')
                 try:
-                    pass_count = self._frequency_tune(task, log, freq, pass_count)
+                    self._frequency_tune(task, freq)
                 except (socket.error, socket.timeout):
                     break
 
