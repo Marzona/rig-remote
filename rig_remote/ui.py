@@ -19,28 +19,21 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    Temporarily disabled freq activity logging and notification.
                    Scan call now a separate thread.
                    Added a "stop" button.
-
 2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
                    choice of variable or infinite looping.
                    Added a "pass count" field in config display.
                    Only done in bookmark scanning, still need to rework
                    frequency scanning to match. Also need to implement
                    changes in delay code (to allow for wait on signal).
-
 2016/02/19 - TAS - Added frequency scan "Stop" button.
-
 2016/02/20 - TAS - Added "wait" checkbox. See scanning.py for notes.
-
 2016/02/22 - TAS - Removed "stop" button and use a "toggle" function for
                    start/stop of scanning. Add "lock" button to UI as 
                    placeholder, but haven't implemented lockout yet.
-
 2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
-
 2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
                    are passed to scan thread. Added support for logging
                    scanning activity to a file.
-
 2016/03/11 - TAS - Changed program parameter storage to a dict, to make
                    validity checking and thread updating easier. Added
                    a queue to pass updated parameters to scanning thread.
@@ -51,29 +44,21 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    a dict also, and then flesh out skeleton update code
                    in scanning thread. Update config code to add new 
                    checkboxes.
-
 2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
                    (Github issue #21)
-
 2016/03/15 - TAS - Added more scanning option validation. Changed scan initialization to pass
                    most params in a dict.
-
 2016/03/19 - TAS - Added validation of the config file when it is applied.
-
 2016/03/20 - TAS - Added some validation of user frequency input, and of the bookmark file when it
                    is loaded.
-
 2016/03/21 - TAS - Added new checkbutton config data to config file handling methods.
-
 2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan. Bookmarks are processed once the
                    scan thread has completed. Only one bookmark per frequency. (If logging enabled, all
                    occurences are logged.)
-
 2016/04/24 - TAS - Changed communications between main and scan threads to use STMessenger class, to
                    enable thread-safe notification of scan thread termination (Issue #30).
-
 2016/05/02 - TAS - Refactor is_valid_hostname(), and the methods that call it, to properly handle bad input.
-
+2016/05/30 - TAS - Stripped out old path support.
 """
 
 # import modules
@@ -811,9 +796,6 @@ class RigRemote(ttk.Frame):
                 self.ckb_top.invoke()
         self.rigctl = RigCtl(self.params["txt_hostname"].get(),
                              self.params["txt_port"].get())
-        for key in ('alternate_config_file', 'alternate_bookmark_file', 'alternate_log_file'):
-            self.alt_files[key] = key in ac.config
-            ac.config.pop(key, None)
         # Here we create a copy of the params dict to use when
         # checking validity of new input
         for key in self.params :
@@ -856,21 +838,8 @@ class RigRemote(ttk.Frame):
         """
 
         if self.cb_save_exit.get():
-            if ((not self.alt_files['alternate_bookmark_file']) and
-                os.path.basename(self.bookmarks_file) == 'rig-bookmarks.csv'):
-                old_bookmark_path = self.bookmarks_file
-                self.bookmarks_file = os.path.join(os.path.expanduser('~'),
-                                            '.rig-remote/rig-remote-bookmarks.csv')
-                self.bookmark("save", ",")
-                try:
-                    os.remove(old_bookmark_path)
-                except OSError:
-                    logger.info("Failed to remove old bookmark file: %s", old_bookmark_path)
+            self.bookmark("save", ",")
             ac = self._store_conf(ac)
-            if ((not self.alt_files['alternate_config_file']) and
-                os.path.join(os.path.split(os.path.dirname(ac.config_file))[1],
-                os.path.basename(ac.config_file)) == ".rig_remote/rig_remote.conf"):
-                ac.old_path = True
             ac.write_conf()
         self.master.destroy()
 

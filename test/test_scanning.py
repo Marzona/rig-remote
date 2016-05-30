@@ -261,7 +261,8 @@ def test_new_bookmarks(fake_rig):
     freq = st.params["range_min"]
     s = Scanning()
     original_len = len(st.new_bookmark_list)
-    s._new_bookmarks(st, freq)
+    nbm = s._create_new_bookmark(st, freq)
+    st.new_bookmark_list.append(nbm)
     assert(original_len + 1 == len(st.new_bookmark_list))
 
 def test_1_scan():

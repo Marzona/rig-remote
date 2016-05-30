@@ -16,6 +16,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/05/04 - TAS - Moved frequency_pp and frequency_pp_parse here.
 2016/05/07 - TAS - Moved is_valid_hostname and is_valid_port here.
 2016/05/08 - TAS - Added this_file_exists.
+2016/05/30 - TAS - Added process_path.
 """
 
 
@@ -23,6 +24,7 @@ import re
 from socket import gethostbyname, gaierror
 import logging
 import Tkinter as tk
+import os.path
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +101,13 @@ def this_file_exists(filename):
     except IOError:
         return None
 
+def process_path(path):
+    """ Handle tilde expansion in a path."""
 
+    working_path, working_name = os.path.split(path)
+    if working_path:
+        working_path = os.path.expanduser(working_path)
+    return os.path.join(working_path, working_name)
 
 class ToolTip:
     def __init__(self, master, text='', delay=1500, **opts):
