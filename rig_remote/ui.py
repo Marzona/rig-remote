@@ -46,39 +46,53 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    checkboxes.
 2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
                    (Github issue #21)
-2016/03/15 - TAS - Added more scanning option validation. Changed scan initialization to pass
+2016/03/15 - TAS - Added more scanning option validation. Changed scan
+                   initialization to pass
                    most params in a dict.
 2016/03/19 - TAS - Added validation of the config file when it is applied.
-2016/03/20 - TAS - Added some validation of user frequency input, and of the bookmark file when it
+2016/03/20 - TAS - Added some validation of user frequency input, and of the
+                   bookmark file when it
                    is loaded.
-2016/03/21 - TAS - Added new checkbutton config data to config file handling methods.
-2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan. Bookmarks are processed once the
-                   scan thread has completed. Only one bookmark per frequency. (If logging enabled, all
-                   occurences are logged.)
-2016/04/24 - TAS - Changed communications between main and scan threads to use STMessenger class, to
-                   enable thread-safe notification of scan thread termination (Issue #30).
-2016/05/02 - TAS - Refactor is_valid_hostname(), and the methods that call it, to properly handle bad input.
+2016/03/21 - TAS - Added new checkbutton config data to config file handling
+                   methods.
+2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan.
+                   Bookmarks are processed once the
+                   scan thread has completed. Only one bookmark per frequency.
+                   (If logging enabled, all occurences are logged.)
+2016/04/24 - TAS - Changed communications between main and scan threads to use
+                   STMessenger class, to
+                   enable thread-safe notification of scan thread termination
+                   (Issue #30).
+2016/05/02 - TAS - Refactor is_valid_hostname(), and the methods that call it,
+                   to properly handle bad input.
 2016/05/30 - TAS - Stripped out old path support.
 """
 
 # import modules
 
-
 import logging
-from rig_remote.constants import ALLOWED_BOOKMARK_TASKS
-from rig_remote.constants import SUPPORTED_SCANNING_ACTIONS
-from rig_remote.constants import CBB_MODES
-from rig_remote.constants import LEN_BM
-from rig_remote.constants import BM
-from rig_remote.constants import DEFAULT_CONFIG
-from rig_remote.constants import UI_EVENT_TIMER_DELAY
+from rig_remote.constants import (ALLOWED_BOOKMARK_TASKS,
+                                  SUPPORTED_SCANNING_ACTIONS,
+                                  CBB_MODES,
+                                  LEN_BM,
+                                  BM,
+                                  DEFAULT_CONFIG,
+                                  UI_EVENT_TIMER_DELAY,
+                                  )
 from rig_remote.exceptions import UnsupportedScanningConfigError
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.disk_io import IO
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import ScanningTask
 from rig_remote.scanning import Scanning
-from rig_remote.utility import frequency_pp, frequency_pp_parse, is_valid_port, is_valid_hostname, ToolTip
+from rig_remote.utility import (
+                                frequency_pp,
+                                frequency_pp_parse,
+                                is_valid_port,
+                                is_valid_hostname,
+                                ToolTip,
+                                RCCheckbutton,
+                                )
 import Tkinter as tk
 import ttk
 import os
@@ -92,34 +106,8 @@ from rig_remote.stmessenger import STMessenger
 # logging configuration
 logger = logging.getLogger(__name__)
 
-# class definition
 
-class RCCheckbutton(ttk.Checkbutton) :
-    """
-    RCCheckbutton is derived from ttk.Checkbutton, and adds an 
-    "is_checked" method to simplify checking instance's state, and
-    new methods to return string state values for config file.
-    """
-    def __init__(self,*args,**kwargs) :
-        self.var = kwargs.get('variable', tk.BooleanVar())
-        kwargs['variable'] = self.var
-        ttk.Checkbutton.__init__(self, *args, **kwargs)
-
-    def is_checked(self) :
-        return self.var.get()
-
-    def get_str_val(self) :
-        if self.is_checked() :
-            return ("true")
-        else :
-            return ("false")
-
-    def set_str_val(self, value) :
-        if value.lower() in ("true", "t") :
-            self.var.set(True)
-        else :
-            self.var.set(False)
-
+# classes definition
 class RigRemote(ttk.Frame):
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
@@ -752,10 +740,12 @@ class RigRemote(ttk.Frame):
         except Exception:
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
             if not silent:
-                tkMessageBox.showerror("Config File Error", "One (or more) " \
-                                                        "of the values in the config file was " \
-                                                        "invalid, and the default was used " \
-                                                        "instead.", parent=self)
+                tkMessageBox.showerror("Config File Error",
+                                       "One (or more) " \
+                                       "of the values in the config file was " \
+                                       "invalid, and the default was used " \
+                                       "instead.",
+                                       parent=self)
         else:
             self.params["txt_hostname"].insert(0, ac.config["hostname"])
         # Test positive integer values

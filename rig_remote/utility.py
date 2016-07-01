@@ -19,14 +19,16 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/05/30 - TAS - Added process_path.
 """
 
-
 import re
 from socket import gethostbyname, gaierror
 import logging
 import Tkinter as tk
 import os.path
+import ttk
 
 logger = logging.getLogger(__name__)
+
+# function definition
 
 def frequency_pp(frequency):
     """Filter invalid chars and add thousands separator.
@@ -243,3 +245,30 @@ class ToolTip:
             del opts[opt]
         label = tk.Label(self._tipwindow, **opts)
         label.pack()
+
+
+class RCCheckbutton(ttk.Checkbutton) :
+    """
+    RCCheckbutton is derived from ttk.Checkbutton, and adds an 
+    "is_checked" method to simplify checking instance's state, and
+    new methods to return string state values for config file.
+    """
+    def __init__(self,*args,**kwargs) :
+        self.var = kwargs.get('variable', tk.BooleanVar())
+        kwargs['variable'] = self.var
+        ttk.Checkbutton.__init__(self, *args, **kwargs)
+
+    def is_checked(self) :
+        return self.var.get()
+
+    def get_str_val(self) :
+        if self.is_checked() :
+            return ("true")
+        else :
+            return ("false")
+
+    def set_str_val(self, value) :
+        if value.lower() in ("true", "t") :
+            self.var.set(True)
+        else :
+            self.var.set(False)
