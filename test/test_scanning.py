@@ -73,6 +73,7 @@ def scan_task():
     params["ckb_record"] = TestBool(False)
     params["ckb_log"] = TestBool(False)
     params["ckb_wait"] = TestBool(False)
+    params["delay"] = 1
     params["ckb_auto_bookmark"] = TestBool(False)
     scan_task = ScanningTask(scanq,
                              mode,
@@ -82,6 +83,10 @@ def scan_task():
                              RigCtl(),
                              "")
     return scan_task
+
+def test_delay(scan_task):
+    s = Scanning()
+    s._queue_sleep(scan_task)
 
 def test_bad_interval(scan_task):
 
@@ -122,6 +127,7 @@ def test_unsupported_scan_mode():
                                  params,
                                  RigCtl(),
                                  "")
+
 
 
 testdata=[(None,
