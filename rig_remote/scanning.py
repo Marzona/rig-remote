@@ -194,8 +194,8 @@ class Scanning(object):
     def _queue_sleep(self, task):
         """check the queue regularly during 'sleep'
 
-        :param: task: current scanning task
-        :type: Scanningtask object
+        :param task: current scanning task
+        :type Scanningtask object
         :returns: None
         """
 
