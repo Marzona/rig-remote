@@ -915,7 +915,7 @@ class RigRemote(ttk.Frame):
     def bookmark_lockout(self, icycle=itertools.cycle(["L", "O"])):
         """Toggle lockout of selected bookmark.
         """
-        
+
         if (self.selected_bookmark == None) :
             # will use this in future to support "current scan" lockout
             return

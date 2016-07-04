@@ -189,6 +189,23 @@ def test_processs_hostname_entry(entry):
     rr._process_hostname_entry(entry, True)
     rr.root.destroy()
 
+def test_processs_port_entry_1():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+    rr.apply_config(ac)
+    rr._process_port_entry("test", True)
+    rr.rigctl.port=None
+    rr.root.destroy()
+
+def test_processs_port_entry_2():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    rr = RigRemote(root, ac)
+    rr.apply_config(ac)
+    rr._process_port_entry("8080", True)
+    rr.rigctl.port="8080"
+    rr.root.destroy()
 
 def test_ko_1_is_valid_hostname():
     with pytest.raises(gaierror):
