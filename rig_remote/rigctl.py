@@ -20,7 +20,12 @@ Copyright (c) 2015 Simone Marzona
 import logging
 import telnetlib
 import socket
-from rig_remote.constants import DEFAULT_CONFIG
+from rig_remote.constants import (
+                                 DEFAULT_CONFIG,
+                                 ALLOWED_VFO_COMMANDS,
+                                 ALLOWED_SPLIT_MODES,
+                                 RESET_CMD_DICT,
+                                 )
 
 # logging configuration
 logger = logging.getLogger(__name__)
@@ -146,3 +151,235 @@ class RigCtl(object):
 
         return output
 
+    def set_vfo(self, vfo):
+        """Wrapper around _request. It configures the command for getting
+        VFO.
+
+        """
+
+        if vfo not in ALLOWED_VFO_COMMANDS:
+            logger.info("VFO value must be a string inclueded in {}, "\
+                        "got {}".format(ALLOWED_VFO_COMMANDS, mode))
+            raise ValueError
+
+        return self._request('V %s' % vfo)
+
+    def get_vfo(self):
+        """Wrapper around _request. It configures the command for getting
+        VFO.
+
+        """
+
+        output = self._request('v')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting VFO, "\
+                         "got {}".format(output))
+            raise ValueError
+
+        return output
+
+    def set_rit(self, rit):
+        """Wrapper around _request. It configures the command for getting
+        RIT.
+
+        """
+
+        if not isinstance(rit, basestring):
+            logger.info("RIT value must be a string, "\
+                        "got {}".format(type(rit)))
+            raise ValueError
+
+        return self._request('J %s' % vfo)
+
+    def get_rit(self):
+        """Wrapper around _request. It configures the command for getting
+        RIT.
+
+        """
+
+        output = self._request('j')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting RIT, "\
+                         "got {}".format(type(output)))
+            raise ValueError
+
+        return output
+
+    def set_xit(self, XIT):
+        """Wrapper around _request. It configures the command for getting
+        XIT.
+
+        """
+
+        if not isinstance(XIT, basestring):
+            logger.info("XIT value must be a string, "\
+                        "got {}".format(type(XIT)))
+            raise ValueError
+
+        return self._request('J %s' % vfo)
+
+    def get_xit(self):
+        """Wrapper around _request. It configures the command for getting
+        XIT.
+
+        """
+
+        output = self._request('j')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting XIT, "\
+                         "got {}".format(type(output)))
+            raise ValueError
+
+        return output
+
+    def set_split_freq(self, split_freq):
+        """Wrapper around _request. It configures the command for setting
+        split frequency.
+
+        """
+
+        if not isinstance(split_freq, int):
+            logger.info("XIT value must be an integer, "\
+                        "got {}".format(type(split_freq)))
+            raise ValueError
+
+        return self._request('I %s' % vfo)
+
+    def get_split_freq(self):
+        """Wrapper around _request. It configures the command for getting
+        XIT.
+
+        """
+
+        output = self._request('i')
+        if not isinstance(output, int):
+            logger.error("Expected int while getting split_frequency, "\
+                         "got {}".format(type(output)))
+            raise ValueError
+
+        return output
+
+    def set_split_mode(self, split_mode):
+        """Wrapper around _request. It configures the command for setting
+        slit frequency.
+
+        """
+
+        if split_mode not in ALLOWED_SPLIT_MODES:
+            logger.info("split_mode value must be a string in {}, "\
+                        "got {}".format(ALLOWED_SPLIT_MODES,
+                                        type(split_freq)))
+            raise ValueError
+
+        return self._request('X %s' % vfo)
+
+    def get_split_mode(self):
+        """Wrapper around _request. It configures the command for getting
+        the split mode.
+
+        """
+
+        output = self._request('x')
+        if not isinstance(output, str):
+            logger.error("Expected string while getting split_frequency_mode, "\
+                         "got {}".format(type(output)))
+            raise ValueError
+
+        return output
+
+
+    def set_func(self, func):
+        """Wrapper around _request. It configures the command for getting
+        func.
+
+        """
+
+        if func not in ALLOWED_FUNC_COMMANDS:
+            logger.info("func value must be a string inclueded in {}, "\
+                        "got {}".format(ALLOWED_FUNC_COMMANDS, mode))
+            raise ValueError
+
+        return self._request('U %s' % func)
+
+    def get_func(self):
+        """Wrapper around _request. It configures the command for getting
+        func.
+
+        """
+
+        output = self._request('u')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting func, "\
+                         "got {}".format(output))
+            raise ValueError
+
+        return output
+
+
+    def set_parm(self, parm):
+        """Wrapper around _request. It configures the command for getting
+        parm.
+
+        """
+
+        if parm not in ALLOWED_PARM_COMMANDS:
+            logger.info("parm value must be a string inclueded in {}, "\
+                        "got {}".format(ALLOWED_PARM_COMMANDS, mode))
+            raise ValueError
+
+        return self._request('P %s' % parm)
+
+    def get_parm(self):
+        """Wrapper around _request. It configures the command for getting
+        parm.
+
+        """
+
+        output = self._request('p')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting parm, "\
+                         "got {}".format(output))
+            raise ValueError
+
+        return output
+
+    def set_antenna(self, antenna):
+        """Wrapper around _request. It configures the command for setting
+        an antenna.
+
+        """
+
+        if not isinstance(antennam, int):
+            logger.info("antenna value must be an int, "\
+                        "got {}".format(antenna))
+            raise ValueError
+
+        return self._request('Y %s' % antenna)
+
+    def get_antenna(self):
+        """Wrapper around _request. It configures the command for getting
+        the antenna in use.
+
+        """
+
+        output = self._request('f')
+        if not isinstance(output, basestring):
+            logger.error("Expected unicode string while getting radio antenna, "\
+                         "got {}".format(output))
+            raise ValueError
+
+        return self._request('y')
+
+    def rig_reset(self, reset_signal):
+        """Wrapper around _request. It configures the command for resetting
+        the rig with various levels 0  =  None,  1 = Software reset,
+        2 = VFO reset, 4 = Memory Clear reset, 8 = Master reset.
+
+        """
+
+        if reset_signal not in RESET_CMD_DICT.keys():
+            logger.error("Reset_signal must be one of "\
+                         "{}.".format(RESET_CMD_DICT.keys()))
+            raise ValueError
+
+        return self._request('* %s' % antenna)
