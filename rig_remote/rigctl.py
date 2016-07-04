@@ -53,7 +53,7 @@ class RigCtl(object):
         :response type: string
         """
 
-        logger.info("Connecting the rig at: {}:{}".format(self.hostname,
+        logger.error("Connecting the rig at: {}:{}".format(self.hostname,
                                                           self.port))
         try:
             con = telnetlib.Telnet(self.hostname, self.port)
@@ -79,7 +79,7 @@ class RigCtl(object):
         try:
             float(frequency)
         except ValueError:
-            logger.info("Frequency value must be a float, "\
+            logger.error("Frequency value must be a float, "\
                         "got {}".format(frequency))
             raise
         return self._request('F %s' % frequency)
@@ -105,7 +105,7 @@ class RigCtl(object):
         """
 
         if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-            logger.info("Frequency value must be a string in {}, "\
+            logger.error("Frequency value must be a string in {}, "\
                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
 
@@ -161,7 +161,7 @@ class RigCtl(object):
         """
 
         if vfo not in ALLOWED_VFO_COMMANDS:
-            logger.info("VFO value must be a string inclueded in {}, "\
+            logger.error("VFO value must be a string inclueded in {}, "\
                         "got {}".format(ALLOWED_VFO_COMMANDS, vfo))
             raise ValueError
 
@@ -188,7 +188,7 @@ class RigCtl(object):
         """
 
         if not isinstance(rit, int):
-            logger.info("RIT value must be an int, "\
+            logger.error("RIT value must be an int, "\
                         "got {}".format(type(rit)))
             raise ValueError
 
@@ -215,7 +215,7 @@ class RigCtl(object):
         """
 
         if not isinstance(xit, basestring):
-            logger.info("XIT value must be a string, "\
+            logger.error("XIT value must be a string, "\
                         "got {}".format(type(xit)))
             raise ValueError
 
@@ -242,7 +242,7 @@ class RigCtl(object):
         """
 
         if not isinstance(split_freq, int):
-            logger.info("XIT value must be an integer, "\
+            logger.error("XIT value must be an integer, "\
                         "got {}".format(type(split_freq)))
             raise ValueError
 
@@ -269,7 +269,7 @@ class RigCtl(object):
         """
 
         if split_mode not in ALLOWED_SPLIT_MODES:
-            logger.info("split_mode value must be a string in {}, "\
+            logger.error("split_mode value must be a string in {}, "\
                         "got {}".format(ALLOWED_SPLIT_MODES,
                                         type(split_mode)))
             raise ValueError
@@ -298,7 +298,7 @@ class RigCtl(object):
         """
 
         if func not in ALLOWED_FUNC_COMMANDS:
-            logger.info("func value must be a string inclueded in {}, "\
+            logger.error("func value must be a string inclueded in {}, "\
                         "got {}".format(ALLOWED_FUNC_COMMANDS, func))
             raise ValueError
 
@@ -326,7 +326,7 @@ class RigCtl(object):
         """
 
         if parm not in ALLOWED_PARM_COMMANDS:
-            logger.info("parm value must be a string inclueded in {}, "\
+            logger.error("parm value must be a string inclueded in {}, "\
                         "got {}".format(ALLOWED_PARM_COMMANDS, parm))
             raise ValueError
 
@@ -353,7 +353,7 @@ class RigCtl(object):
         """
 
         if not isinstance(antenna, int):
-            logger.info("antenna value must be an int, "\
+            logger.error("antenna value must be an int, "\
                         "got {}".format(antenna))
             raise ValueError
 
