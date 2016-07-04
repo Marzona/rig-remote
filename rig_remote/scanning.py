@@ -218,7 +218,7 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        if task.mode.lower() not in SUPPORTED_SCANNING_MODES:
+        if task and task.mode.lower() not in SUPPORTED_SCANNING_MODES:
             logger.exception("Invalid scan mode provided:{}".format(task.mode))
             raise InvalidScanModeError
 

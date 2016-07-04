@@ -285,3 +285,7 @@ def test_signal_check(fake_rig):
     sgn_level = 2
     detected_level = []
     assert( s._signal_check( sgn_level, fake_rig, detected_level) == True)
+
+def test_process_queue(scan_task):
+    s=Scanning()
+    s._process_queue(scan_task)
