@@ -7,8 +7,7 @@ from rig_remote.utility import (
                                 )
 
 def test_this_file_exist():
-    with pytest.raises(IOError):
-        this_file_exist("/nonexisting")
+    assert(None == this_file_exists("/nonexisting"))
 
 def test_is_valid_port_1():
     with pytest.raises(ValueError):
