@@ -20,3 +20,4 @@ def test_is_valid_port_2():
 def test_is_valid_hostname():
     with pytest.raises(ValueError):
         is_valid_hostname("")
+
