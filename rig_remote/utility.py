@@ -104,7 +104,8 @@ def this_file_exists(filename):
         return None
 
 def process_path(path):
-    """ Handle tilde expansion in a path."""
+    """Handle tilde expansion in a path.
+    """
 
     working_path, working_name = os.path.split(path)
     if working_path:
