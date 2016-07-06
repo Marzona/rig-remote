@@ -168,12 +168,12 @@ class ScanningTask(object):
     def _check_interval(self):
         """Checks for a sane interval. We don't want to search for signals
         with bandwidth lower than MIN_INTERVAL, if there is such a low interval
-        we overwrite and log a warning.
+        we overwrite and log an error.
         """
 
         if khertz_to_hertz(self.params["interval"]) < MIN_INTERVAL:
-            logger.info("Low interval provided:{}".format(self.params["interval"]))
-            logger.info("Overriding with {}".format(MIN_INTERVAL))
+            logger.error("Low interval provided:{}".format(self.params["interval"]))
+            logger.error("Overriding with {}".format(MIN_INTERVAL))
             self.params["interval"] = MIN_INTERVAL
 
 
@@ -197,7 +197,11 @@ class Scanning(object):
         :returns: None
         """
 
-        length = task.params['delay']
+        length = task.params["delay"]
+        if not isinstance(length, int):
+            logger.error("delay is not an int: {}".format(type(task.params["delay"])))
+            raise ValueError
+
         while True:
             if task.scanq.update_queued():
                 self._process_queue(task)
@@ -216,15 +220,17 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        if task and task.mode.lower() not in SUPPORTED_SCANNING_MODES:
+        if (not task or 
+            not task.mode or
+            task.mode.lower() not in SUPPORTED_SCANNING_MODES):
             logger.exception("Invalid scan mode provided:{}".format(task.mode))
             raise InvalidScanModeError
 
         log = LogFile()
         log.open(task.log_filename)
-        if task and task.mode.lower() == "bookmarks":
+        if task.mode.lower() == "bookmarks":
             task = self._bookmarks(task, log)
-        elif task and task.mode.lower() == "frequency":
+        elif task.mode.lower() == "frequency":
             task = self._frequency(task, log)
         log.close()
 
@@ -428,9 +434,8 @@ class Scanning(object):
 
         processed_something = False
         while task.scanq.update_queued():
-            try:
-                name, value = task.scanq.get_event_update()
-            except NoneType:
+            name, value = task.scanq.get_event_update()
+            if not name or not value:
                 logger.warning("Event update attempt returned None.")
                 break
             try:

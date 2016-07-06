@@ -55,11 +55,20 @@ def fake_rig():
             return "8.2"
     return fake_rig()
 
+@pytest.fixture
+def FakeSTMessenger():
+    class FakeSTMessenger(object):
+        def update_queued(self):
+            return False
+        def get_event_update(self):
+            return None, None
+    return FakeSTMessenger
 
 @pytest.fixture
 def scan_task():
+
     params = {}
-    scanq = STMessenger()
+    scanq = ""
     mode = "bookmarks"
     rig = None
     bookmark_list = []
@@ -75,6 +84,7 @@ def scan_task():
     params["ckb_wait"] = TestBool(False)
     params["delay"] = 1
     params["ckb_auto_bookmark"] = TestBool(False)
+
     scan_task = ScanningTask(scanq,
                              mode,
                              bookmark_list,
@@ -84,22 +94,20 @@ def scan_task():
                              "")
     return scan_task
 
-def test_delay(scan_task):
+def test_delay(scan_task, FakeSTMessenger):
     s = Scanning()
+    scan_task.scanq=FakeSTMessenger()
     s._queue_sleep(scan_task)
 
-def test_bad_interval(scan_task):
-
+def test_low_interval(scan_task):
+    scan_task.params["interval"] = MIN_INTERVAL/10000
     scan_task._check_interval()
-    minimum_interval = MIN_INTERVAL*100
-    assert (scan_task.params["interval"] == minimum_interval)
+    assert (scan_task.params["interval"] == MIN_INTERVAL)
 
-def test_good_interval(scan_task):
-
-    scan_task.interval= "100001"
+def test_interval(scan_task):
+    scan_task.params["interval"] = MIN_INTERVAL*100
     scan_task._check_interval()
-    assert (scan_task.interval != MIN_INTERVAL)
-
+    assert (scan_task.params["interval"] == MIN_INTERVAL*100)
 
 def test_unsupported_scan_mode():
 
@@ -261,7 +269,7 @@ def test_2_tune():
         pass
     assert (s.scan_active == False)
 
-def test_new_bookmarks(fake_rig):
+def test_new_bookmarks_1(fake_rig):
     st = scan_task()
     st.rig = fake_rig
     freq = st.params["range_min"]
@@ -270,6 +278,14 @@ def test_new_bookmarks(fake_rig):
     nbm = s._create_new_bookmark(st, freq)
     st.new_bookmark_list.append(nbm)
     assert(original_len + 1 == len(st.new_bookmark_list))
+
+def test_new_bookmarks_2(fake_rig):
+    s = Scanning()
+    st = scan_task()
+    st.rig = fake_rig
+    freq = st.params["range_min"]
+    nbm = s._create_new_bookmark(st, freq)
+    assert(isinstance(nbm, dict) == True)
 
 def test_1_scan():
     s=Scanning()
@@ -286,9 +302,6 @@ def test_signal_check(fake_rig):
     detected_level = []
     assert( s._signal_check( sgn_level, fake_rig, detected_level) == True)
 
-def test_process_queue(scan_task):
-    s=Scanning()
-    s._process_queue(scan_task)
 
 def test_pass_count_update(scan_task):
     s=Scanning()
@@ -302,3 +315,22 @@ def test_get_scan_items(scan_task):
     freq, pass_count, interval = s._get_task_items(scan_task)
     assert (freq == scan_task.params["range_min"])
     assert (pass_count == scan_task.params["passes"])
+
+def test_queue_sleep_1(scan_task,FakeSTMessenger):
+    # sillt test just to make sure that the while true actually ends.
+    s = Scanning()
+    scan_task.params['delay'] = 1
+    scan_task.scanq=FakeSTMessenger()
+    s._queue_sleep(scan_task)
+
+def test_queue_sleep_2(scan_task):
+    # sillt test just to make sure that the while true actually ends.
+    s = Scanning()
+    scan_task.params['delay'] = "test"
+    with pytest.raises(ValueError):
+        s._queue_sleep(scan_task)
+
+def test_terminate():
+    s = Scanning()
+    s.terminate()
+    assert(s.scan_active == False)
