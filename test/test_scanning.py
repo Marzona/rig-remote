@@ -289,3 +289,16 @@ def test_signal_check(fake_rig):
 def test_process_queue(scan_task):
     s=Scanning()
     s._process_queue(scan_task)
+
+def test_pass_count_update(scan_task):
+    s=Scanning()
+    s.scan_active=True
+    scan_task.params["passes"]=2
+    n,task = s._pass_count_update(1,scan_task)
+    assert(s.scan_active == False)
+
+def test_get_scan_items(scan_task):
+    s = Scanning()
+    freq, pass_count, interval = s._get_task_items(scan_task)
+    assert (freq == scan_task.params["range_min"])
+    assert (pass_count == scan_task.params["passes"])

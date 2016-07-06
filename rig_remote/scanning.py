@@ -69,6 +69,10 @@ from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
 from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
 from rig_remote.stmessenger import STMessenger
+from rig_remote.utility import(
+                             khertz_to_hertz,
+                             dbfs_to_sgn,
+                            )
 import socket
 import logging
 import time
@@ -77,13 +81,7 @@ import re
 # logging configuration
 logger = logging.getLogger(__name__)
 
-# helper functions
-
-def _khertz_to_hertz(value):
-    return value*1000
-
-def _dbfs_to_sgn(value):
-    return value*10
+# class definition
 
 class ScanningTask(object):
     """Representation of a scan task, with helper method for checking
@@ -134,10 +132,10 @@ class ScanningTask(object):
 
         try:
             self.params["range_min"] = \
-                            _khertz_to_hertz(int(filter(str.isdigit,
+                            khertz_to_hertz(int(filter(str.isdigit,
                                                        self.params["txt_range_min"].get())))
             self.params["range_max"] = \
-                            _khertz_to_hertz(int(filter(str.isdigit,
+                            khertz_to_hertz(int(filter(str.isdigit,
                                                        self.params["txt_range_max"].get())))
             self.params["interval"] = int(filter(str.isdigit,
                                                  self.params["txt_interval"].get()))
@@ -173,7 +171,7 @@ class ScanningTask(object):
         we overwrite and log a warning.
         """
 
-        if _khertz_to_hertz(self.params["interval"]) < MIN_INTERVAL:
+        if khertz_to_hertz(self.params["interval"]) < MIN_INTERVAL:
             logger.info("Low interval provided:{}".format(self.params["interval"]))
             logger.info("Overriding with {}".format(MIN_INTERVAL))
             self.params["interval"] = MIN_INTERVAL
@@ -235,7 +233,6 @@ class Scanning(object):
         This is for reducing the code inside the while true loops
         """
 
-
         logger.info("Tuning to {}".format(freq))
 
         try:
@@ -264,6 +261,11 @@ class Scanning(object):
         task.rig.stop_recording()
         logger.info("Recording stopped.")
 
+    def _get_task_items(self, task):
+        freq = task.params["range_min"]
+        pass_count = task.params["passes"]
+        interval = khertz_to_hertz(task.params["interval"])
+        return freq, pass_count, interval
 
     def _frequency(self, task, log):
         """Performs a frequency scan, using the task obj for finding
@@ -277,7 +279,7 @@ class Scanning(object):
 
         level = []
         pass_count = task.params["passes"]
-        interval = _khertz_to_hertz(task.params["interval"])
+        interval = khertz_to_hertz(task.params["interval"])
         while self.scan_active:
             freq = task.params["range_min"]
             # If the range is negative, silently bail...
@@ -285,10 +287,7 @@ class Scanning(object):
                 self.scan_active = False
             while freq < task.params["range_max"]:
                 if self._process_queue(task):
-                    freq = task.params["range_min"]
-                    pass_count = task.params["passes"]
-                    interval = _khertz_to_hertz(task.params["interval"])
-                    logger.info("Interval:{}".format(task.params["interval"]))
+                    freq, pass_count, interval = self._get_task_items(task)
                 try:
                     self._frequency_tune(task, freq)
                 except (socket.error, socket.timeout):
@@ -318,12 +317,16 @@ class Scanning(object):
                 freq = freq + interval
                 if not self.scan_active:
                     return task
-            if pass_count > 0:
-                pass_count -= 1
-                if pass_count == 0 and task.params["passes"] > 0:
-                    self.scan_active = False
+            pass_count, task = self._pass_count_update(pass_count, task)
         task.scanq.notify_end_of_scan()
         return task
+
+    def _pass_count_update(self, pass_count, task):
+        if pass_count > 0:
+            pass_count -= 1
+            if pass_count == 0 and task.params["passes"] > 0:
+                self.scan_active = False
+        return pass_count, task
 
     def _signal_check(self, sgn_level, rig, detected_level):
         """check for the signal SIGNAL_CHECKS times pausing
@@ -337,7 +340,7 @@ class Scanning(object):
         """
 
         del detected_level[:]
-        sgn = _dbfs_to_sgn(sgn_level)
+        sgn = dbfs_to_sgn(sgn_level)
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
@@ -408,11 +411,7 @@ class Scanning(object):
 
                 if not self.scan_active:
                     return task
-
-            if pass_count > 0:
-                pass_count -= 1
-                if pass_count == 0 and task.params['passes'] > 0:
-                    self.scan_active = False
+            pass_count, task = self._pass_count_update(pass_count, task)
         task.scanq.notify_end_of_scan()
         return task
 
@@ -438,7 +437,7 @@ class Scanning(object):
                 key = str(name.split("_", 1)[1])
                 if key in task.params:
                     if key in ('range_min', 'range_max'):
-                        task.params[key] = _khertz_to_hertz(value)
+                        task.params[key] = khertz_to_hertz(value)
                     else:
                         task.params[key] = value
                 else:
