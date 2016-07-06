@@ -53,8 +53,6 @@ class RigCtl(object):
         :response type: string
         """
 
-        logger.error("Connecting the rig at: {}:{}".format(self.hostname,
-                                                          self.port))
         try:
             con = telnetlib.Telnet(self.hostname, self.port)
         except socket.timeout:
