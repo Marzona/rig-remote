@@ -4,6 +4,7 @@ from rig_remote.utility import (
                                 this_file_exists,
                                 is_valid_port,
                                 is_valid_hostname,
+                                process_path,
                                 )
 
 def test_this_file_exist():
@@ -21,3 +22,11 @@ def test_is_valid_hostname():
     with pytest.raises(ValueError):
         is_valid_hostname("")
 
+def test_process_path_1():
+    path= "/tmp/p"
+    assert(path == process_path(path))
+
+def test_process_path_2():
+    path="~/test/p"
+    processed_path= process_path(path)
+    assert(("home" in processed_path) ==True)

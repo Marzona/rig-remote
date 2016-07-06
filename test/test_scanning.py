@@ -334,3 +334,4 @@ def test_terminate():
     s = Scanning()
     s.terminate()
     assert(s.scan_active == False)
+

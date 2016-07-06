@@ -28,6 +28,7 @@ from rig_remote.constants import (
                                  ALLOWED_FUNC_COMMANDS,
                                  RESET_CMD_DICT,
                                  ALLOWED_RIGCTL_MODES,
+                                 RIG_TIMEOUT,
                                  )
 
 # logging configuration
@@ -54,7 +55,7 @@ class RigCtl(object):
         """
 
         try:
-            con = telnetlib.Telnet(self.hostname, self.port)
+            con = telnetlib.Telnet(self.hostname, self.port, RIG_TIMEOUT)
         except socket.timeout:
             logger.error("Time out while connecting to {}:{}".format(self.hostname,
                                                                      self.port))
