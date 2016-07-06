@@ -737,7 +737,7 @@ class RigRemote(ttk.Frame):
         ac.read_conf()
         try:
             is_valid_hostname(ac.config["hostname"])
-        except Exception:
+        except ValueError:
             self.params["txt_hostname"].insert(0, DEFAULT_CONFIG["hostname"])
             if not silent:
                 tkMessageBox.showerror("Config File Error",
