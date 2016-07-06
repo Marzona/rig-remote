@@ -18,6 +18,7 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 # constant definition
+RIG_TIMEOUT=10
 RESET_CMD_DICT={"NONE" : 0,
                 "SOFTWARE_RESET": 1,
                 "VFO_RESET": 2,

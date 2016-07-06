@@ -155,11 +155,13 @@ class ToolTip:
             else:
                 KeyError = 'KeyError: Unknown option: "%s"' %key
                 raise KeyError
+
     """
     these methods handle the callbacks on "<Enter>", "<Leave>" and "<Motion>"
     events on the parent widget; override them if you want to change the 
     widget's behavior
     """
+
     def enter(self, event=None):
         self._schedule()
 
