@@ -38,8 +38,8 @@ class RigCtl(object):
     """Basic rigctl client implementation."""
 
     def __init__(self,
-                 hostname=DEFAULT_CONFIG["hostname"],
-                 port=DEFAULT_CONFIG["port"]):
+                 hostname=DEFAULT_CONFIG["hostname1"],
+                 port=DEFAULT_CONFIG["port1"]):
         self.hostname = hostname
         self.port = port
 
