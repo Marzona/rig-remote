@@ -54,7 +54,10 @@ def frequency_pp_parse(frequency):
     :return: frequency without separator or None if invalid chars present
     :return type: string or None
     """
-
+    if not isinstance(frequency, basestring):
+        logger.error("frequency is not a string, "\
+                     "but {}".format(type(frequency)))
+        raise ValueError
     nocommas = frequency.replace(',', '')
     results = re.search("[^0-9]", nocommas)
     if results == None:
