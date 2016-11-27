@@ -28,7 +28,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/02/19 - TAS - Added frequency scan "Stop" button.
 2016/02/20 - TAS - Added "wait" checkbox. See scanning.py for notes.
 2016/02/22 - TAS - Removed "stop" button and use a "toggle" function for
-                   start/stop of scanning. Add "lock" button to UI as 
+                   start/stop of scanning. Add "lock" button to UI as
                    placeholder, but haven't implemented lockout yet.
 2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
 2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
@@ -42,7 +42,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    queue. Added Checkbutton class to streamline handling.
                    TODO: Change initial thread parameter passing to
                    a dict also, and then flesh out skeleton update code
-                   in scanning thread. Update config code to add new 
+                   in scanning thread. Update config code to add new
                    checkboxes.
 2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
                    (Github issue #21)
@@ -139,7 +139,7 @@ class RigRemote(ttk.Frame):
 
     def build(self, ac):
         """Build and initialize the GUI widgets.
-        :param: none
+        :param: ac
         :raises: none
         :returns: None
         """
@@ -162,7 +162,7 @@ class RigRemote(ttk.Frame):
                                   show="headings")
         t_tree = ToolTip(self.tree,
                          follow_mouse=1,
-                         text="Bookmark list, double click to recall.")
+                         text="Your bookmark list")
 
         self.tree.heading('frequency',
                           text='Frequency',
@@ -342,14 +342,14 @@ class RigRemote(ttk.Frame):
                   text="Mode:").grid(row=6,
                                      column=1,
                                      sticky=tk.W)
-        self.params["cbb_mode2"] = ttk.Combobox(self.rig_control_menu, 
-                                               name="cbb_mode2",width=15)
+        self.params["cbb_mode2"] = ttk.Combobox(self.rig_control_menu,
+                                                name="cbb_mode2",width=15)
         self.params["cbb_mode2"].grid(row=6,
-                                     column=2,
-                                     columnspan=3,
-                                     padx=2,
-                                     pady=2,
-                                     sticky=tk.EW)
+                                      column=2,
+                                      columnspan=3,
+                                      padx=2,
+                                      pady=2,
+                                      sticky=tk.EW)
         t_cbb_mode2 = ToolTip(self.params["cbb_mode2"],
                               follow_mouse=1,
                               text="Mode to use for tuning the frequency.")
@@ -360,66 +360,98 @@ class RigRemote(ttk.Frame):
                                             column=1,
                                             sticky=tk.EW)
         self.params["txt_description2"] = ttk.Entry(self.rig_control_menu,
-                                                   name="txt_description2")
+                                                    name="txt_description2")
         self.params["txt_description2"].grid(row=7,
-                                            column=2,
-                                            columnspan=3,
-                                            padx=2,
-                                            pady=2,
-                                            sticky=tk.EW)
+                                             column=2,
+                                             columnspan=3,
+                                             padx=2,
+                                             pady=2,
+                                             sticky=tk.EW)
         t_txt_description2 = ToolTip(self.params["txt_description2"],
-                                    follow_mouse=1,
-                                    text="Description of the bookmark.")
+                                     follow_mouse=1,
+                                     text="Description of the bookmark.")
 
         self.btn_add2 = ttk.Button(self.rig_control_menu,
-                                  text="Add",
-                                  width=7,
-                                  command=self.cb_second_add)
+                                   text="Add",
+                                   width=7,
+                                   command=self.cb_second_add)
         t_btn_add2 = ToolTip(self.btn_add2,
-                            follow_mouse=1,
-                            text="Bookmark this frequency.")
+                             follow_mouse=1,
+                             text="Bookmark this frequency.")
         self.btn_add2.grid(row=8,
-                          column=2,
-                          padx=2,
-                          pady=2)
+                           column=2,
+                           padx=2,
+                           pady=2)
 
         self.btn_delete2 = ttk.Button(self.rig_control_menu,
-                                     text="Delete",
-                                     width=7,
-                                     command=self.cb_delete2)
+                                      text="Remove",
+                                      width=7,
+                                      command=self.cb_delete2)
         t_btn_delete2 = ToolTip(self.btn_delete2,
                                follow_mouse=1,
                                text="Remove this frequency from bookmarks.")
         self.btn_delete2.grid(row=8,
-                              column=3,
+                              column=1,
                               padx=2,
                               pady=2)
 
         self.btn_load2 = ttk.Button(self.rig_control_menu,
-                                   text="Get",
-                                   width=7,
-                                   command=self.cb_second_get_frequency)
+                                    text="Get",
+                                    width=7,
+                                    command=self.cb_second_get_frequency)
         t_btn_load2 = ToolTip(self.btn_load2,
-                             follow_mouse=1,
-                             text="Get the frequency and mode from the rig.")
-        self.btn_load2.grid(row=8,
-                           column=4,
-                           padx=2,
-                           pady=2)
+                              follow_mouse=1,
+                              text="Get the frequency and mode from the rig.")
+        self.btn_load2.grid(row=9,
+                            column=3,
+                            padx=2,
+                            pady=2)
 
         self.btn_tune2 = ttk.Button(self.rig_control_menu,
-                                       text="tune",
-                                       width=7,
-                                       command=self.cb_second_set_frequency)
+                                    text="Set",
+                                    width=7,
+                                    command=self.cb_second_set_frequency)
         t_btn_tune2 = ToolTip(self.btn_tune2,
-                                 follow_mouse=1,
-                                 text="tune the frequency and mode "\
-                                      "from the bookmarks.")
+                             follow_mouse=1,
+                             text="Tune the frequency and mode from the "
+                                  "rig control panel above.")
 
-        self.btn_tune2.grid(row=8,
-                               column=1,
-                               padx=2,
-                               pady=2)
+        self.btn_tune2.grid(row=9,
+                            column=1,
+                            padx=2,
+                            pady=2)
+
+        self.btn_recall2 = ttk.Button(self.rig_control_menu,
+                                      text="Recall",
+                                      width=7,
+                                   command=self.cb_second_fill_form)
+        t_btn_recall2 = ToolTip(self.btn_recall2,
+                                follow_mouse=1,
+                                text="Recall the frequency and mode from the "
+                                     "bookmarks into this rig control panel.")
+        t_btn_recall2 = ToolTip(self.btn_recall2,
+                                follow_mouse=1,
+                                text="Recall the frequency and mode from the "
+                                     "bookmarks into this rig control panel.")
+
+        self.btn_recall2.grid(row=8,
+                              column=3,
+                              padx=2,
+                              pady=2)
+
+#        self.btn_tune2 = ttk.Button(self.rig_control_menu,
+#                                       text="Load",
+#                                       width=7,
+#                                       command=self.cb_second_set_frequency)
+#        t_btn_tune2 = ToolTip(self.btn_tune2,
+#                                 follow_mouse=1,
+#                                 text="Tune the frequency and mode "
+#                                      "from the bookmarks.")
+
+#        self.btn_tune2.grid(row=8,
+#                               column=3,
+#                               padx=2,
+#                               pady=2)
 
 
         # horizontal separator
@@ -458,7 +490,7 @@ class RigRemote(ttk.Frame):
                   text="Mode:").grid(row=6,
                                      column=0,
                                      sticky=tk.W)
-        self.params["cbb_mode1"] = ttk.Combobox(self.rig_control_menu, 
+        self.params["cbb_mode1"] = ttk.Combobox(self.rig_control_menu,
                                                name="cbb_mode1",width=15)
         self.params["cbb_mode1"].grid(row=6,
                                      column=1,
@@ -500,14 +532,14 @@ class RigRemote(ttk.Frame):
                           pady=2)
 
         self.btn_delete1 = ttk.Button(self.rig_control_menu,
-                                     text="Delete",
+                                     text="Remove",
                                      width=7,
                                      command=self.cb_delete1)
         t_btn_delete1 = ToolTip(self.btn_delete1,
                                follow_mouse=1,
                                text="Remove this frequency from bookmarks.")
         self.btn_delete1.grid(row=8,
-                             column=2,
+                             column=0,
                              padx=2,
                              pady=2)
 
@@ -515,28 +547,55 @@ class RigRemote(ttk.Frame):
                                    text="Get",
                                    width=7,
                                    command=self.cb_first_get_frequency)
-        t_btn_load = ToolTip(self.btn_load1,
+        t_btn_load1 = ToolTip(self.btn_load1,
                              follow_mouse=1,
                              text="Get the frequency and mode from the rig.")
 
-        self.btn_load1.grid(row=8,
-                           column=3,
+        self.btn_load1.grid(row=9,
+                           column=2,
                            padx=2,
                            pady=2)
 
         self.btn_tune1 = ttk.Button(self.rig_control_menu,
-                                       text="tune",
-                                       width=7,
-                                       command=self.cb_first_set_frequency)
+                                   text="Set",
+                                   width=7,
+                                   command=self.cb_first_set_frequency)
         t_btn_tune1 = ToolTip(self.btn_tune1,
-                                 follow_mouse=1,
-                                 text="tune the frequency and mode "\
-                                      "from the bookmarks.")
+                              follow_mouse=1,
+                              text="Tune the frequency and mode from the "
+                                   "rig control panel above.")
 
-        self.btn_tune1.grid(row=8,
-                               column=0,
-                               padx=2,
-                               pady=2)
+        self.btn_tune1.grid(row=9,
+                            column=0,
+                            padx=2,
+                            pady=2)
+
+        self.btn_recall1 = ttk.Button(self.rig_control_menu,
+                                      text="Recall",
+                                      width=7,
+                                      command=self.cb_first_fill_form)
+        t_btn_recall1 = ToolTip(self.btn_recall1,
+                                follow_mouse=1,
+                                text="Recall the frequency and mode from the "
+                                     "bookmarks into this rig control panel.")
+
+        self.btn_recall1.grid(row=8,
+                              column=2,
+                              padx=2,
+                              pady=2)
+#        self.btn_recall1 = ttk.Button(self.rig_control_menu,
+#                                      text="Load",
+#                                      width=7,
+#                                      command=self.cb_first_set_frequency)
+#        t_btn_recall1 = ToolTip(self.btn_recall1,
+#                                follow_mouse=1,
+#                                text="Recall the frequency and mode from the "
+#                                     "bookmarks into this rig control panel.")
+
+#        self.btn_recall1.grid(row=8,
+#                              column=2,
+#                              padx=2,
+#                              pady=2)
 
         # horizontal separator
         ttk.Frame(self.rig_control_menu).grid(row=9,
@@ -634,7 +693,7 @@ class RigRemote(ttk.Frame):
                                      sticky=tk.E)
         t_ckb_wait = ToolTip(self.params["ckb_wait"],
                              follow_mouse=1,
-                             text="Waits after having found an active"\
+                             text="Waits after having found an active"
                                   " frequency.")
         self.params["ckb_wait"].val = self.cb_wait
         self.cb_wait.trace("w", self.process_wait)
@@ -652,7 +711,7 @@ class RigRemote(ttk.Frame):
                                        sticky=tk.E)
         t_ckb_record = ToolTip(self.params["ckb_record"],
                                follow_mouse=1,
-                               text="Enable the recording of signal to"\
+                               text="Enable the recording of signal to"
                                     " a file.")
         self.params["ckb_record"].val = self.cb_record
         self.cb_record.trace("w", self.process_record)
@@ -714,7 +773,7 @@ class RigRemote(ttk.Frame):
                                           sticky=tk.W)
         t_txt_range_min = ToolTip(self.params["txt_range_min"],
                                   follow_mouse=1,
-                                  text="Lower bound of the frequency"\
+                                  text="Lower bound of the frequency"
                                        " band to scan.")
         self.params["txt_range_min"].bind("<Return>", self.process_entry)
         self.params["txt_range_min"].bind("<FocusOut>", self.process_entry)
@@ -730,7 +789,7 @@ class RigRemote(ttk.Frame):
                                           sticky=tk.W)
         t_txt_range_max = ToolTip(self.params["txt_range_max"],
                                   follow_mouse=1,
-                                  text="Upper bound of the frequency"\
+                                  text="Upper bound of the frequency"
                                        " band to scan.")
         self.params["txt_range_max"].bind("<Return>", self.process_entry)
         self.params["txt_range_max"].bind("<FocusOut>", self.process_entry)
@@ -769,7 +828,7 @@ class RigRemote(ttk.Frame):
                           variable=self.cb_auto_bookmark)
         t_ckb_auto_bookmark = ToolTip(self.params["ckb_auto_bookmark"],
                                       follow_mouse=1,
-                                      text="Bookmark any active frequency"\
+                                      text="Bookmark any active frequency"
                                            " found.")
         self.params["ckb_auto_bookmark"].grid(row=16,
                                               column=0,
@@ -790,8 +849,8 @@ class RigRemote(ttk.Frame):
                                            sticky=tk.E)
         t_ckb_aggr_scan = ToolTip(self.params["ckb_aggr_scan"],
                                    follow_mouse=1,
-                                   text="Split the frequency range "\
-                                        "and use both rigs "\
+                                   text="Split the frequency range "
+                                        "and use both rigs "
                                         "simultaneously. Implies auto bookmark")
         self.params["ckb_aggr_scan"].val = self.cb_aggr_scan
         self.cb_aggr_scan.trace("w", self.process_record)
@@ -935,10 +994,10 @@ class RigRemote(ttk.Frame):
         except ValueError:
             self.params["txt_hostname1"].insert(0, DEFAULT_CONFIG["hostname1"])
             if not silent:
-                tkMessageBox.showerror("Config File Error",
-                                       "One (or more) " \
-                                       "of the values in the config file was " \
-                                       "invalid, and the default was used " \
+                tkMessageBox.showerror("Config File Error"
+                                       "One (or more) "
+                                       "of the values in the config file was "
+                                       "invalid, and the default was used "
                                        "instead.",
                                        parent=self)
         else:
@@ -966,9 +1025,9 @@ class RigRemote(ttk.Frame):
             self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
         if eflag :
             if not silent:
-                tkMessageBox.showerror("Config File Error", "One (or more) "\
-                                   "of the values in the config file was "\
-                                   "invalid, and the default was used "\
+                tkMessageBox.showerror("Config File Error", "One (or more) "
+                                   "of the values in the config file was "
+                                   "invalid, and the default was used "
                                    "instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
                 ac.config["auto_bookmark"].lower())
@@ -1042,7 +1101,7 @@ class RigRemote(ttk.Frame):
         """
 
         if task not in ALLOWED_BOOKMARK_TASKS:
-            logger.info("Not allowed bookmark task requested {}, "\
+            logger.info("Not allowed bookmark task requested {}, "
                         "ignoring.".format(task))
 
         bookmarks = IO()
@@ -1063,8 +1122,8 @@ class RigRemote(ttk.Frame):
                         error = True
                     if error == True :
                         if not silent:
-                            tkMessageBox.showerror("Error", "Invalid value in "\
-                                                   "Bookmark #%i. "\
+                            tkMessageBox.showerror("Error", "Invalid value in "
+                                                   "Bookmark #%i. "
                                                    "Skipping..." %count)
                     else :
                         item = self.tree.insert('', tk.END, values=line)
@@ -1131,7 +1190,7 @@ class RigRemote(ttk.Frame):
            appropriate.
         """
 
-        if self.scan_mode == None or self.scan_mode == "frequency" : 
+        if self.scan_mode == None or self.scan_mode == "frequency" :
             action = self.freq_scan_toggle.cget('text').lower()
             self.freq_scan_toggle.config(text = next(icycle))
             self._scan("frequency", action)
@@ -1150,8 +1209,8 @@ class RigRemote(ttk.Frame):
         except ValueError:
             if not silent:
                 tkMessageBox.showerror("Error",
-                                       "Invalid input value in "\
-                                       "port. Must be integer and greater than "\
+                                       "Invalid input value in "
+                                       "port. Must be integer and greater than "
                                        "1024")
             return
         self.rigctl.port=event_value
@@ -1193,8 +1252,8 @@ class RigRemote(ttk.Frame):
         if (event_value == "") or event_value.isspace() :
             if not silent:
                 answer = tkMessageBox.askyesno("Error",
-                                               "{} must have a value "\
-                                               "entered. Use the "\
+                                               "{} must have a value "
+                                               "entered. Use the "
                                                "default?".format(ekey))
             else:
                 answer = True     #default answer for testing
@@ -1307,7 +1366,7 @@ class RigRemote(ttk.Frame):
 
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
-            logger.error("Supported "\
+            logger.error("Supported "
                          "actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
 
@@ -1428,14 +1487,14 @@ class RigRemote(ttk.Frame):
         """Wrapper around cb_set_frequency.
 
         """
-        rig_target=self.build_rig_source(2)
+        rig_target=self.build_rig_uri(2)
         self.cb_get_frequency(rig_target)
 
     def cb_first_get_frequency(self):
         """Wrapper around cb_set_frequency.
 
         """
-        rig_target=self.build_rig_source(1)
+        rig_target=self.build_rig_uri(1)
         self.cb_get_frequency(rig_target)
 
     def cb_get_frequency(self, rig_target, silent = False):
@@ -1448,21 +1507,23 @@ class RigRemote(ttk.Frame):
         """
 
         # clear fields
-        self._clear_form()
+        self._clear_form(rig_target["rig_number"])
         try:
-            frequency = self.rigctl.get_frequency()
-            mode = self.rigctl.get_mode()
+            frequency = self.rigctl.get_frequency(rig_target)
+            mode = self.rigctl.get_mode(rig_target)
             # update fields
-            self.params["txt_frequency"].insert(0,
+            txt_frequency = "txt_frequency{}".format(rig_target["rig_number"])
+            self.params[txt_frequency].insert(0,
                                                 frequency_pp(frequency))
-            self.params["cbb_mode"].insert(0, mode)
+            cbb_mode = "cbb_mode{}".format(rig_target["rig_number"])
+            self.params[cbb_mode].insert(0, mode)
         except Exception as err:
             if not silent:
                 tkMessageBox.showerror("Error",
                                    "Could not connect to rig.\n%s" % err,
                                    parent=self)
 
-    def build_rig_source(self, number):
+    def build_rig_uri(self, number):
         if number not in (1,2):
             logger.error("The rig number {} is not supported".format(number))
             raise NotImplementedError
@@ -1470,9 +1531,9 @@ class RigRemote(ttk.Frame):
         rig_target= {}
         hostname = ("txt_hostname{}".format(number))
         port = ("txt_port{}".format(number))
-
-        rig_target["hostname"] = self.params[hostname]
-        rig_target["port"] = self.params[port]
+        rig_target["hostname"] = self.params[hostname].get()
+        rig_target["port"] = self.params[port].get()
+        rig_target["rig_number"] = number
 
         return rig_target
 
@@ -1480,14 +1541,14 @@ class RigRemote(ttk.Frame):
         """Wrapper around cb_set_frequency.
         """
 
-        rig_target = self.build_rig_source(2)
+        rig_target = self.build_rig_uri(2)
         self.cb_set_frequency(rig_target, event = None)
 
     def cb_first_set_frequency(self):
         """Wrapper around cb_set_frequency.
         """
 
-        rig_target = self.build_rig_source(1)
+        rig_target = self.build_rig_uri(1)
         self.cb_set_frequency(rig_target, event = None)
 
     def cb_set_frequency(self, rig_target, event, silent = False):
@@ -1503,18 +1564,38 @@ class RigRemote(ttk.Frame):
         :returns: none
         """
 
-        item = self.tree.focus()
-        values = self.tree.item(item).get('values')
+        txt_frequency = "txt_frequency{}".format(rig_target["rig_number"])
+        cbb_mode = "cbb_mode{}".format(rig_target["rig_number"])
+        frequency = self.params[txt_frequency].get()
+        mode = self.params[cbb_mode].get()
+
+
+#        item = self.tree.focus()
+#        values = self.tree.item(item).get('values')
         try:
-            self.rigctl.set_frequency(values[0].replace(',', ''))
-            self.rigctl.set_mode((values[1]))
+            self.rigctl.set_frequency(frequency.replace(',', ''), rig_target)
+            self.rigctl.set_mode(str((mode)), rig_target)
         except Exception as err:
             if not silent:
                 tkMessageBox.showerror("Error",
-                                   "Could not set frequency.\n%s" % err,
-                                   parent=self)
+                                       "Could not set frequency.\n%s" % err,
+                                       parent=self)
 
-    def cb_autofill_form(self, event):
+    def cb_second_fill_form(self):
+        """Wrapper around cb_set_frequency.
+        """
+
+        self.cb_autofill_form(2, event = None)
+
+    def cb_first_fill_form(self):
+        """Wrapper around cb_set_frequency.
+        """
+
+        self.cb_autofill_form(1, event = None)
+
+
+
+    def cb_autofill_form(self, rig_target, event):
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
 
@@ -1526,10 +1607,15 @@ class RigRemote(ttk.Frame):
 
         self.selected_bookmark = self.tree.focus()
         values = self.tree.item(self.selected_bookmark).get('values')
-        self._clear_form()
-        self.params["cbb_mode1"].insert(0, values[1])
-        self.params["txt_frequency1"].insert(0, values[0])
-        self.params["txt_description1"].insert(0, values[2])
+        self._clear_form(rig_target)
+
+        cbb_mode = "cbb_mode{}".format(rig_target)
+        txt_frequency = "txt_frequency{}".format(rig_target)
+        txt_description = "txt_description{}".format(rig_target)
+
+        self.params[cbb_mode].insert(0, values[1])
+        self.params[txt_frequency].insert(0, values[0])
+        self.params[txt_description].insert(0, values[2])
 
     def build_control_source(self, number, silent = False):
         if number not in (1,2):
@@ -1593,8 +1679,8 @@ class RigRemote(ttk.Frame):
             elif (frequency == curr_freq and
                   mode == curr_mode) :
                 if not (silent) :
-                    tkMessageBox.showerror("Error", "A bookmark with the "\
-                                           "same frequency and mode "\
+                    tkMessageBox.showerror("Error", "A bookmark with the "
+                                           "same frequency and mode "
                                            "already exists.", parent=self)
                 return
         # insert
