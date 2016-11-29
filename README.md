@@ -1,3 +1,25 @@
+Rig Remote, a brief description.
+--------------------------------
+
+Rig-Remote is a tool that tries to provide some additional features to existing SDR software or rigs. Rig-Remote relies on the RigCTL protocol over TCP/IP (telnet). Rig-Remote connects to a receiver (SDR or "real" rig with rigctld) using Telnet protocol. It sends RigCTL commands for performing remote control of the receiver.
+If your rig is able to understand RigCTL commands, then you can control it with Rig-remote.
+
+Some sample feature Rig-remote provides are:
+
+- scanning of bookmarks or frequencies
+- bookmarking
+- enable/disable recording
+- enable/disable streaming
+- ...and many more
+
+Check the wiki here on GitHub (https://github.com/Marzona/rig-remote/wiki) for more information on how Rig-remote works, there is a user guide too...
+
+Check the issues and milestones to see what's we are working on
+
+Feel free to create issues for bugs, feature request or to provide us suggestions, I'll classify them accordingly.
+
+Do you want to work on this software? YAY! You're more than welcome! In the wiki there is the link to the mailing list, subscribe and ping, there is a lot of work for everybody!
+
 rig-remote Version 2
 -------------------------------
 
@@ -36,8 +58,6 @@ Features/changes
 - auto bookmark frequencies that are discovered as active
 
 Suggestions are welcome!
-
-Checkout my issus on GitHub
 
 Requirements
 ---
