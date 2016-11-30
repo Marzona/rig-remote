@@ -165,8 +165,10 @@ SUPPORTED_SCANNING_ACTIONS = ("start",
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
-                  "port" : "7356",
+DEFAULT_CONFIG = {"hostname1" : "127.0.0.1",
+                  "port1" : "7356",
+                  "hostname2" : "127.0.0.1",
+                  "port2" : "7357",
                   "interval" : "1",
                   "delay" : "5",
                   "passes" : "0",
