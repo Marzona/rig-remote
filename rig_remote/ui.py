@@ -378,7 +378,7 @@ class RigRemote(ttk.Frame):
         t_btn_add2 = ToolTip(self.btn_add2,
                              follow_mouse=1,
                              text="Bookmark this frequency.")
-        self.btn_add2.grid(row=8,
+        self.btn_add2.grid(row=9,
                            column=2,
                            padx=2,
                            pady=2)
@@ -390,7 +390,7 @@ class RigRemote(ttk.Frame):
         t_btn_delete2 = ToolTip(self.btn_delete2,
                                follow_mouse=1,
                                text="Remove this frequency from bookmarks.")
-        self.btn_delete2.grid(row=8,
+        self.btn_delete2.grid(row=9,
                               column=1,
                               padx=2,
                               pady=2)
@@ -402,7 +402,7 @@ class RigRemote(ttk.Frame):
         t_btn_load2 = ToolTip(self.btn_load2,
                               follow_mouse=1,
                               text="Get the frequency and mode from the rig.")
-        self.btn_load2.grid(row=9,
+        self.btn_load2.grid(row=8,
                             column=3,
                             padx=2,
                             pady=2)
@@ -416,7 +416,7 @@ class RigRemote(ttk.Frame):
                              text="Tune the frequency and mode from the "
                                   "rig control panel above.")
 
-        self.btn_tune2.grid(row=9,
+        self.btn_tune2.grid(row=8,
                             column=1,
                             padx=2,
                             pady=2)
@@ -434,7 +434,7 @@ class RigRemote(ttk.Frame):
                                 text="Recall the frequency and mode from the "
                                      "bookmarks into this rig control panel.")
 
-        self.btn_recall2.grid(row=8,
+        self.btn_recall2.grid(row=9,
                               column=3,
                               padx=2,
                               pady=2)
@@ -526,7 +526,7 @@ class RigRemote(ttk.Frame):
         t_btn_add1 = ToolTip(self.btn_add1,
                             follow_mouse=1,
                             text="Bookmark this frequency.")
-        self.btn_add1.grid(row=8,
+        self.btn_add1.grid(row=9,
                           column=1,
                           padx=2,
                           pady=2)
@@ -537,8 +537,8 @@ class RigRemote(ttk.Frame):
                                      command=self.cb_delete1)
         t_btn_delete1 = ToolTip(self.btn_delete1,
                                follow_mouse=1,
-                               text="Remove this frequency from bookmarks.")
-        self.btn_delete1.grid(row=8,
+                               text="Remove the selected bookmark.")
+        self.btn_delete1.grid(row=9,
                              column=0,
                              padx=2,
                              pady=2)
@@ -551,7 +551,7 @@ class RigRemote(ttk.Frame):
                              follow_mouse=1,
                              text="Get the frequency and mode from the rig.")
 
-        self.btn_load1.grid(row=9,
+        self.btn_load1.grid(row=8,
                            column=2,
                            padx=2,
                            pady=2)
@@ -565,7 +565,7 @@ class RigRemote(ttk.Frame):
                               text="Tune the frequency and mode from the "
                                    "rig control panel above.")
 
-        self.btn_tune1.grid(row=9,
+        self.btn_tune1.grid(row=8,
                             column=0,
                             padx=2,
                             pady=2)
@@ -579,23 +579,10 @@ class RigRemote(ttk.Frame):
                                 text="Recall the frequency and mode from the "
                                      "bookmarks into this rig control panel.")
 
-        self.btn_recall1.grid(row=8,
+        self.btn_recall1.grid(row=9,
                               column=2,
                               padx=2,
                               pady=2)
-#        self.btn_recall1 = ttk.Button(self.rig_control_menu,
-#                                      text="Load",
-#                                      width=7,
-#                                      command=self.cb_first_set_frequency)
-#        t_btn_recall1 = ToolTip(self.btn_recall1,
-#                                follow_mouse=1,
-#                                text="Recall the frequency and mode from the "
-#                                     "bookmarks into this rig control panel.")
-
-#        self.btn_recall1.grid(row=8,
-#                              column=2,
-#                              padx=2,
-#                              pady=2)
 
         # horizontal separator
         ttk.Frame(self.rig_control_menu).grid(row=9,
