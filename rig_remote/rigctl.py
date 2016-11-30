@@ -38,12 +38,12 @@ class RigCtl(object):
     """Basic rigctl client implementation."""
 
     def __init__(self,
-                 hostname=DEFAULT_CONFIG["hostname"],
-                 port=DEFAULT_CONFIG["port"]):
+                 hostname=DEFAULT_CONFIG["hostname1"],
+                 port=DEFAULT_CONFIG["port1"]):
         self.hostname = hostname
         self.port = port
 
-    def _request(self, request):
+    def _request(self, request, rig_target):
         """Main method implementing the rigctl protocol. It's  wrapped by the
         more specific methods that offer the specific functions.
 
@@ -53,7 +53,13 @@ class RigCtl(object):
         :returns response: response data
         :response type: string
         """
+        if not isinstance(rig_target, dict):
+            logger.error("rig_target is not of type dict "\
+                         "but {}".format(type(rig_target)))
+            raise TypeError
 
+        self.hostname = rig_target["hostname"]
+        self.port = rig_target["port"]
         try:
             con = telnetlib.Telnet(self.hostname, self.port, RIG_TIMEOUT)
         except socket.timeout:
@@ -69,7 +75,7 @@ class RigCtl(object):
         con.write('c\n'.encode('ascii'))
         return response
 
-    def set_frequency(self, frequency):
+    def set_frequency(self, frequency, rig_target):
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -81,42 +87,41 @@ class RigCtl(object):
             logger.error("Frequency value must be a float, "\
                         "got {}".format(frequency))
             raise
-        return self._request('F %s' % frequency)
+        return self._request('F %s' % frequency, rig_target)
 
-    def get_frequency(self):
+    def get_frequency(self, rig_target):
         """Wrapper around _request. It configures the command for getting
         a frequency.
 
         """
 
-        output = self._request('f')
+        output = self._request('f', rig_target)
         if not isinstance(output, basestring):
             logger.error("Expected unicode string while getting radio frequency, "\
                          "got {}".format(output))
             raise ValueError
 
-        return self._request('f')
+        return self._request('f', rig_target)
 
-    def set_mode(self, mode):
+    def set_mode(self, mode, rig_target):
         """Wrapper around _request. It configures the command for setting
         the mode.
 
         """
-
         if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-            logger.error("Frequency value must be a string in {}, "\
+            logger.error("Frequency mode must be a string in {}, "\
                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
 
-        return self._request('M %s' % mode)
+        return self._request('M %s' % mode, rig_target)
 
-    def get_mode(self):
+    def get_mode(self, rig_target):
         """Wrapper around _request. It configures the command for getting
         the mode.
 
         """
 
-        output = self._request('m')
+        output = self._request('m', rig_target)
         if not isinstance(output, basestring):
             logger.error("Expected unicode string while getting radio mode, "\
                          "got {}".format(output))
