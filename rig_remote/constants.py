@@ -198,3 +198,13 @@ DEFAULT_PREFIX = '~/.rig-remote'
 DEFAULT_CONFIG_FILENAME = 'rig-remote.conf'
 DEFAULT_LOG_FILENAME = 'rig-remote-log.txt'
 DEFAULT_BOOKMARK_FILENAME = 'rig-remote-bookmarks.csv'
+ABOUT = """
+Rig remote is a software for controlling a rig
+via tcp/ip and RigCtl.
+
+GitHub: https://github.com/Marzona/rig-remote
+
+Project wiki: https://github.com/Marzona/rig-remote/wiki
+
+GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
+"""
