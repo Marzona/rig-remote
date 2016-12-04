@@ -1343,7 +1343,6 @@ class RigRemote(ttk.Frame):
         if task == "save":
             for item in self.tree.get_children():
                 values = self.tree.item(item).get('values')
-                logger.error("1078")
                 values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
                 bookmarks.row_list.append(values)
             # Not where we want to do this, and will be fixed with BookmarkSet
@@ -1857,14 +1856,14 @@ class RigRemote(ttk.Frame):
         freq = "txt_frequency{}".format(number)
         mode = "cbb_mode{}".format(number)
         description = "txt_description{}".format(number)
-        logger.error("1536")
         control_source["frequency"] = frequency_pp_parse(self.params[freq].get())
         try:
             int(control_source["frequency"])
         except (ValueError, TypeError):
             if not (silent) :
                 tkMessageBox.showerror("Error",
-                                       "Invalid value in Frequency field.")
+                                       "Invalid value in Frequency field."
+                                       "Note: '.' isn't allowrd.")
                 self.params[freq].focus_set()
             return
         control_source["mode"] = self.params[mode].get()
