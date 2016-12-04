@@ -181,9 +181,9 @@ class RigRemote(ttk.Frame):
 
         menubar = tk.Menu(root)
         appmenu = tk.Menu(menubar, tearoff=0)
+        appmenu.add_command(label="About", command=self.pop_up_about)
         appmenu.add_command(label="Quit",
                              command=lambda: self.shutdown(self.ac))
-        appmenu.add_command(label="About", command=self.pop_up_about)
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
         bookmarksmenu.add_command(label="Import", command=None)
