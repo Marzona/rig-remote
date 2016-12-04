@@ -82,8 +82,8 @@ from rig_remote.constants import (
                                   ABOUT,
                                   )
 from rig_remote.exceptions import UnsupportedScanningConfigError
-from rig_remote.exceptions import InvalidPathError
-from rig_remote.disk_io import IO
+#from rig_remote.disk_io import IO
+from rig_remote.bookmarks import Bookmarks
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import ScanningTask
 from rig_remote.scanning import Scanning
@@ -103,12 +103,10 @@ import tkMessageBox
 import threading
 import itertools
 import webbrowser
-
 from rig_remote.stmessenger import STMessenger
 
 # logging configuration
 logger = logging.getLogger(__name__)
-
 
 # classes definition
 class RigRemote(ttk.Frame):
@@ -132,7 +130,8 @@ class RigRemote(ttk.Frame):
         self.focus_force()
         self.update()
         # bookmarks loading on start
-        self.bookmark("load", ",")
+        self.bookmarks = Bookmarks(self.tree)
+        self._bookmark_load()
         self.scan_thread = None
         self.scan_mode = None
         self.scanning = None
@@ -142,7 +141,18 @@ class RigRemote(ttk.Frame):
         self.bind_all("<1>", lambda event:self.focus_set(event))
         self.ac = ac
 
-    def center_window(self, window, width=300, height=200):
+    def _bookmark_load(self):
+        self.bookmarks.load(self.bookmarks_file, ",")
+
+    # move to utils
+    def _center_window(self, window, width=300, height=200):
+        """Centers a given window with a given size
+
+        :param window: the window to be centered
+        :param width: width of the window
+        :param height: height of the window
+        """
+
         # get screen width and height
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
@@ -152,42 +162,36 @@ class RigRemote(ttk.Frame):
         y = (screen_height/2) - (height/2)
         window.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
-    def callback(self, url):
-        print url
-        webbrowser.open_new(url)
+    def pop_up_about(self):
+        """Describes a pop-up window.
+        """
 
-    def pop_up(self):
-        # needs to be on top
+        # the pop-up needs to be on top
         self.ckb_top.val.set(False)
         panel = tk.Toplevel(self.root)
-        self.center_window(panel, 500, 150)
-        # on close set the proper always on top status
-        # self.toggle_cb_top()
+        self._center_window(panel, 500, 150)
         text = tk.StringVar()
         label = tk.Label(panel, textvariable=text)
         text.set(ABOUT)
         label.pack()
-#        glink = tk.Label(panel, text=r"http://www.google.com", fg="blue", cursor="hand2")
-#        glink.bind("<Button-1>", self.callback(glink.cget("text")))
-#        glink.pack()
 
     def buildmenu(self, root):
+        """method for building the menu of the main window
+        """
+
         menubar = tk.Menu(root)
-        filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Quit",
+        appmenu = tk.Menu(menubar, tearoff=0)
+        appmenu.add_command(label="Quit",
                              command=lambda: self.shutdown(self.ac))
+        appmenu.add_command(label="About", command=self.pop_up_about)
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
         bookmarksmenu.add_command(label="Import", command=None)
         bookmarksmenu.add_command(label="Export", command=None)
 
-        helpmenu = tk.Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="About", command=self.pop_up)
-
         root.config(menu=menubar)
-        menubar.add_cascade(label="Rig Remote", menu=filemenu)
+        menubar.add_cascade(label="Rig Remote", menu=appmenu)
         menubar.add_cascade(label="Bookmarks", menu=bookmarksmenu)
-        menubar.add_cascade(label="Help", menu=helpmenu)
 
     def build(self, ac):
         """Build and initialize the GUI widgets.
@@ -998,17 +1002,6 @@ class RigRemote(ttk.Frame):
                                   text="Save setting on exit.")
         self.ckb_save_exit.val = self.cb_save_exit
 
-#        self.btn_quit = ttk.Button(self.control_menu,
-#                                   text="Quit",
-#                                   command=lambda: self.shutdown(ac))
-#        t_btn_quit = ToolTip(self.btn_quit,
-#                             follow_mouse=1,
-#                             text="Exit rig-remote.")
-#        self.btn_quit.grid(row=21,
-#                           column=3,
-#                           columnspan=1,
-#                           sticky=tk.SE)
-
         # horizontal separator
         ttk.Frame(self.control_menu).grid(row=22,
                                           column=0,
@@ -1025,6 +1018,7 @@ class RigRemote(ttk.Frame):
 
     def apply_config(self, ac, silent = False):
         """Applies the config to the UI.
+
         :param ac: object instance for handling the app config
         :type ac: AppConfig object
         :param silent: suppress messagebox
@@ -1094,6 +1088,7 @@ class RigRemote(ttk.Frame):
             elif self.params[key].winfo_class() == "TCheckbutton" :
                 self.params_last_content[key] = self.params[key].is_checked()
 
+    # move to utils
     def _store_conf(self, ac):
         """populates the ac object reading the info from the UI
         :param ac: object used to hold the app configuration.
@@ -1118,7 +1113,7 @@ class RigRemote(ttk.Frame):
         ac.config["bookmark_filename"] = self.bookmarks_file
         ac.config["log_filename"] = self.log_file
         return ac
-
+    # move to utils
     def shutdown(self,ac, silent = False):
         """Here we quit. Before exiting, if save_exit checkbox is checked
         we save the configuration of the app and the bookmarks.
@@ -1133,66 +1128,6 @@ class RigRemote(ttk.Frame):
             ac.write_conf()
         self.master.destroy()
 
-    def bookmark(self, task, delimiter, silent = False):
-        """Bookmarks handling. loads and saves the bookmarks as
-        a csv file.
-        :param task: either load or save
-        :type task: string
-        :param delimiter: delimiter to use for creating the csv file
-        :type delimiter: string
-        :param silent: suppress messagebox
-        :type silent: boolean
-        :raises : none
-        :returns : none
-        """
-
-        if task not in ALLOWED_BOOKMARK_TASKS:
-            logger.info("Not allowed bookmark task requested {}, "\
-                        "ignoring.".format(task))
-
-        bookmarks = IO()
-        if task == "load":
-            try:
-                bookmarks.csv_load(self.bookmarks_file, delimiter)
-                count = 0
-                for line in bookmarks.row_list:
-                    count += 1
-                    error = False
-                    if len(line) < LEN_BM:
-                        line.append("O")
-                    logger.error("1058")
-                    if frequency_pp_parse(line[BM.freq]) == None :
-                        error = True
-                    line[BM.freq] = frequency_pp(line[BM.freq])
-                    if line[BM.mode] not in CBB_MODES :
-                        error = True
-                    if error == True :
-                        if not silent:
-                            tkMessageBox.showerror("Error", "Invalid value in "\
-                                                   "Bookmark #%i. "\
-                                                   "Skipping..." %count)
-                    else :
-                        item = self.tree.insert('', tk.END, values=line)
-                        self.bookmark_bg_tag(item, line[BM.lockout])
-            except InvalidPathError:
-                logger.info("No bookmarks file found, skipping.")
-
-        if task == "save":
-            for item in self.tree.get_children():
-                values = self.tree.item(item).get('values')
-                logger.error("1078")
-                values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
-                bookmarks.row_list.append(values)
-            # Not where we want to do this, and will be fixed with BookmarkSet
-            try:
-                os.makedirs(os.path.dirname(self.bookmarks_file))
-            except IOError:
-                logger.info("Error while trying to create bookmark " \
-                    "path as {}".format(self.bookmarks_file))
-            except OSError:
-                logger.info("The bookmark directory already exists.")
-            bookmarks.csv_save(self.bookmarks_file, delimiter)
-
     def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle bookmark scan Start/Stop button, changing label text as
            appropriate.
@@ -1202,17 +1137,6 @@ class RigRemote(ttk.Frame):
             action = self.book_scan_toggle.cget('text').lower()
             self.book_scan_toggle.config(text = next(icycle))
             self._scan("bookmarks", action)
-
-    def bookmark_bg_tag(self, item, value) :
-        """Set item background color based on lock status
-        """
-
-        if value == "L" :
-            self.tree.tag_configure('locked', background = 'red')
-            self.tree.item(item, tags = "locked")
-        else :
-            self.tree.tag_configure('unlocked', background = 'white')
-            self.tree.item(item, tags = "unlocked")
 
     def bookmark_lockout(self, icycle=itertools.cycle(["L", "O"])):
         """Toggle lockout of selected bookmark.
@@ -1228,7 +1152,7 @@ class RigRemote(ttk.Frame):
             else :
                 values[BM.lockout] = "L"
             self.tree.item(self.selected_bookmark, values = values)
-            self.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
+            self.bookmarks.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
 
 
     def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
@@ -1336,45 +1260,49 @@ class RigRemote(ttk.Frame):
             self.scanq.send_event_update(event_list)
 
     def process_wait(self, *args):
-        """ Methods to handle checkbutton updates
+        """ Methods to handle checkbutton updates, it wraps around
+        process_checkbutton.
 
         :param *args: ignored
         :returns: None
         """
         event_list = ("ckb_wait", self.cb_wait.get())
-        self.process_checkbutton(event_list)
+        self._process_checkbutton(event_list)
 
     def process_record(self, *args) :
-        """ Methods to handle checkbutton updates
+        """ Methods to handle checkbutton updates, it wraps around
+        process_checkbutton.
 
         :param *args: ignored
         :returns: None
         """
 
         event_list = ("ckb_record", self.cb_record.get())
-        self.process_checkbutton(event_list)
+        self._process_checkbutton(event_list)
 
     def process_log(self, *args) :
-        """ Methods to handle checkbutton updates
+        """ Methods to handle checkbutton updates, it wraps around
+        process_checkbutton.
 
         :param *args: ignored
         :returns: None
         """
 
         event_list = ("ckb_log", self.cb_log.get())
-        self.process_checkbutton(event_list)
+        self._process_checkbutton(event_list)
 
     def process_auto_bookmark(self, *args) :
-        """ Methods to handle checkbutton updates
+        """ Methods to handle checkbutton updates, it wraps around
+        process_checkbutton.
 
         :param *args: ignored
         :returns: None
         """
 
         event_list = ("ckb_auto_bookmark", self.cb_auto_bookmark.get())
-        self.process_checkbutton(event_list)
+        self._process_checkbutton(event_list)
 
-    def process_checkbutton(self, event_list) :
+    def _process_checkbutton(self, event_list) :
         """Take the event_list generated by caller and push it on the queue.
 
         :param event_list: name of param to update, value of param
@@ -1389,6 +1317,7 @@ class RigRemote(ttk.Frame):
         """Check it the scan thread has sent us a termination signal.
         :returns: None
         """
+
         if self.scanq.check_end_of_scan():
             if self.scan_mode == 'frequency':
                 self.frequency_toggle()
@@ -1568,7 +1497,7 @@ class RigRemote(ttk.Frame):
                 tkMessageBox.showerror("Error",
                                    "Could not connect to rig.\n%s" % err,
                                    parent=self)
-
+    # move to utils
     def build_rig_uri(self, number):
         if number not in (1,2):
             logger.error("The rig number {} is not supported".format(number))

@@ -208,3 +208,8 @@ Project wiki: https://github.com/Marzona/rig-remote/wiki
 
 GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
 """
+
+SUPPORTED_BOOKMARK_FORMATS = [
+                              "gqrx",
+                              "rig_remote"
+                             ]
