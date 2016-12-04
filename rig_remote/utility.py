@@ -49,11 +49,13 @@ def frequency_pp(frequency):
 
 def frequency_pp_parse(frequency):
     """Remove thousands separator and check for invalid chars.
+
     :param frequency: frequency value
     :type frequency: string
     :return: frequency without separator or None if invalid chars present
     :return type: string or None
     """
+
     if not isinstance(frequency, basestring):
         logger.error("frequency is not a string, "\
                      "but {}".format(type(frequency)))

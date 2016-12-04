@@ -48,7 +48,6 @@ class Bookmarks(object):
 
         for item in self.tree.get_children():
             values = self.tree.item(item).get('values')
-            logger.error("1078")
             values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
             bookmarks.row_list.append(values)
         # Not where we want to do this, and will be fixed with BookmarkSet
@@ -87,7 +86,6 @@ class Bookmarks(object):
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
-            logger.error("1058")
             if frequency_pp_parse(line[BM.freq]) == None :
                 error = True
             line[BM.freq] = frequency_pp(line[BM.freq])
