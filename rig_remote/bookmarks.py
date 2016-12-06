@@ -18,12 +18,12 @@ from rig_remote.utility import (
                                )
 import logging
 import Tkinter as tk
+import os
 
 # logging configuration
 logger = logging.getLogger(__name__)
 
 # classes definition
-
 class Bookmarks(object):
     """Implements the bookmarks management.
     """
@@ -32,13 +32,14 @@ class Bookmarks(object):
         self.bookmarks = io
         self.tree = tree
 
-    def save(self, bookmark_file, silent = False):
+    def save(self, bookmark_file, delimiter = ',', silent = False):
         """Bookmarks handling. Saves the bookmarks as
         a csv file.
 
-        :param filename: filename to load, with full path
-        :type filename: string
-        :param delimiter: delimiter to use for creating the csv file
+        :param bookmark_file: filename to load, with full path
+        :type bookmark_file: string
+        :param delimiter: delimiter to use for creating the csv file,
+        defaults to ','
         :type delimiter: string
         :param silent: suppress messagebox
         :type silent: boolean
@@ -49,24 +50,25 @@ class Bookmarks(object):
         for item in self.tree.get_children():
             values = self.tree.item(item).get('values')
             values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
-            bookmarks.row_list.append(values)
+            self.bookmarks.row_list.append(values)
         # Not where we want to do this, and will be fixed with BookmarkSet
         try:
-            os.makedirs(os.path.dirname(bookmarks_file))
+            os.makedirs(os.path.dirname(bookmark_file))
         except IOError:
             logger.info("Error while trying to create bookmark " \
-                "path as {}".format(bookmarks_file))
+                        "path as {}".format(bookmark_file))
         except OSError:
             logger.info("The bookmark directory already exists.")
-        bookmarks.csv_save(bookmarks_file, delimiter)
+        self.bookmarks.csv_save(bookmark_file, delimiter)
 
     def load(self, bookmark_file, delimiter, silent = False):
         """Bookmarks handling. Loads the bookmarks as
         a csv file.
 
-        :param filename: filename to load, with full path
-        :type filename: string
-        :param delimiter: delimiter to use for creating the csv file
+        :param bookmark_file: filename to load, with full path
+        :type bookmark_file: string
+        :param delimiter: delimiter to use for creating the csv file,
+        defaults to ',''
         :type delimiter: string
         :param silent: suppress messagebox
         :type silent: boolean
@@ -102,11 +104,12 @@ class Bookmarks(object):
 
     def bookmark_bg_tag(self, item, value) :
         """Set item background color based on lock status.
-        
+
         :param value: Locked or unlocked
         :type value: string
         :param item: item in the bookmark tree
         :type item: tree element
+        :raises: none
         """
 
         if value == "L" :
@@ -119,6 +122,9 @@ class Bookmarks(object):
     def import_bookmarks(self):
         """handles the import of the bookmarks. It is a 
         Wrapper around the import funtions and the requester function.
+
+        :params: none
+        :raises: none
         """
 
         bookmark_format, file_path = self.import_requester()
@@ -126,6 +132,13 @@ class Bookmarks(object):
         setattr(self, call, bookmark_path)
 
     def _import_rig_remote(self, file_path):
+        """Imports the bookmarks using rig-remote format. It wraps around
+        the load method.
+
+        :param file_path: path o fhte file to import
+        :type file_path: string
+        """
+
         self.load(file_path, ",", silent = False)
 
     def _import_gqrx(self, file_path):

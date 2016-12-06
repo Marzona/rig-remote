@@ -53,6 +53,8 @@ class RigCtl(object):
         :returns response: response data
         :response type: string
         """
+
+
         if not isinstance(rig_target, dict):
             logger.error("rig_target is not of type dict "\
                          "but {}".format(type(rig_target)))
@@ -60,6 +62,7 @@ class RigCtl(object):
 
         self.hostname = rig_target["hostname"]
         self.port = rig_target["port"]
+        import pdb; pdb.set_trace()
         try:
             con = telnetlib.Telnet(self.hostname, self.port, RIG_TIMEOUT)
         except socket.timeout:

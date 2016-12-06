@@ -82,7 +82,6 @@ from rig_remote.constants import (
                                   ABOUT,
                                   )
 from rig_remote.exceptions import UnsupportedScanningConfigError
-#from rig_remote.disk_io import IO
 from rig_remote.bookmarks import Bookmarks
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import ScanningTask
@@ -93,11 +92,14 @@ from rig_remote.utility import (
                                 is_valid_port,
                                 is_valid_hostname,
                                 ToolTip,
+                                build_rig_uri,
+                                shutdown,
                                 RCCheckbutton,
+                                center_window,
                                 )
 import Tkinter as tk
 import ttk
-import os
+#import os
 from Tkinter import LabelFrame
 import tkMessageBox
 import threading
@@ -144,24 +146,6 @@ class RigRemote(ttk.Frame):
     def _bookmark_load(self):
         self.bookmarks.load(self.bookmarks_file, ",")
 
-    # move to utils
-    def _center_window(self, window, width=300, height=200):
-        """Centers a given window with a given size
-
-        :param window: the window to be centered
-        :param width: width of the window
-        :param height: height of the window
-        """
-
-        # get screen width and height
-        screen_width = window.winfo_screenwidth()
-        screen_height = window.winfo_screenheight()
-
-        # calculate position x and y coordinates
-        x = (screen_width/2) - (width/2)
-        y = (screen_height/2) - (height/2)
-        window.geometry('%dx%d+%d+%d' % (width, height, x, y))
-
     def pop_up_about(self):
         """Describes a pop-up window.
         """
@@ -169,7 +153,7 @@ class RigRemote(ttk.Frame):
         # the pop-up needs to be on top
         self.ckb_top.val.set(False)
         panel = tk.Toplevel(self.root)
-        self._center_window(panel, 500, 150)
+        center_window(panel, 500, 150)
         text = tk.StringVar()
         label = tk.Label(panel, textvariable=text)
         text.set(ABOUT)
@@ -183,7 +167,9 @@ class RigRemote(ttk.Frame):
         appmenu = tk.Menu(menubar, tearoff=0)
         appmenu.add_command(label="About", command=self.pop_up_about)
         appmenu.add_command(label="Quit",
-                             command=lambda: self.shutdown(self.ac))
+                            command=lambda: shutdown(
+                                                     self
+                                                    ))
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
         bookmarksmenu.add_command(label="Import", command=None)
@@ -1064,49 +1050,9 @@ class RigRemote(ttk.Frame):
             elif self.params[key].winfo_class() == "TCheckbutton" :
                 self.params_last_content[key] = self.params[key].is_checked()
 
-    # move to utils
-    def _store_conf(self, ac):
-        """populates the ac object reading the info from the UI
-        :param ac: object used to hold the app configuration.
-        :type ac: AppConfig() object
-        :returns ac: ac obj updated.
-        """
-        ac.config["hostname1"] = self.params["txt_hostname1"].get()
-        ac.config["port1"] = self.params["txt_port1"].get()
-        ac.config["interval"] = self.params["txt_interval"].get()
-        ac.config["delay"] = self.params["txt_delay"].get()
-        ac.config["passes"] = self.params["txt_passes"].get()
-        ac.config["sgn_level"] = self.params["txt_sgn_level"].get()
-        ac.config["range_min"] = self.params["txt_range_min"].get()
-        ac.config["range_max"] = self.params["txt_range_max"].get()
-        ac.config["wait"] = self.params["ckb_wait"].get_str_val()
-        ac.config["record"] = self.params["ckb_record"].get_str_val()
-        ac.config["log"] = self.params["ckb_log"].get_str_val()
-        ac.config["always_on_top"] = self.ckb_top.get_str_val()
-        ac.config["save_exit"] = self.ckb_save_exit.get_str_val()
-        ac.config["auto_bookmark"] = \
-                                self.params["ckb_auto_bookmark"].get_str_val()
-        ac.config["bookmark_filename"] = self.bookmarks_file
-        ac.config["log_filename"] = self.log_file
-        return ac
-    # move to utils
-    def shutdown(self,ac, silent = False):
-        """Here we quit. Before exiting, if save_exit checkbox is checked
-        we save the configuration of the app and the bookmarks.
-        :param ac: object that represent the UI configuration
-        :type ac:AppConfig instance
-        :returns: none
-        """
-
-        if self.cb_save_exit.get():
-            self.bookmark("save", ",")
-            ac = self._store_conf(ac)
-            ac.write_conf()
-        self.master.destroy()
-
     def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle bookmark scan Start/Stop button, changing label text as
-           appropriate.
+        appropriate.
         """
 
         if self.scan_mode == None or self.scan_mode == "bookmarks" :
@@ -1133,7 +1079,7 @@ class RigRemote(ttk.Frame):
 
     def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle frequency scan Start/Stop button, changing label text as
-           appropriate.
+        appropriate.
         """
 
         if self.scan_mode == None or self.scan_mode == "frequency" :
@@ -1143,6 +1089,7 @@ class RigRemote(ttk.Frame):
 
     def _process_port_entry(self, event_value, silent = False):
         """ Process event for port number entry
+
         :param event_value: new port number
         :type event_value: str
         :param silent: suppress messagebox
@@ -1163,12 +1110,14 @@ class RigRemote(ttk.Frame):
 
     def _process_hostname_entry(self, event_value, silent = False):
         """ Process event for hostname entry
+
         :param event_value: new hostname
         :type event_value: str
         :param silent: suppress messagebox
         :type silent: boolean
         :return:
         """
+
         try:
             is_valid_hostname(event_value)
         except Exception:
@@ -1181,10 +1130,10 @@ class RigRemote(ttk.Frame):
 
     def process_entry(self, event, silent = False) :
         """Process a change in an entry widget. Check validity of
-           numeric data. If empty field, offer the default or return to
-           edit. If not valid, display a message and reset
-           the widget to its previous state. Otherwise push the
-           change onto the queue.
+        numeric data. If empty field, offer the default or return to
+        edit. If not valid, display a message and reset
+        the widget to its previous state. Otherwise push the
+        change onto the queue.
 
         :param event: event dict generated by widget handler
         :param silent: suppress messagebox
@@ -1285,6 +1234,7 @@ class RigRemote(ttk.Frame):
         :type event_list: list
         :returns: None
         """
+
         if self.scan_thread != None :
             self.scanq.send_event_update(event_list)
             self.params_last_content[event_list[0]] = event_list[1]
@@ -1438,14 +1388,14 @@ class RigRemote(ttk.Frame):
         """Wrapper around cb_set_frequency.
 
         """
-        rig_target=self.build_rig_uri(2)
+        rig_target=build_rig_uri(2, self.params)
         self.cb_get_frequency(rig_target)
 
     def cb_first_get_frequency(self):
         """Wrapper around cb_set_frequency.
 
         """
-        rig_target=self.build_rig_uri(1)
+        rig_target=build_rig_uri(1, self.params)
         self.cb_get_frequency(rig_target)
 
     def cb_get_frequency(self, rig_target, silent = False):
@@ -1473,33 +1423,19 @@ class RigRemote(ttk.Frame):
                 tkMessageBox.showerror("Error",
                                    "Could not connect to rig.\n%s" % err,
                                    parent=self)
-    # move to utils
-    def build_rig_uri(self, number):
-        if number not in (1,2):
-            logger.error("The rig number {} is not supported".format(number))
-            raise NotImplementedError
-
-        rig_target= {}
-        hostname = ("txt_hostname{}".format(number))
-        port = ("txt_port{}".format(number))
-        rig_target["hostname"] = self.params[hostname].get()
-        rig_target["port"] = self.params[port].get()
-        rig_target["rig_number"] = number
-
-        return rig_target
 
     def cb_second_set_frequency(self):
         """Wrapper around cb_set_frequency.
         """
 
-        rig_target = self.build_rig_uri(2)
+        rig_target = build_rig_uri(2, self.params)
         self.cb_set_frequency(rig_target, event = None)
 
     def cb_first_set_frequency(self):
         """Wrapper around cb_set_frequency.
         """
 
-        rig_target = self.build_rig_uri(1)
+        rig_target = build_rig_uri(1, self.params)
         self.cb_set_frequency(rig_target, event = None)
 
     def cb_set_frequency(self, rig_target, event, silent = False):
@@ -1520,16 +1456,17 @@ class RigRemote(ttk.Frame):
         frequency = self.params[txt_frequency].get()
         mode = self.params[cbb_mode].get()
 
-
-#        item = self.tree.focus()
-#        values = self.tree.item(item).get('values')
         try:
             self.rigctl.set_frequency(frequency.replace(',', ''), rig_target)
             self.rigctl.set_mode(str((mode)), rig_target)
         except Exception as err:
-            if not silent:
+            if not silent and (frequency != "" or mode != ""):
                 tkMessageBox.showerror("Error",
                                        "Could not set frequency.\n%s" % err,
+                                       parent=self)
+            if not silent and (frequency == "" or mode == ""):
+                tkMessageBox.showerror("Error",
+                                       "Please provide frequency and mode.",
                                        parent=self)
 
     def cb_second_fill_form(self):
@@ -1566,6 +1503,7 @@ class RigRemote(ttk.Frame):
         self.params[txt_frequency].insert(0, values[0])
         self.params[txt_description].insert(0, values[2])
 
+    # move to utils
     def build_control_source(self, number, silent = False):
         if number not in (1,2):
             logger.error("The rig number {} is not supported".format(number))
@@ -1582,7 +1520,7 @@ class RigRemote(ttk.Frame):
             if not (silent) :
                 tkMessageBox.showerror("Error",
                                        "Invalid value in Frequency field."
-                                       "Note: '.' isn't allowrd.")
+                                       "Note: '.' isn't allowed.")
                 self.params[freq].focus_set()
             return
         control_source["mode"] = self.params[mode].get()
@@ -1644,7 +1582,7 @@ class RigRemote(ttk.Frame):
         self.tree.focus(item)
         self.tree.see(item)
         # save
-        self.bookmark("save", ",")
+        self.bookmarks.save(self.bookmarks_file)
 
     def cb_delete2(self):
         """wrapper around cb_delete
@@ -1671,5 +1609,5 @@ class RigRemote(ttk.Frame):
         if item != '':
             self.tree.delete(item)
             # save
-        self.bookmark("save", ",")
+        self.bookmarks.save(self.bookmarks_file)
         self._clear_form(source) 
