@@ -66,6 +66,7 @@ class AppConfig(object):
         :raises: none
         :returns: none
         """
+
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
