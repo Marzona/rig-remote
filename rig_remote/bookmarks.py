@@ -47,6 +47,7 @@ class Bookmarks(object):
         :returns : none
         """
 
+        self.bookmarks.row_list = []
         for item in self.tree.get_children():
             values = self.tree.item(item).get('values')
             values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
@@ -76,6 +77,8 @@ class Bookmarks(object):
         :returns : none
         """
 
+        if bookmark_file == "noname":
+            return
         try:
             self.bookmarks.csv_load(bookmark_file, delimiter)
         except InvalidPathError:

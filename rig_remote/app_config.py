@@ -46,15 +46,18 @@ class AppConfig(object):
         alternate_config_file and we use it, otherwise we check for
         the default one.
 
-        :param alternate_config_file: config file passed as input argument
-        :type alternate_config_file: string
+        :param config_file: config file passed as input argument
+        :type config_file: string
         :raises: none
         :returns:none
         """
 
         self.io = IO()
         self.config_file = config_file
-        self.config = dict.copy(DEFAULT_CONFIG)
+        if not self.config_file:
+            self.config = dict.copy(DEFAULT_CONFIG)
+        else:
+            self.config = {}
 
     def read_conf(self):
         """Read the configuration file.
@@ -72,7 +75,7 @@ class AppConfig(object):
             self.io.csv_load(self.config_file, "=")
             error = 0
             for row in self.io.row_list:
-                if len(row) == 2 and row[0].strip() in self.config.keys() :
+                if len(row) == 2 :
                     self.config[row[0].strip()] = row[1].strip()
                 else:
                     logger.warning("Error in config file line: " + str(row))

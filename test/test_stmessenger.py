@@ -17,16 +17,6 @@ def test_good_event_update():
     stm = STMessenger()
     assert (stm.send_event_update(fake) == None)
 
-#class fake_queue_comms():
-#    def get_from_child():
-#        raise Exception
-
-#def tests_wrong_get_event_update(fake_queue_comms):
-#    stm = STMessenger
-#    stm.mqueue = fake_queue_comms
-#    assert (stm.send_event_update(fake) == [])
-
-
 def test_end_of_scan1():
     stm = STMessenger()
 

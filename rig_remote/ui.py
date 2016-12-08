@@ -124,6 +124,7 @@ class RigRemote(ttk.Frame):
         self.params = {}
         self.params_last_content = {}
         self.alt_files = {}
+        #import pdb; pdb.set_trace()
         self.bookmarks_file = ac.config["bookmark_filename"]
         self.log_file = ac.config["log_filename"]
         self.build(ac)
@@ -133,7 +134,7 @@ class RigRemote(ttk.Frame):
         self.update()
         # bookmarks loading on start
         self.bookmarks = Bookmarks(self.tree)
-        self._bookmark_load()
+        self.bookmarks.load(self.bookmarks_file, ",")
         self.scan_thread = None
         self.scan_mode = None
         self.scanning = None
@@ -142,9 +143,6 @@ class RigRemote(ttk.Frame):
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event:self.focus_set(event))
         self.ac = ac
-
-    def _bookmark_load(self):
-        self.bookmarks.load(self.bookmarks_file, ",")
 
     def pop_up_about(self):
         """Describes a pop-up window.
@@ -1040,8 +1038,8 @@ class RigRemote(ttk.Frame):
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.is_checked() == False:
                 self.ckb_top.invoke()
-        self.rigctl = RigCtl(self.params["txt_hostname1"].get(),
-                             self.params["txt_port1"].get())
+
+        self.rigctl = RigCtl(build_rig_uri(1, self.params))
         # Here we create a copy of the params dict to use when
         # checking validity of new input
         for key in self.params :
@@ -1106,7 +1104,7 @@ class RigRemote(ttk.Frame):
                                        "port. Must be integer and greater than "
                                        "1024")
             return
-        self.rigctl.port=event_value
+        self.rigctl.target["port"]=event_value
 
     def _process_hostname_entry(self, event_value, silent = False):
         """ Process event for hostname entry
@@ -1125,7 +1123,7 @@ class RigRemote(ttk.Frame):
                 tkMessageBox.showerror("Error",
                                        "Invalid Hostname")
             return
-        self.rigctl.hostname=event_value
+        self.rigctl.target["hostname"]=event_value
 
 
     def process_entry(self, event, silent = False) :
@@ -1303,7 +1301,6 @@ class RigRemote(ttk.Frame):
                 bookmarks = self.tree
                 pass_params = dict.copy(self.params)
                 nbl = self.new_bookmark_list
-
                 task = ScanningTask(scanq,
                                     mode,
                                     bookmarks,
@@ -1363,7 +1360,7 @@ class RigRemote(ttk.Frame):
         :returns: none
         """
 
-        self._clear_form()
+        self._clear_form(1)
         for nb in nbl:
             self.params["txt_description"].insert(0,
                                                   "activity on {}".format(nb["time"]))
