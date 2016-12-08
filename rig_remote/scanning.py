@@ -72,6 +72,7 @@ from rig_remote.stmessenger import STMessenger
 from rig_remote.utility import(
                              khertz_to_hertz,
                              dbfs_to_sgn,
+                             build_rig_uri,
                             )
 import socket
 import logging
@@ -240,7 +241,6 @@ class Scanning(object):
         """
 
         logger.info("Tuning to {}".format(freq))
-
         try:
             task.rig.set_frequency(freq)
         except ValueError:
