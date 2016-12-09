@@ -11,7 +11,7 @@ from rig_remote.constants import (
                                  RESET_CMD_DICT,
                                  )
 
-testdata = [("test", "80"), ("127.0.0.1","test"), ("test", "test")]
+testdata = [("127.0.0.1", "80"), ("test", "80"), ("127.0.0.1","test"), ("test", "test")]
 testdata2 = [("F 100000"), ("M 100000")]
 
 @pytest.fixture
