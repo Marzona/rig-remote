@@ -363,7 +363,6 @@ class ToolTip:
         label = tk.Label(self._tipwindow, **opts)
         label.pack()
 
-
 class RCCheckbutton(ttk.Checkbutton) :
     """
     RCCheckbutton is derived from ttk.Checkbutton, and adds an 
@@ -389,3 +388,4 @@ class RCCheckbutton(ttk.Checkbutton) :
             self.var.set(True)
         else :
             self.var.set(False)
+

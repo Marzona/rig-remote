@@ -988,7 +988,7 @@ class RigRemote(ttk.Frame):
         """
 
         eflag = False
-        ac.read_conf()
+        #ac.read_conf()
         try:
             is_valid_hostname(ac.config["hostname1"])
         except ValueError:
@@ -1500,7 +1500,6 @@ class RigRemote(ttk.Frame):
         self.params[txt_frequency].insert(0, values[0])
         self.params[txt_description].insert(0, values[2])
 
-    # move to utils
     def build_control_source(self, number, silent = False):
         if number not in (1,2):
             logger.error("The rig number {} is not supported".format(number))
