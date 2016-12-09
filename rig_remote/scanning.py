@@ -350,7 +350,7 @@ class Scanning(object):
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
-            logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            logger.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rig.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))

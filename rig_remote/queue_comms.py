@@ -78,7 +78,7 @@ class QueueComms (object):
         try:
             return queue.get(False)
         except Empty:
-            logging.info("Queue empty while getting from {}".format(queue))
+            logger.info("Queue empty while getting from {}".format(queue))
 
 
     def get_from_parent(self):
