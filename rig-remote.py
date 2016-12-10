@@ -152,7 +152,6 @@ if __name__ == "__main__":
         ac.config['log_filename'] = process_path(log)
     elif ac.config['log_filename'] == 'noname':
         ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
-    import pdb; pdb.set_trace()
     app = RigRemote(root, ac)
     app.apply_config(ac)
     app.mainloop()
