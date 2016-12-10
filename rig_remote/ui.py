@@ -124,7 +124,6 @@ class RigRemote(ttk.Frame):
         self.params = {}
         self.params_last_content = {}
         self.alt_files = {}
-        #import pdb; pdb.set_trace()
         self.bookmarks_file = ac.config["bookmark_filename"]
         self.log_file = ac.config["log_filename"]
         self.build(ac)
@@ -988,7 +987,6 @@ class RigRemote(ttk.Frame):
         """
 
         eflag = False
-        #ac.read_conf()
         try:
             is_valid_hostname(ac.config["hostname1"])
         except ValueError:
@@ -1085,7 +1083,7 @@ class RigRemote(ttk.Frame):
             self.freq_scan_toggle.config(text = next(icycle))
             self._scan("frequency", action)
 
-    def _process_port_entry(self, event_value, silent = False):
+    def _process_port_entry(self, event_value, number, silent = False):
         """ Process event for port number entry
 
         :param event_value: new port number
@@ -1104,9 +1102,10 @@ class RigRemote(ttk.Frame):
                                        "port. Must be integer and greater than "
                                        "1024")
             return
-        self.rigctl.target["port"]=event_value
+        if number == 1:
+            self.rigctl.target["port"]=event_value
 
-    def _process_hostname_entry(self, event_value, silent = False):
+    def _process_hostname_entry(self, event_value, number, silent = False):
         """ Process event for hostname entry
 
         :param event_value: new hostname
@@ -1123,7 +1122,8 @@ class RigRemote(ttk.Frame):
                 tkMessageBox.showerror("Error",
                                        "Invalid Hostname")
             return
-        self.rigctl.target["hostname"]=event_value
+        if number == 1:
+            self.rigctl.target["hostname"]=event_value
 
 
     def process_entry(self, event, silent = False) :
@@ -1163,12 +1163,20 @@ class RigRemote(ttk.Frame):
                 else :
                     event.widget.focus_set()
                     return
-        if event_name == "txt_hostname1" or event_name == "txt_hostname2":
-            self._process_hostname_entry(event_value)
+        if event_name == "txt_hostname1":
+            self._process_hostname_entry(event_value, 1)
             return
-        if event_name == "txt_port1" or event_name == "txt_port2":
-            self._process_port_entry(event_value)
+        if event_name == "txt_hostname2":
+            self._process_hostname_entry(event_value, 2)
             return
+
+        if event_name == "txt_port1":
+            self._process_port_entry(event_value, 1)
+            return
+        if event_name == "txt_port2":
+            self._process_port_entry(event_value, 2)
+            return
+
         try :
             event_value_int = int(event.widget.get().replace(',',''))
         except ValueError:
