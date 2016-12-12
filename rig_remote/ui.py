@@ -756,9 +756,8 @@ class RigRemote(ttk.Frame):
         t_freq_scan_toggle = ToolTip(self.freq_scan_toggle,
                                      follow_mouse=1,
                                      text="Starts a frequency scan.")
-        self.freq_scan_toggle.grid(row=16,
+        self.freq_scan_toggle.grid(row=17,
                                    column=2,
-                                   columnspan=1,
                                    padx=2,
                                    sticky=tk.W)
 
@@ -773,7 +772,7 @@ class RigRemote(ttk.Frame):
                                    sticky=tk.W)
         self.params["txt_range_min"] = ttk.Entry(self.freq_scanning_menu,
                                                  name="txt_range_min",
-                                                 width=10)
+                                                 width=8)
         self.params["txt_range_min"].grid(row=12,
                                           column=1,
                                           columnspan=1,
@@ -789,7 +788,7 @@ class RigRemote(ttk.Frame):
 
         self.params["txt_range_max"] = ttk.Entry(self.freq_scanning_menu,
                                                  name="txt_range_max",
-                                                 width=10)
+                                                 width=8)
         self.params["txt_range_max"].grid(row=12,
                                           column=2,
                                           columnspan=1,
@@ -809,7 +808,7 @@ class RigRemote(ttk.Frame):
                                          sticky=tk.W)
         self.params["txt_interval"] = ttk.Entry(self.freq_scanning_menu,
                                                 name="txt_interval",
-                                                width=10)
+                                                width=6)
         self.params["txt_interval"].grid(row=13,
                                          column=1,
                                          columnspan=1,
@@ -839,11 +838,28 @@ class RigRemote(ttk.Frame):
                                       follow_mouse=1,
                                       text="Bookmark any active frequency"
                                            " found.")
-        self.params["ckb_auto_bookmark"].grid(row=16,
+        self.params["ckb_auto_bookmark"].grid(row=17,
                                               column=0,
-                                              columnspan=2)
+                                              columnspan=1)
         self.params["ckb_auto_bookmark"].val = self.cb_auto_bookmark
         self.cb_auto_bookmark.trace("w", self.process_auto_bookmark)
+
+        ttk.Label(self.freq_scanning_menu,
+                  text="Scan mode:").grid(row=16,
+                                          column=0,
+                                          sticky=tk.W)
+        self.params["cbb_scan_mode"] = ttk.Combobox(self.freq_scanning_menu,
+                                                    name="cbb_scan_mode",
+                                                    width=4)
+        self.params["cbb_scan_mode"].grid(row=16,
+                                          column=1,
+                                          padx=2,
+                                          pady=2,
+                                          sticky=tk.EW)
+        t_cbb_scan_mode = ToolTip(self.params["cbb_scan_mode"],
+                                  follow_mouse=1,
+                                  text="Mode to use for the frequency scan.")
+        self.params["cbb_scan_mode"]['values'] = CBB_MODES
 
         self.cb_aggr_scan = tk.BooleanVar()
         self.params["ckb_aggr_scan"] = RCCheckbutton(self.scanning_conf_menu,
@@ -895,9 +911,9 @@ class RigRemote(ttk.Frame):
                                            )
         t_book_scan_toggle = ToolTip(self.book_scan_toggle,
                                      follow_mouse=1,
-                                     text="Start a bookmark scan.")
-        self.book_scan_toggle.grid(row=17,
-                                   column=2,
+                                     text="Starts a bookmark scan.")
+        self.book_scan_toggle.grid(row=18,
+                                   column=1,
                                    columnspan=1,
                                    padx=2,
                                    sticky=tk.W)
@@ -909,7 +925,7 @@ class RigRemote(ttk.Frame):
         t_book_lockout = ToolTip(self.book_lockout,
                                  follow_mouse=1,
                                  text="Toggle skipping selected bookmark.")
-        self.book_lockout.grid(row=17,
+        self.book_lockout.grid(row=18,
                                column=3,
                                columnspan=1,
                                padx=2,
@@ -1077,6 +1093,12 @@ class RigRemote(ttk.Frame):
         """Toggle frequency scan Start/Stop button, changing label text as
         appropriate.
         """
+
+        if self.params["cbb_scan_mode"].get() == "":
+            tkMessageBox.showerror("Error",
+                                   "You must select a mode for "
+                                   "performing a frequency scan.")
+            return
 
         if self.scan_mode == None or self.scan_mode == "frequency" :
             action = self.freq_scan_toggle.cget('text').lower()
@@ -1271,6 +1293,7 @@ class RigRemote(ttk.Frame):
         :returns: None
         """
 
+
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
             logger.error("Supported "
@@ -1298,10 +1321,11 @@ class RigRemote(ttk.Frame):
 
         if (action.lower() == "start" and self.scan_thread == None) :
             # there is no ongoing scan task and we want to start one
+
             if len(self.tree.get_children()) == 0 and mode == "bookmarks":
                 if not silent:
                     tkMessageBox.showerror("Error",
-                                       "No bookmarks to scan.")
+                                           "No bookmarks to scan.")
                 self.bookmark_toggle()
             else:
                 self.scan_mode = mode

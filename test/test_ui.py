@@ -17,6 +17,12 @@ def fake_control_source():
     fake_control_source["description"] = "test"
     return fake_control_source
 
+def truncate_bookmark_file():
+    with open("./test/test-bookmarks.csv", "rw+") as f:
+        for i in range(10):
+            f.readline()
+        f.truncate()
+
 def test_load_conf1():
     root = tk.Tk()
     ac = AppConfig("./test/test-config.file")
@@ -169,7 +175,7 @@ def test_load_conf17():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["cbb_mode1"].config()["values"][4] == ('', 'OFF', 'RAW', 'AM', 'FM', 'WFM', 'WFM_ST', 'LSB', 'USB', 'CW', 'CWL', 'CWU'))
+    assert (rr.params["cbb_mode1"].config()["values"][4] == ('', 'AM', 'FM', 'WFM', 'WFM_ST', 'LSB', 'USB', 'CW', 'CWL', 'CWU'))
     rr.root.destroy()
 
 testdata = [("80"), ("test"), ("1024")]
@@ -197,12 +203,11 @@ def test_cb_add(entry, fake_control_source):
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     rr.params["txt_frequency1"].insert(0, entry)
-
     rr.cb_add(fake_control_source, True)
     rr.root.destroy()
+    truncate_bookmark_file()
 
-
-testdata = ['', 'string', '123.123', '123.123.', 'google.com', '127.0.0.1']
+testdata = ['', 'string', '123.123', '123.123.', '127.0.0.1']
 @pytest.mark.parametrize("entry", testdata)
 def test_process_hostname_entry(entry):
     root = tk.Tk()
@@ -212,6 +217,7 @@ def test_process_hostname_entry(entry):
     rr.apply_config(ac)
     rr._process_hostname_entry(entry, True)
     rr.root.destroy()
+    truncate_bookmark_file()
 
 def test_process_port_entry_1():
     root = tk.Tk()

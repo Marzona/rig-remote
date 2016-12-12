@@ -283,7 +283,10 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
+        mode = task.params["cbb_scan_mode"].get()
+        task.rig.set_mode(mode )
         level = []
+
         pass_count = task.params["passes"]
         interval = khertz_to_hertz(task.params["interval"])
         while self.scan_active:
