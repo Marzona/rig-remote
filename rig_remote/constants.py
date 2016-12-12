@@ -121,8 +121,6 @@ ALLOWED_SPLIT_MODES=["AM",
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
 DIRMODE = 644
 CBB_MODES = ('',
-             'OFF',
-             'RAW',
              'AM',
              'FM',
              'WFM',
