@@ -3,16 +3,19 @@
 # import modules
 import pytest
 import socket
+from mock import patch, MagicMock
 from rig_remote.rigctl import RigCtl
 from rig_remote.constants import (
-                                 DEFAULT_CONFIG,
-                                 ALLOWED_VFO_COMMANDS,
-                                 ALLOWED_SPLIT_MODES,
-                                 RESET_CMD_DICT,
+                                  DEFAULT_CONFIG,
+                                  ALLOWED_VFO_COMMANDS,
+                                  ALLOWED_SPLIT_MODES,
+                                  RESET_CMD_DICT,
                                  )
 
-testdata = [("127.0.0.1", "80"), ("test", "80"), ("127.0.0.1","test"), ("test", "test")]
-testdata2 = [("F 100000"), ("M 100000")]
+testdata = [("127.0.0.1", "80"),
+            ("test", "80"),
+            ("127.0.0.1","test"),
+            ("test", "test")]
 
 @pytest.fixture
 def fake_target():
@@ -23,30 +26,45 @@ def fake_target():
     return fake_target
 
 @pytest.mark.parametrize("hostname, port", testdata)
-def test_set_connection_refused(hostname, port, fake_target):
-    DEFAULT_CONFIG["hostname"] = hostname
-    DEFAULT_CONFIG["port"] = port
+def test_set_frequency(hostname, port, fake_target):
+    DEFAULT_CONFIG["hostname"] = "127.0.0.1"
+    DEFAULT_CONFIG["port"] = "80"
     rigctl = RigCtl(fake_target)
-    with pytest.raises(socket.error):
-        rigctl.set_frequency("1000000")
+    rigctl._request = MagicMock()
+    rigctl.set_frequency("1000000")
+    rigctl._request.assert_called_once_with('F 1000000', None)
 
-@pytest.mark.parametrize("hostname, port", testdata)
-def test_get_connection_refused(hostname, port, fake_target):
-    DEFAULT_CONFIG["hostname"] = hostname
-    DEFAULT_CONFIG["port"] = port
+def test_get_frequency(fake_target):
+    DEFAULT_CONFIG["hostname"] = "127.0.0.1"
+    DEFAULT_CONFIG["port"] = "80"
     rigctl = RigCtl(fake_target)
-    with pytest.raises(socket.error):
-        rigctl.get_frequency()
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "f"
+    rigctl.get_frequency()
+    rigctl._request == "f"
 
-def test_set_frequency(fake_target):
+def test_set_bad_frequency(fake_target):
     rigctl = RigCtl(fake_target)
     with pytest.raises(ValueError):
         rigctl.set_frequency("test")
 
-def test_set_mode(fake_target):
+def test_set_bad_mode(fake_target):
     rigctl = RigCtl(fake_target)
     with pytest.raises(ValueError):
         rigctl.set_mode(5)
+
+def test_get_mode(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "m"
+    rigctl.get_mode()
+    rigctl._request = "m"
+
+def test_set_mode(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl.set_mode("AM")
+    rigctl._request.assert_called_once_with('M AM', None)
 
 def test_rig_reset(fake_target):
     rigctl = RigCtl(fake_target)
@@ -128,7 +146,3 @@ def test_antenna(fake_target):
     with pytest.raises(ValueError):
         rigctl.set_antenna("testparm")
 
-def test_rig_reset(fake_target):
-    rigctl = RigCtl(fake_target)
-    with pytest.raises(ValueError):
-        rigctl.set_antenna("testparam")

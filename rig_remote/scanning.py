@@ -285,6 +285,7 @@ class Scanning(object):
 
         mode = task.params["cbb_scan_mode"].get()
         task.rig.set_mode(mode )
+
         level = []
 
         pass_count = task.params["passes"]
