@@ -99,7 +99,6 @@ from rig_remote.utility import (
                                 )
 import Tkinter as tk
 import ttk
-#import os
 from Tkinter import LabelFrame
 import tkMessageBox
 import threading
@@ -127,7 +126,6 @@ class RigRemote(ttk.Frame):
         self.bookmarks_file = ac.config["bookmark_filename"]
         self.log_file = ac.config["log_filename"]
         self.build(ac)
-        self.buildmenu(root)
         self.params["cbb_mode1"].current(0)
         self.focus_force()
         self.update()
@@ -142,6 +140,7 @@ class RigRemote(ttk.Frame):
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event:self.focus_set(event))
         self.ac = ac
+        self.buildmenu(root)
 
     def pop_up_about(self):
         """Describes a pop-up window.
@@ -169,7 +168,7 @@ class RigRemote(ttk.Frame):
                                                     ))
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
-        bookmarksmenu.add_command(label="Import", command=None)
+        bookmarksmenu.add_command(label="Import", command=self.bookmarks.import_bookmarks)
         bookmarksmenu.add_command(label="Export", command=None)
 
         root.config(menu=menubar)

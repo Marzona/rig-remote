@@ -3,21 +3,26 @@
 # import modules
 from rig_remote.disk_io import IO
 from rig_remote.constants import (
-                                 SUPPORTED_BOOKMARK_FORMATS,
-                                 LEN_BM,
-                                 BM,
-                                 CBB_MODES,
+                                  LEN_BM,
+                                  BM,
+                                  CBB_MODES,
+                                  GQRX_FIRST_BOOKMARK,
+                                  GQRX_BOOKMARK_HEADER,
+                                  REVERSE_MODE_MAP,
                                  )
 from rig_remote.exceptions import (
-                                  UnsupportedBookmarkFormatError,
-                                  InvalidPathError,
+                                   InvalidPathError,
+                                   FormatError,
                                   )
 from rig_remote.utility import (
-                               frequency_pp_parse,
-                               frequency_pp,
+                                frequency_pp_parse,
+                                frequency_pp,
                                )
 import logging
 import Tkinter as tk
+import Tkconstants
+import tkMessageBox
+import tkFileDialog
 import os
 
 # logging configuration
@@ -79,15 +84,23 @@ class Bookmarks(object):
 
         if bookmark_file == "noname":
             return
+
         try:
             self.bookmarks.csv_load(bookmark_file, delimiter)
         except InvalidPathError:
             logger.info("No bookmarks file found, skipping.")
             return
+        self._insert_bookmarks(self.bookmarks.row_list)
+
+    def _insert_bookmarks(self, bookmarks, silent = False):
+        """Method for inserting bookmark data already loaded.
+
+        :param bookmarks: bookmarks to import in the UI
+        :type bookmarks: dict
+        """
 
         count = 0
-        for line in self.bookmarks.row_list:
-            count += 1
+        for line in bookmarks:
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
@@ -122,17 +135,41 @@ class Bookmarks(object):
             self.tree.tag_configure('unlocked', background = 'white')
             self.tree.item(item, tags = "unlocked")
 
-    def import_bookmarks(self):
+    def import_bookmarks(self, silent = True):
         """handles the import of the bookmarks. It is a 
         Wrapper around the import funtions and the requester function.
 
-        :params: none
-        :raises: none
+        :params root: main window
+        :type root: tkinter panel
         """
 
-        bookmark_format, file_path = self.import_requester()
-        call = "_import{}".format(bookmark_format)
-        setattr(self, call, bookmark_path)
+        filename = tkFileDialog.askopenfilename(initialdir = "~/",
+                                                title = "Select bookmark file",
+                                                filetypes = (("csv files","*.csv"),
+                                                             ("all files","*.*")))
+
+        if self._detect_format(filename) == "gqrx":
+            self._import_gqrx(filename)
+            return
+        if self._detect_format(filename) == "rig-remote":
+            self._import_rig_remote(filename)
+            return
+        if not silent:
+            tkMessageBox.showerror("Error", "Unsupported file format.")
+
+    def _detect_format(self, filename):
+        """Method for detecting the bookmark type. Only two types are supported.
+
+        :param filename: file path to read
+        :type filename: string
+        """
+
+        with open(filename, "r") as fn:
+            line = fn.readline()
+        if GQRX_BOOKMARK_HEADER == line:
+            return "gqrx"
+        if len(line.split(",")) == 4:
+            return "rig-remote"
 
     def _import_rig_remote(self, file_path):
         """Imports the bookmarks using rig-remote format. It wraps around
@@ -142,13 +179,39 @@ class Bookmarks(object):
         :type file_path: string
         """
 
-        self.load(file_path, ",", silent = False)
+        try:
+            self.load(file_path, ",", silent = False)
+        except ValueError:
+            raise FormatError
 
     def _import_gqrx(self, file_path):
-        pass
+        """Method for importing gqrx bookmarks.
+
+        :param file_path: path of the file to be loaded
+        :type file_path: string
+        """
+
+        self.bookmarks.csv_load(file_path, ";")
+
+        count = 0
+        book = []
+        for line in self.bookmarks.row_list:
+            count+=1
+            if count < GQRX_FIRST_BOOKMARK + 1:
+                continue
+            try:
+                new_line = []
+                new_line.append(line[0].strip())
+                new_line.append(REVERSE_MODE_MAP[line[2].strip()])
+                new_line.append(line[1].strip())
+                book.append(new_line)
+            except IndexError:
+                pass
+
+        self._insert_bookmarks(book)
 
     def _export_rig_remote(self, file_path):
-        self.load(file_path, ",", silent = False)
+        pass
 
     def _export_gqrx(self, file_path):
         pass
@@ -161,14 +224,3 @@ class Bookmarks(object):
         call = "_export{}".format(bookmark_format)
         setattr(self, call, bookmark_path)
 
-    def import_requester(self):
-        """wrapper around requester()
-        """
-
-        pass
-
-    def export_requester(self):
-        """wrapper around requester()
-        """
-
-        pass
