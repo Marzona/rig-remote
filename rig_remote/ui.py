@@ -168,8 +168,14 @@ class RigRemote(ttk.Frame):
                                                     ))
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
-        bookmarksmenu.add_command(label="Import", command=self.bookmarks.import_bookmarks)
-        bookmarksmenu.add_command(label="Export", command=None)
+        exportmenu = tk.Menu(menubar, tearoff=0)
+        bookmarksmenu.add_command(label="Import",
+                                  command=self.bookmarks.import_bookmarks)
+        bookmarksmenu.add_cascade(label = "Export", menu = exportmenu)
+        exportmenu.add_command(label="Export GQRX",
+                                  command=self.bookmarks.export_gqrx)
+        exportmenu.add_command(label="Export rig-remote",
+                                  command=self.bookmarks.export_rig_remote)
 
         root.config(menu=menubar)
         menubar.add_cascade(label="Rig Remote", menu=appmenu)

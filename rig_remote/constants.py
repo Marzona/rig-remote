@@ -220,5 +220,15 @@ Project wiki: https://github.com/Marzona/rig-remote/wiki
 GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
 """
 
-GQRX_BOOKMARK_HEADER = "# Tag name          ;  color\n"
+GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
 GQRX_FIRST_BOOKMARK = 5
+
+GQRX_BOOKMARK_HEADER = [
+                        ["# Tag name          ","  color"],
+                        ["Untagged            "," #c0c0c0"],
+                        ["Marine VHF          "," #c0c0c0"],
+                        [],
+                        ["# Frequency "," Name                     ",
+                         " Modulation          ",
+                         "  Bandwidth"," Tags"],
+                        ]

@@ -7,8 +7,9 @@ from rig_remote.constants import (
                                   BM,
                                   CBB_MODES,
                                   GQRX_FIRST_BOOKMARK,
-                                  GQRX_BOOKMARK_HEADER,
+                                  GQRX_BOOKMARK_FIRST_LINE,
                                   REVERSE_MODE_MAP,
+                                  GQRX_BOOKMARK_HEADER,
                                  )
 from rig_remote.exceptions import (
                                    InvalidPathError,
@@ -147,13 +148,16 @@ class Bookmarks(object):
                                                 title = "Select bookmark file",
                                                 filetypes = (("csv files","*.csv"),
                                                              ("all files","*.*")))
+        if not filename: return
 
         if self._detect_format(filename) == "gqrx":
             self._import_gqrx(filename)
             return
+
         if self._detect_format(filename) == "rig-remote":
             self._import_rig_remote(filename)
             return
+
         if not silent:
             tkMessageBox.showerror("Error", "Unsupported file format.")
 
@@ -166,7 +170,7 @@ class Bookmarks(object):
 
         with open(filename, "r") as fn:
             line = fn.readline()
-        if GQRX_BOOKMARK_HEADER == line:
+        if GQRX_BOOKMARK_FIRST_LINE == line:
             return "gqrx"
         if len(line.split(",")) == 4:
             return "rig-remote"
@@ -210,17 +214,66 @@ class Bookmarks(object):
 
         self._insert_bookmarks(book)
 
-    def _export_rig_remote(self, file_path):
-        pass
-
-    def _export_gqrx(self, file_path):
-        pass
-
-    def export_bookmarks(self):
-        """handles the popup for selecting the path and the format.
+    def export_rig_remote(self):
+        """Wrapper method for exporting using rig remote csv format.
+        it wraps around the save method used when "save on exit" is selected.
         """
 
-        bookmark_format, file_path = self.export_requester()
-        call = "_export{}".format(bookmark_format)
-        setattr(self, call, bookmark_path)
+        filename = self._export_panel()
+        try:
+            self.save(filename, ",", silent = False)
+        except ValueError:
+            raise FormatError
 
+    def export_gqrx(self):
+        """Wrapper method for exporting using rig remote csv format.
+        It wraps around the save method used when "save on exit" is selected
+        and around a function that provides the format/data conversion.
+        """
+
+        filename = self._export_panel()
+        
+        self.bookmarks.row_list = GQRX_BOOKMARK_HEADER
+        self._save_gqrx(filename)
+
+    def _save_gqrx(self, filename):
+        """Private method for saving the bookmarks file in csv compatible
+        with gqrx bookmark format. It wraps around csv_save method of disk_io
+        module.
+
+        :param filename: filename to be saved
+        """
+
+        for item in self.tree.get_children():
+            gqrx_bookmark =[]
+            values = self.tree.item(item).get('values')
+            values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
+            gqrx_bookmark.append(values[0])
+            gqrx_bookmark.append(values[2])
+            gqrx_bookmark.append(values[1])
+            gqrx_bookmark.append("")
+            gqrx_bookmark.append("Untagged")
+            self.bookmarks.row_list.append(gqrx_bookmark)
+        # Not where we want to do this, and will be fixed with BookmarkSet
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except IOError:
+            logger.info("Error while trying to create bookmark " \
+                        "path as {}".format(filename))
+        except OSError:
+            logger.info("The bookmark directory already exists.")
+        self.bookmarks.row_list.reverse()
+        self.bookmarks.csv_save(filename, ";")
+
+
+
+    def _export_panel(self):
+        """handles the popup for selecting the path for saving the file.
+        """
+
+        filename = tkFileDialog.asksaveasfilename(initialdir = "~/",
+                                                  title = "Select bookmark file",
+                                                  initialfile = "bookmarks-export.csv",
+                                                  filetypes = (("csv","*.csv"),
+                                                               ("all files","*.*")))
+        return filename
