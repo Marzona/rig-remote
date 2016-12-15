@@ -3,21 +3,27 @@
 # import modules
 from rig_remote.disk_io import IO
 from rig_remote.constants import (
-                                 SUPPORTED_BOOKMARK_FORMATS,
-                                 LEN_BM,
-                                 BM,
-                                 CBB_MODES,
+                                  LEN_BM,
+                                  BM,
+                                  CBB_MODES,
+                                  GQRX_FIRST_BOOKMARK,
+                                  GQRX_BOOKMARK_FIRST_LINE,
+                                  REVERSE_MODE_MAP,
+                                  GQRX_BOOKMARK_HEADER,
                                  )
 from rig_remote.exceptions import (
-                                  UnsupportedBookmarkFormatError,
-                                  InvalidPathError,
+                                   InvalidPathError,
+                                   FormatError,
                                   )
 from rig_remote.utility import (
-                               frequency_pp_parse,
-                               frequency_pp,
+                                frequency_pp_parse,
+                                frequency_pp,
                                )
 import logging
 import Tkinter as tk
+import Tkconstants
+import tkMessageBox
+import tkFileDialog
 import os
 
 # logging configuration
@@ -79,15 +85,23 @@ class Bookmarks(object):
 
         if bookmark_file == "noname":
             return
+
         try:
             self.bookmarks.csv_load(bookmark_file, delimiter)
         except InvalidPathError:
             logger.info("No bookmarks file found, skipping.")
             return
+        self._insert_bookmarks(self.bookmarks.row_list)
+
+    def _insert_bookmarks(self, bookmarks, silent = False):
+        """Method for inserting bookmark data already loaded.
+
+        :param bookmarks: bookmarks to import in the UI
+        :type bookmarks: dict
+        """
 
         count = 0
-        for line in self.bookmarks.row_list:
-            count += 1
+        for line in bookmarks:
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
@@ -122,17 +136,44 @@ class Bookmarks(object):
             self.tree.tag_configure('unlocked', background = 'white')
             self.tree.item(item, tags = "unlocked")
 
-    def import_bookmarks(self):
+    def import_bookmarks(self, silent = True):
         """handles the import of the bookmarks. It is a 
         Wrapper around the import funtions and the requester function.
 
-        :params: none
-        :raises: none
+        :params root: main window
+        :type root: tkinter panel
         """
 
-        bookmark_format, file_path = self.import_requester()
-        call = "_import{}".format(bookmark_format)
-        setattr(self, call, bookmark_path)
+        filename = tkFileDialog.askopenfilename(initialdir = "~/",
+                                                title = "Select bookmark file",
+                                                filetypes = (("csv files","*.csv"),
+                                                             ("all files","*.*")))
+        if not filename: return
+
+        if self._detect_format(filename) == "gqrx":
+            self._import_gqrx(filename)
+            return
+
+        if self._detect_format(filename) == "rig-remote":
+            self._import_rig_remote(filename)
+            return
+
+        if not silent:
+            tkMessageBox.showerror("Error", "Unsupported file format.")
+
+    def _detect_format(self, filename):
+        """Method for detecting the bookmark type. Only two types are supported.
+
+        :param filename: file path to read
+        :type filename: string
+        """
+
+        with open(filename, "r") as fn:
+            line = fn.readline()
+        if GQRX_BOOKMARK_FIRST_LINE == line:
+            return "gqrx"
+        if len(line.split(",")) == 4:
+            return "rig-remote"
 
     def _import_rig_remote(self, file_path):
         """Imports the bookmarks using rig-remote format. It wraps around
@@ -142,33 +183,97 @@ class Bookmarks(object):
         :type file_path: string
         """
 
-        self.load(file_path, ",", silent = False)
+        try:
+            self.load(file_path, ",", silent = False)
+        except ValueError:
+            raise FormatError
 
     def _import_gqrx(self, file_path):
-        pass
+        """Method for importing gqrx bookmarks.
 
-    def _export_rig_remote(self, file_path):
-        self.load(file_path, ",", silent = False)
-
-    def _export_gqrx(self, file_path):
-        pass
-
-    def export_bookmarks(self):
-        """handles the popup for selecting the path and the format.
+        :param file_path: path of the file to be loaded
+        :type file_path: string
         """
 
-        bookmark_format, file_path = self.export_requester()
-        call = "_export{}".format(bookmark_format)
-        setattr(self, call, bookmark_path)
+        self.bookmarks.csv_load(file_path, ";")
 
-    def import_requester(self):
-        """wrapper around requester()
+        count = 0
+        book = []
+        for line in self.bookmarks.row_list:
+            count+=1
+            if count < GQRX_FIRST_BOOKMARK + 1:
+                continue
+            try:
+                new_line = []
+                new_line.append(line[0].strip())
+                new_line.append(REVERSE_MODE_MAP[line[2].strip()])
+                new_line.append(line[1].strip())
+                book.append(new_line)
+            except IndexError:
+                pass
+
+        self._insert_bookmarks(book)
+
+    def export_rig_remote(self):
+        """Wrapper method for exporting using rig remote csv format.
+        it wraps around the save method used when "save on exit" is selected.
         """
 
-        pass
+        filename = self._export_panel()
+        try:
+            self.save(filename, ",", silent = False)
+        except ValueError:
+            raise FormatError
 
-    def export_requester(self):
-        """wrapper around requester()
+    def export_gqrx(self):
+        """Wrapper method for exporting using rig remote csv format.
+        It wraps around the save method used when "save on exit" is selected
+        and around a function that provides the format/data conversion.
         """
 
-        pass
+        filename = self._export_panel()
+        
+        self.bookmarks.row_list = GQRX_BOOKMARK_HEADER
+        self._save_gqrx(filename)
+
+    def _save_gqrx(self, filename):
+        """Private method for saving the bookmarks file in csv compatible
+        with gqrx bookmark format. It wraps around csv_save method of disk_io
+        module.
+
+        :param filename: filename to be saved
+        """
+
+        for item in self.tree.get_children():
+            gqrx_bookmark =[]
+            values = self.tree.item(item).get('values')
+            values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
+            gqrx_bookmark.append(values[0])
+            gqrx_bookmark.append(values[2])
+            gqrx_bookmark.append(values[1])
+            gqrx_bookmark.append("")
+            gqrx_bookmark.append("Untagged")
+            self.bookmarks.row_list.append(gqrx_bookmark)
+        # Not where we want to do this, and will be fixed with BookmarkSet
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except IOError:
+            logger.info("Error while trying to create bookmark " \
+                        "path as {}".format(filename))
+        except OSError:
+            logger.info("The bookmark directory already exists.")
+        self.bookmarks.row_list.reverse()
+        self.bookmarks.csv_save(filename, ";")
+
+
+
+    def _export_panel(self):
+        """handles the popup for selecting the path for saving the file.
+        """
+
+        filename = tkFileDialog.asksaveasfilename(initialdir = "~/",
+                                                  title = "Select bookmark file",
+                                                  initialfile = "bookmarks-export.csv",
+                                                  filetypes = (("csv","*.csv"),
+                                                               ("all files","*.*")))
+        return filename
