@@ -36,5 +36,5 @@ class UnsupportedScanningConfigError(NonRetriableError):
 class RetriableError (Exception):
     pass
 
-class UnsupportedBookmarkFormatError (RetriableError):
+class FormatError (RetriableError):
     pass

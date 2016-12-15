@@ -149,15 +149,26 @@ MONITOR_MODE_DELAY = 2
 # the key is the rig-remote namings and the value is the rig naming
 
 MODE_MAP = {}
-MODE_MAP["AM"] = "AM",
-MODE_MAP["FM"] = "NarrowFM",
-MODE_MAP["WFM_ST"] = "WFM(stereo)",
-MODE_MAP["WFM"] = "WFM(mono)",
-MODE_MAP["LSB"] = "LSB",
-MODE_MAP["USB"] = "USB",
-MODE_MAP["CW"] = "CW",
-MODE_MAP["CWL"] = "CW-L",
+MODE_MAP["AM"] = "AM"
+MODE_MAP["FM"] = "NarrowFM"
+MODE_MAP["WFM_ST"] = "WFM(stereo)"
+MODE_MAP["WFM"] = "WFM(mono)"
+MODE_MAP["LSB"] = "LSB"
+MODE_MAP["USB"] = "USB"
+MODE_MAP["CW"] = "CW"
+MODE_MAP["CWL"] = "CW-L"
 MODE_MAP["CWU"] = "CW-U"
+
+REVERSE_MODE_MAP = {}
+REVERSE_MODE_MAP["AM"] = "AM"
+REVERSE_MODE_MAP["Narrow FM"] = "FM"
+REVERSE_MODE_MAP["WFM (stereo)"] = "WFM_ST"
+REVERSE_MODE_MAP["WFM (mono)"] = "WFM"
+REVERSE_MODE_MAP["LSB"] = "LSB"
+REVERSE_MODE_MAP["USB"] = "USB"
+REVERSE_MODE_MAP["CW"] = "CW"
+REVERSE_MODE_MAP["CW-L"] = "CWL"
+REVERSE_MODE_MAP["CW-U"] = "CWU"
 
 SUPPORTED_SCANNING_ACTIONS = ("start",
                                "stop")
@@ -209,7 +220,15 @@ Project wiki: https://github.com/Marzona/rig-remote/wiki
 GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
 """
 
-SUPPORTED_BOOKMARK_FORMATS = [
-                              "gqrx",
-                              "rig_remote"
-                             ]
+GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
+GQRX_FIRST_BOOKMARK = 5
+
+GQRX_BOOKMARK_HEADER = [
+                        ["# Tag name          ","  color"],
+                        ["Untagged            "," #c0c0c0"],
+                        ["Marine VHF          "," #c0c0c0"],
+                        [],
+                        ["# Frequency "," Name                     ",
+                         " Modulation          ",
+                         "  Bandwidth"," Tags"],
+                        ]

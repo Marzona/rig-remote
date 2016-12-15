@@ -71,6 +71,7 @@ class IO(object):
         self._path_check(csv_file)
         try:
             with open(csv_file, 'r') as data_file:
+                self.row_list = []
                 reader = csv.reader(data_file, delimiter=delimiter)
                 for line in reader:
                     self.row_list.append(line)
