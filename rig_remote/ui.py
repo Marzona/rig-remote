@@ -212,7 +212,6 @@ class RigRemote(ttk.Frame):
                           text='Frequency',
                           anchor=tk.CENTER)
         self.tree.column('frequency',
-                         #minwidth=100,
                          width=100,
                          stretch=True,
                          anchor=tk.CENTER)
@@ -220,7 +219,6 @@ class RigRemote(ttk.Frame):
                           text='Mode',
                           anchor=tk.CENTER)
         self.tree.column('mode',
-                         #minwidth=80,
                          width=70,
                          stretch=True,
                          anchor=tk.CENTER)
@@ -229,7 +227,6 @@ class RigRemote(ttk.Frame):
                           )
         self.tree.column('description',
                          stretch=True,
-                         #width=70
                          )
         ysb = ttk.Scrollbar(self,
                             orient=tk.VERTICAL,
@@ -253,8 +250,6 @@ class RigRemote(ttk.Frame):
                        rowspan=5,
                        sticky=tk.NSEW
                        )
-        self.tree.bind('<Double-Button-1>',
-                       self.cb_first_set_frequency)
 
         # vertical separator between bookmarks and comands
         ttk.Frame(self).grid(row=0,

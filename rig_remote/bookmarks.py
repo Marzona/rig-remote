@@ -65,7 +65,7 @@ class Bookmarks(object):
             logger.info("Error while trying to create bookmark " \
                         "path as {}".format(bookmark_file))
         except OSError:
-            logger.info("The bookmark directory already exists.")
+            logger.info("The bookmark file already exists.")
         self.bookmarks.csv_save(bookmark_file, delimiter)
 
     def load(self, bookmark_file, delimiter, silent = False):
@@ -150,15 +150,19 @@ class Bookmarks(object):
                                                              ("all files","*.*")))
         if not filename: return
 
-        if self._detect_format(filename) == "gqrx":
+        fileformat = self._detect_format(filename)
+
+        if fileformat == "gqrx":
             self._import_gqrx(filename)
             return
 
-        if self._detect_format(filename) == "rig-remote":
+        if fileformat == "rig-remote":
             self._import_rig_remote(filename)
             return
 
         if not silent:
+            logger.error("Unsupported format, supported formats are rig-remote"
+                         "rig-remote and gqrx,")
             tkMessageBox.showerror("Error", "Unsupported file format.")
 
     def _detect_format(self, filename):
@@ -167,6 +171,10 @@ class Bookmarks(object):
         :param filename: file path to read
         :type filename: string
         """
+
+        if not filename:
+            logger.error("No filename passed.")
+            raise InvalidPathError
 
         with open(filename, "r") as fn:
             line = fn.readline()
@@ -232,7 +240,6 @@ class Bookmarks(object):
         """
 
         filename = self._export_panel()
-        
         self.bookmarks.row_list = GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
@@ -261,11 +268,9 @@ class Bookmarks(object):
             logger.info("Error while trying to create bookmark " \
                         "path as {}".format(filename))
         except OSError:
-            logger.info("The bookmark directory already exists.")
+            logger.info("The bookmark filef already exists.")
         self.bookmarks.row_list.reverse()
         self.bookmarks.csv_save(filename, ";")
-
-
 
     def _export_panel(self):
         """handles the popup for selecting the path for saving the file.
