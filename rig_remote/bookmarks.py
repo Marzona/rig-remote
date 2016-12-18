@@ -182,6 +182,7 @@ class Bookmarks(object):
             return "gqrx"
         if len(line.split(",")) == 4:
             return "rig-remote"
+        raise FormatError()
 
     def _import_rig_remote(self, file_path):
         """Imports the bookmarks using rig-remote format. It wraps around
