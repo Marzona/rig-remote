@@ -80,7 +80,7 @@ def build_rig_uri(number, params):
 
     if number not in (1,2):
         logger.error("The rig number {} is not supported".format(number))
-        tImplementedError
+        raise NotImplementedError
 
     rig_target= {}
     hostname = ("txt_hostname{}".format(number))
@@ -106,7 +106,7 @@ def shutdown(window, silent = False):
     if window.ckb_save_exit.get_str_val() == "true":
         window.bookmarks.save(window.bookmarks_file)
         store_conf(window)
-        
+
     window.master.destroy()
 
 def store_conf(window):
@@ -213,14 +213,6 @@ def process_path(path):
     :type path: string
     """
 
-# rifare con
-#    working_path, working_name = os.path.split(path)
-#    try:
-#        working_path = os.path.expanduser(working_path)
-#    except Exception:
-#        pass
-#    return os.path.join(working_path, working_name)
-
     working_path, working_name = os.path.split(path)
     if working_path:
         working_path = os.path.expanduser(working_path)
@@ -266,7 +258,7 @@ class ToolTip:
 
     """
     these methods handle the callbacks on "<Enter>", "<Leave>" and "<Motion>"
-    events on the parent widget; override them if you want to change the 
+    events on the parent widget; override them if you want to change the
     widget's behavior
     """
 
@@ -326,7 +318,7 @@ class ToolTip:
         self._tipwindow = None
         if tw:
             tw.destroy()
-                
+
     ##----these methods might be overridden in derived classes:
 
     def coords(self):
@@ -365,7 +357,7 @@ class ToolTip:
 
 class RCCheckbutton(ttk.Checkbutton) :
     """
-    RCCheckbutton is derived from ttk.Checkbutton, and adds an 
+    RCCheckbutton is derived from ttk.Checkbutton, and adds an
     "is_checked" method to simplify checking instance's state, and
     new methods to return string state values for config file.
     """
@@ -388,4 +380,3 @@ class RCCheckbutton(ttk.Checkbutton) :
             self.var.set(True)
         else :
             self.var.set(False)
-
