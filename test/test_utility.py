@@ -8,6 +8,7 @@ from rig_remote.utility import (
                                 frequency_pp_parse,
                                 store_conf,
                                 build_rig_uri,
+                                dbfs_to_sgn,
                                 )
 from rig_remote.ui import RigRemote
 import Tkinter as tk
@@ -84,3 +85,17 @@ def test_store_conf(key, value):
     out = store_conf(rr)
     assert(out.config[key] == value)
     rr.root.destroy()
+
+def test_khertz_to_hertz():
+    assert(dbfs_to_sgn(10) == 100)
+
+def test_error_khertz_to_hertz():
+    with pytest.raises(ValueError):
+        dbfs_to_sgn("test")
+
+def test_dbfs_to_sgn():
+    assert(dbfs_to_sgn(10) == 100)
+
+def test_error_dbfs_to_sgn():
+    with pytest.raises(ValueError):
+        dbfs_to_sgn("test")
