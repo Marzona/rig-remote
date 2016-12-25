@@ -41,7 +41,7 @@ class RigCtl(object):
         """implements the rig.
 
         :param target: rig uri data
-        :type target: dict created from build_rig_uri 
+        :type target: dict created from build_rig_uri
         :raises TypeError: if the target is not a dict of 3 keys
         """
 

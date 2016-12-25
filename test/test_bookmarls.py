@@ -53,21 +53,6 @@ def test_export_rig_remote_bad_attrib():
     with pytest.raises(AttributeError):
         bk.export_rig_remote()
 
-def test_export_rig_remote():
-    tree = ttk.Treeview(columns=("frequency",
-                                 "mode",
-                                 "description",
-                                 "lockout"),
-                        displaycolumns=("frequency",
-                                        "mode",
-                                        "description"),
-                        show="headings")
-    bk = Bookmarks(tree, io=IO())
-    bk._export_panel = MagicMock()
-    bk._export_panel.return_value == "test"
-    bk.save = MagicMock()
-    bk.export_rig_remote()
-    bk.save.assert_called_once_With("test")
 
 def test_save_gqrx():
     tree = ttk.Treeview(columns=("frequency",
@@ -240,4 +225,3 @@ def test_import_gqrx():
     bk._insert_bookmarks = MagicMock()
     bk._import_gqrx("test")
     bk._insert_bookmarks.assert_called_once_with([['28800000', 'FM', 'standing spike']])
-

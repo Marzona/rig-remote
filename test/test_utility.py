@@ -6,6 +6,7 @@ from rig_remote.utility import (
                                 is_valid_hostname,
                                 process_path,
                                 frequency_pp_parse,
+                                build_rig_uri,
                                 )
 
 def test_this_file_exist():
@@ -41,3 +42,7 @@ def test_frequency_pp_parse2():
     freq="2,4"
     pfreq=frequency_pp_parse(freq)
     assert("," not in pfreq)
+
+def test_build_rig_uri():
+    with pytest.raises(NotImplementedError):
+        build_rig_uri(3,"test")

@@ -3,6 +3,7 @@
 # import modules
 import pytest
 import socket
+import telnetlib
 from mock import patch, MagicMock
 from rig_remote.rigctl import RigCtl
 from rig_remote.constants import (
@@ -34,6 +35,18 @@ def test_set_frequency(hostname, port, fake_target):
     rigctl.set_frequency("1000000")
     rigctl._request.assert_called_once_with('F 1000000', None)
 
+def test_request_timeout(fake_target):
+    telnetlib.Telnet = MagicMock(side_effect=socket.timeout)
+    rigctl = RigCtl(fake_target)
+    with pytest.raises(socket.timeout):
+        rigctl.get_frequency()
+
+def test_request_socket_error(fake_target):
+    telnetlib.Telnet = MagicMock(side_effect=socket.error)
+    rigctl = RigCtl(fake_target)
+    with pytest.raises(socket.error):
+        rigctl.get_frequency()
+
 def test_get_frequency(fake_target):
     DEFAULT_CONFIG["hostname"] = "127.0.0.1"
     DEFAULT_CONFIG["port"] = "80"
@@ -42,6 +55,26 @@ def test_get_frequency(fake_target):
     rigctl._request.return_value = "f"
     rigctl.get_frequency()
     rigctl._request == "f"
+
+def test_get_frequency_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_frequency()
+
+def test_get_level(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_level() == "22")
+
+def test_get_level_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_level()
 
 def test_set_bad_frequency(fake_target):
     rigctl = RigCtl(fake_target)
@@ -57,8 +90,105 @@ def test_get_mode(fake_target):
     rigctl = RigCtl(fake_target)
     rigctl._request = MagicMock()
     rigctl._request.return_value = "m"
-    rigctl.get_mode()
-    rigctl._request = "m"
+    assert(rigctl.get_mode() == "m")
+
+def test_get_mode_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_mode()
+
+def test_get_vfo_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_vfo()
+
+def test_get_vfo(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_vfo() == "22")
+
+def test_get_rit_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_rit()
+
+def test_get_rit(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_rit() == "22")
+
+def test_get_xit_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_xit()
+
+def test_get_xit(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_xit() == "22")
+
+def test_get_split_freq_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    with pytest.raises(ValueError):
+        rigctl.get_split_freq()
+
+def test_get_split_freq(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    assert(rigctl.get_split_freq() == 22)
+
+def test_get_func_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_func()
+
+def test_get_func(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_func() == "22")
+
+def test_get_parm_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_parm()
+
+def test_get_parm(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    assert(rigctl.get_parm() == "22")
+
+def test_get_antenna_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "22"
+    with pytest.raises(ValueError):
+        rigctl.get_antenna()
+
+def test_get_antenna(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    assert(rigctl.get_antenna() == 22)
 
 def test_set_mode(fake_target):
     rigctl = RigCtl(fake_target)
@@ -145,4 +275,3 @@ def test_antenna(fake_target):
     rigctl = RigCtl(fake_target)
     with pytest.raises(ValueError):
         rigctl.set_antenna("testparm")
-
