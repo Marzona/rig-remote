@@ -31,10 +31,10 @@ logger = logging.getLogger(__name__)
 # function definition
 
 def khertz_to_hertz(value):
-    return value*1000
+    return int(value)*1000
 
 def dbfs_to_sgn(value):
-    return value*10
+    return int(value)*10
 
 def frequency_pp(frequency):
     """Filter invalid chars and add thousands separator.
