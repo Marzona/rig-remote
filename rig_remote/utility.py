@@ -201,7 +201,6 @@ def this_file_exists(filename):
     """
     try:
         with open(filename) as f:
-            f.close()
             return(filename)
     except IOError:
         return None
