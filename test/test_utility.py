@@ -9,6 +9,8 @@ from rig_remote.utility import (
                                 store_conf,
                                 build_rig_uri,
                                 dbfs_to_sgn,
+                                center_window,
+                                shutdown,
                                 )
 from rig_remote.ui import RigRemote
 import Tkinter as tk
@@ -99,3 +101,14 @@ def test_dbfs_to_sgn():
 def test_error_dbfs_to_sgn():
     with pytest.raises(ValueError):
         dbfs_to_sgn("test")
+
+def test_center_window():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    rr.ac.write_conf = MagicMock()
+    panel = tk.Toplevel(rr)
+    center_window(panel)
+    assert(panel.geometry() == '1x1+533+284')
+    rr.root.destroy()
