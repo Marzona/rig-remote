@@ -29,7 +29,7 @@ def test_load_conf1():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    
+
     assert (rr.params["txt_hostname1"].get() == "127.0.0.1")
     rr.root.destroy()
 
@@ -246,6 +246,3 @@ def test_ko_1_is_valid_hostname():
 def test_ko_2_is_valid_hostname():
     with pytest.raises(ValueError):
         is_valid_hostname("")
-
-def test_ok_1_is_valid_hostname():
-    is_valid_hostname("www.google.com")
