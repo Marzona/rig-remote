@@ -27,9 +27,8 @@ def test_good_path_csv_save():
 def test_bad_file_csv_save():
 
     io=IO()
-    io.row_list=2
     with pytest.raises(TypeError):
-        io.csv_save("/tmp/test.csv",",")
+        io.csv_save(["/tmp/test.csv",","])
 
 def test_bad_file2_csv_save():
 

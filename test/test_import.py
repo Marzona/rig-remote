@@ -46,32 +46,3 @@ stmessenger_module=[
                     ("from rig_remote.stmessenger import STMessenger"),
                    ]
 
-@pytest.mark.parametrize("entry", constants_module)
-def test_import_constants(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", app_config_module)
-def test_import_app_config(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", disk_io_module)
-def test_import_disk_io(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", exception_module)
-def test_import_exception(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", rigctl_module)
-def test_import_rigctl(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", scanning_module)
-def test_import_scanning(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-@pytest.mark.parametrize("entry", stmessenger_module)
-def test_import_stmessenger(entry):
-    getattr(__import__("rig_remote", fromlist=[entry]), "constants")
-
-

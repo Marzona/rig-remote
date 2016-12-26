@@ -41,6 +41,7 @@ ALLOWED_RIGCTL_MODES=("USB",
                       "PKTFM",
                       "ECSSUSB",
                       "ECSSLSB",
+                      "WFM_ST",
                       "FAX",
                       "SAM",
                       "SAL",
@@ -120,8 +121,6 @@ ALLOWED_SPLIT_MODES=["AM",
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
 DIRMODE = 644
 CBB_MODES = ('',
-             'OFF',
-             'RAW',
              'AM',
              'FM',
              'WFM',
@@ -150,23 +149,36 @@ MONITOR_MODE_DELAY = 2
 # the key is the rig-remote namings and the value is the rig naming
 
 MODE_MAP = {}
-MODE_MAP["AM"] = "AM",
-MODE_MAP["FM"] = "NarrowFM",
-MODE_MAP["WFM_ST"] = "WFM(stereo)",
-MODE_MAP["WFM"] = "WFM(mono)",
-MODE_MAP["LSB"] = "LSB",
-MODE_MAP["USB"] = "USB",
-MODE_MAP["CW"] = "CW",
-MODE_MAP["CWL"] = "CW-L",
+MODE_MAP["AM"] = "AM"
+MODE_MAP["FM"] = "NarrowFM"
+MODE_MAP["WFM_ST"] = "WFM(stereo)"
+MODE_MAP["WFM"] = "WFM(mono)"
+MODE_MAP["LSB"] = "LSB"
+MODE_MAP["USB"] = "USB"
+MODE_MAP["CW"] = "CW"
+MODE_MAP["CWL"] = "CW-L"
 MODE_MAP["CWU"] = "CW-U"
+
+REVERSE_MODE_MAP = {}
+REVERSE_MODE_MAP["AM"] = "AM"
+REVERSE_MODE_MAP["Narrow FM"] = "FM"
+REVERSE_MODE_MAP["WFM (stereo)"] = "WFM_ST"
+REVERSE_MODE_MAP["WFM (mono)"] = "WFM"
+REVERSE_MODE_MAP["LSB"] = "LSB"
+REVERSE_MODE_MAP["USB"] = "USB"
+REVERSE_MODE_MAP["CW"] = "CW"
+REVERSE_MODE_MAP["CW-L"] = "CWL"
+REVERSE_MODE_MAP["CW-U"] = "CWU"
 
 SUPPORTED_SCANNING_ACTIONS = ("start",
                                "stop")
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
-                  "port" : "7356",
+DEFAULT_CONFIG = {"hostname1" : "127.0.0.1",
+                  "port1" : "7356",
+                  "hostname2" : "127.0.0.1",
+                  "port2" : "7357",
                   "interval" : "1",
                   "delay" : "5",
                   "passes" : "0",
@@ -178,6 +190,7 @@ DEFAULT_CONFIG = {"hostname" : "127.0.0.1",
                   "log" : "false",
                   "always_on_top" : "true",
                   "save_exit" : "false",
+                  "aggr_scan" : "false",
                   "auto_bookmark" : "false",
                   "log_filename" : "noname",
                   "bookmark_filename" : "noname"}
@@ -196,3 +209,26 @@ DEFAULT_PREFIX = '~/.rig-remote'
 DEFAULT_CONFIG_FILENAME = 'rig-remote.conf'
 DEFAULT_LOG_FILENAME = 'rig-remote-log.txt'
 DEFAULT_BOOKMARK_FILENAME = 'rig-remote-bookmarks.csv'
+ABOUT = """
+Rig remote is a software for controlling a rig
+via tcp/ip and RigCtl.
+
+GitHub: https://github.com/Marzona/rig-remote
+
+Project wiki: https://github.com/Marzona/rig-remote/wiki
+
+GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
+"""
+
+GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
+GQRX_FIRST_BOOKMARK = 5
+
+GQRX_BOOKMARK_HEADER = [
+                        ["# Tag name          ","  color"],
+                        ["Untagged            "," #c0c0c0"],
+                        ["Marine VHF          "," #c0c0c0"],
+                        [],
+                        ["# Frequency "," Name                     ",
+                         " Modulation          ",
+                         "  Bandwidth"," Tags"],
+                        ]

@@ -10,7 +10,7 @@ def test_app_config2():
     assert (ac.config_file == "test")
 
 def test_app_config4():
-    ac = AppConfig("/tmp/test")
+    ac = AppConfig("./test/test-config.file")
     ac.read_conf()
     assert(len(ac.config) == 16)
 

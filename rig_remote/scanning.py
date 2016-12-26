@@ -72,6 +72,7 @@ from rig_remote.stmessenger import STMessenger
 from rig_remote.utility import(
                              khertz_to_hertz,
                              dbfs_to_sgn,
+                             build_rig_uri,
                             )
 import socket
 import logging
@@ -220,7 +221,7 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        if (not task or 
+        if (not task or
             not task.mode or
             task.mode.lower() not in SUPPORTED_SCANNING_MODES):
             logger.exception("Invalid scan mode provided:{}".format(task.mode))
@@ -240,7 +241,6 @@ class Scanning(object):
         """
 
         logger.info("Tuning to {}".format(freq))
-
         try:
             task.rig.set_frequency(freq)
         except ValueError:
@@ -283,7 +283,11 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
+        mode = task.params["cbb_scan_mode"].get()
+        task.rig.set_mode(mode )
+
         level = []
+
         pass_count = task.params["passes"]
         interval = khertz_to_hertz(task.params["interval"])
         while self.scan_active:
@@ -350,7 +354,7 @@ class Scanning(object):
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
-            logging.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            logger.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rig.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))

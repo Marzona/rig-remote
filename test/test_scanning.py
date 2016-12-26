@@ -25,6 +25,14 @@ from rig_remote.constants import MIN_INTERVAL
 from rig_remote.stmessenger import STMessenger
 from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
 
+@pytest.fixture
+def fake_target():
+    fake_target= {}
+    fake_target["hostname"] = "test"
+    fake_target["port"] = 80
+    fake_target["rig_number"] = 1
+    return fake_target
+
 class TestStr (str) :
 
     def __new__(cls, *args, **kw):
@@ -85,12 +93,17 @@ def scan_task():
     params["delay"] = 1
     params["ckb_auto_bookmark"] = TestBool(False)
 
+    fake_target= {}
+    fake_target["hostname"] = "127.0.0.1"
+    fake_target["port"] = 80
+    fake_target["rig_number"] = 1
+
     scan_task = ScanningTask(scanq,
                              mode,
                              bookmark_list,
                              new_bookmark_list,
                              params,
-                             RigCtl(),
+                             RigCtl(fake_target),
                              "")
     return scan_task
 
@@ -109,7 +122,7 @@ def test_interval(scan_task):
     scan_task._check_interval()
     assert (scan_task.params["interval"] == MIN_INTERVAL*100)
 
-def test_unsupported_scan_mode():
+def test_unsupported_scan_mode(fake_target):
 
     params = {}
     scanq = None
@@ -133,7 +146,7 @@ def test_unsupported_scan_mode():
                                  bookmark_list,
                                  new_bookmark_list,
                                  params,
-                                 RigCtl(),
+                                 RigCtl(fake_target),
                                  "")
 
 
@@ -225,7 +238,7 @@ testdata=[(None,
 
 @pytest.mark.parametrize(
 "scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark", testdata)
-def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark):
+def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_freq, delay, passes, sgn_level, interval, record, log, wait, auto_bookmark, fake_target):
     with pytest.raises(ValueError):
 
         params = {}
@@ -245,7 +258,7 @@ def test_bad_param(scanq, mode, bookmark_list, new_bookmark_list, min_freq, max_
                      bookmark_list,
                      new_bookmark_list,
                      params,
-                     RigCtl(),
+                     RigCtl(fake_target),
                      "")
 
 def test_tune():
@@ -334,4 +347,3 @@ def test_terminate():
     s = Scanning()
     s.terminate()
     assert(s.scan_active == False)
-
