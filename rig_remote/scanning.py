@@ -311,7 +311,6 @@ class Scanning(object):
                         self._start_recording()
 
                     if task.params["auto_bookmark"]:
-                        print ("new bookmark")
                         nbm = self._create_new_bookmark(task, freq)
                         task.new_bookmark_list.append(nbm)
 
