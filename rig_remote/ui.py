@@ -861,24 +861,25 @@ class RigRemote(ttk.Frame):
                                   text="Mode to use for the frequency scan.")
         self.params["cbb_scan_mode"]['values'] = CBB_MODES
 
-        self.cb_aggr_scan = tk.BooleanVar()
-        self.params["ckb_aggr_scan"] = RCCheckbutton(self.scanning_conf_menu,
-                                                  name="aggr_scan",
-                                                  text="Aggr",
-                                                  onvalue=True,
-                                                  offvalue=False,
-                                                  variable=self.cb_aggr_scan)
-        self.params["ckb_aggr_scan"].grid(row=15,
-                                           column=2,
-                                           columnspan=1,
-                                           sticky=tk.E)
-        t_ckb_aggr_scan = ToolTip(self.params["ckb_aggr_scan"],
-                                   follow_mouse=1,
-                                   text="Split the frequency range "
-                                        "and use both rigs "
-                                        "simultaneously. Implies auto bookmark")
-        self.params["ckb_aggr_scan"].val = self.cb_aggr_scan
-        self.cb_aggr_scan.trace("w", self.process_record)
+########### not ready yet
+#        self.cb_aggr_scan = tk.BooleanVar()
+#        self.params["ckb_aggr_scan"] = RCCheckbutton(self.scanning_conf_menu,
+#                                                  name="aggr_scan",
+#                                                  text="Aggr",
+#                                                  onvalue=True,
+#                                                  offvalue=False,
+#                                                  variable=self.cb_aggr_scan)
+#        self.params["ckb_aggr_scan"].grid(row=15,
+#                                           column=2,
+#                                           columnspan=1,
+#                                           sticky=tk.E)
+#        t_ckb_aggr_scan = ToolTip(self.params["ckb_aggr_scan"],
+#                                   follow_mouse=1,
+#                                   text="Split the frequency range "
+#                                        "and use both rigs "
+#                                        "simultaneously. Implies auto bookmark")
+#        self.params["ckb_aggr_scan"].val = self.cb_aggr_scan
+#        self.cb_aggr_scan.trace("w", self.process_record)
 
         ttk.Frame(self.freq_scanning_menu).grid(row=17,
                                                 column=0,
@@ -1293,7 +1294,6 @@ class RigRemote(ttk.Frame):
         :returns: None
         """
 
-
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action:{}".format(action))
             logger.error("Supported "
@@ -1372,7 +1372,7 @@ class RigRemote(ttk.Frame):
         """
 
         if source not in (1,2):
-            logger.error("The rig number {} is not supported".format(number))
+            logger.error("The rig number {} is not supported".format(source))
             raise NotImplementedError
 
         frequency = ("txt_frequency{}".format(source))
@@ -1391,17 +1391,16 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: none
         """
-
         self._clear_form(1)
         for nb in nbl:
-            self.params["txt_description"].insert(0,
+            self.params["txt_description1"].insert(0,
                                                   "activity on {}".format(nb["time"]))
-            self.params["txt_frequency"].insert(0,
+            self.params["txt_frequency1"].insert(0,
                                                 frequency_pp(str(nb["freq"])))
-            self.params["cbb_mode"].insert(0,nb["mode"])
+            self.params["cbb_mode1"].insert(0,nb["mode"])
             # adding bookmark to the list
             self.cb_first_add(True)
-            self._clear_form()
+            self._clear_form(1)
 
     def toggle_cb_top(self, *args):
         """Set window property to be always on top.
@@ -1638,4 +1637,4 @@ class RigRemote(ttk.Frame):
             self.tree.delete(item)
             # save
         self.bookmarks.save(self.bookmarks_file)
-        self._clear_form(source) 
+        self._clear_form(source)

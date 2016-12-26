@@ -221,7 +221,7 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        if (not task or 
+        if (not task or
             not task.mode or
             task.mode.lower() not in SUPPORTED_SCANNING_MODES):
             logger.exception("Invalid scan mode provided:{}".format(task.mode))
@@ -311,6 +311,7 @@ class Scanning(object):
                         self._start_recording()
 
                     if task.params["auto_bookmark"]:
+                        print ("new bookmark")
                         nbm = self._create_new_bookmark(task, freq)
                         task.new_bookmark_list.append(nbm)
 
