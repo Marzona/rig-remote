@@ -5,9 +5,18 @@ import pytest
 import socket
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
+from rig_remote.exceptions import UnsupportedScanningConfigError
 from rig_remote.utility import is_valid_hostname, is_valid_port
 import Tkinter as tk
 from socket import gaierror
+
+@pytest.fixture
+def fake_target():
+    fake_target= {}
+    fake_target["hostname"] = "127.0.0.1"
+    fake_target["port"] = 80
+    fake_target["rig_number"] = 1
+    return fake_target
 
 @pytest.fixture
 def fake_control_source():
@@ -246,3 +255,59 @@ def test_ko_1_is_valid_hostname():
 def test_ko_2_is_valid_hostname():
     with pytest.raises(ValueError):
         is_valid_hostname("")
+
+def test_popup_about():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    assert(rr.ckb_top.val.get() == False)
+
+def test_scan():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    with pytest.raises(UnsupportedScanningConfigError):
+        rr._scan("test","test")
+
+def test_new_activity_message():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    assert(rr._new_activity_message([]) == "")
+
+def test_error_clear_form():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    with pytest.raises(NotImplementedError):
+        rr._clear_form(3)
+
+def test_1_clear_form():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    rr._clear_form(1)
+    assert(rr.params["txt_frequency1"].get() == "")
+    assert(rr.params["txt_port1"].get() == "")
+
+def test_2_clear_form():
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    rr._clear_form(2)
+    assert(rr.params["txt_frequency2"].get() == "")
+    assert(rr.params["txt_port2"].get() == "")
+
+def test_cb_get_frequency(fake_target):
+    root = tk.Tk()
+    ac = AppConfig("./test/test-config.file")
+    ac.read_conf()
+    rr = RigRemote(root, ac)
+    rr.cb_get_frequency(fake_target)
+    import pdb; pdb.set_trace()

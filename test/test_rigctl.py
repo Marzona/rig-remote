@@ -26,6 +26,10 @@ def fake_target():
     fake_target["rig_number"] = 1
     return fake_target
 
+def test_rig_control():
+    with pytest.raises(TypeError):
+        rigctl = RigCtl("test")
+
 @pytest.mark.parametrize("hostname, port", testdata)
 def test_set_frequency(hostname, port, fake_target):
     DEFAULT_CONFIG["hostname"] = "127.0.0.1"
@@ -98,6 +102,19 @@ def test_get_mode_error(fake_target):
     rigctl._request.return_value = 22
     with pytest.raises(ValueError):
         rigctl.get_mode()
+
+def test_get_split_mode(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = "m"
+    assert(rigctl.get_split_mode() == "m")
+
+def test_get_split_mode_error(fake_target):
+    rigctl = RigCtl(fake_target)
+    rigctl._request = MagicMock()
+    rigctl._request.return_value = 22
+    with pytest.raises(ValueError):
+        rigctl.get_split_mode()
 
 def test_get_vfo_error(fake_target):
     rigctl = RigCtl(fake_target)
