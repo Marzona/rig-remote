@@ -37,13 +37,21 @@ logger = logging.getLogger(__name__)
 class RigCtl(object):
     """Basic rigctl client implementation."""
 
-    def __init__(self,
-                 hostname=DEFAULT_CONFIG["hostname"],
-                 port=DEFAULT_CONFIG["port"]):
-        self.hostname = hostname
-        self.port = port
+    def __init__(self, target):
+        """implements the rig.
 
-    def _request(self, request):
+        :param target: rig uri data
+        :type target: dict created from build_rig_uri
+        :raises TypeError: if the target is not a dict of 3 keys
+        """
+
+        if not isinstance(target, dict) or not len(target.keys()) == 3:
+            logger.error("target is not of type dict "
+                         "but {}".format(type(target)))
+            raise TypeError
+        self.target = target
+
+    def _request(self, request, target=None):
         """Main method implementing the rigctl protocol. It's  wrapped by the
         more specific methods that offer the specific functions.
 
@@ -54,22 +62,28 @@ class RigCtl(object):
         :response type: string
         """
 
+        if not target:
+            target = self.target
+
         try:
-            con = telnetlib.Telnet(self.hostname, self.port, RIG_TIMEOUT)
+            con = telnetlib.Telnet(target["hostname"],
+                                   target["port"],
+                                   RIG_TIMEOUT)
         except socket.timeout:
-            logger.error("Time out while connecting to {}:{}".format(self.hostname,
-                                                                     self.port))
+            logger.error("Time out while connecting to {}:{}".format(target["hostname"],
+                                                                     ["port"]))
             raise
         except socket.error:
-            logger.exception("Connection refused on {}:{}".format(self.hostname,
-                                                                  self.port))
+            logger.exception("Connection refused on {}:{}".format(["hostname"],
+                                                                  ["port"]))
             raise
+
         con.write(('%s\n' % request).encode('ascii'))
         response = con.read_some().decode('ascii').strip()
         con.write('c\n'.encode('ascii'))
         return response
 
-    def set_frequency(self, frequency):
+    def set_frequency(self, frequency, target=None):
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -81,9 +95,9 @@ class RigCtl(object):
             logger.error("Frequency value must be a float, "\
                         "got {}".format(frequency))
             raise
-        return self._request('F %s' % frequency)
+        return self._request('F %s' % frequency, target)
 
-    def get_frequency(self):
+    def get_frequency(self, target=None):
         """Wrapper around _request. It configures the command for getting
         a frequency.
 
@@ -95,22 +109,21 @@ class RigCtl(object):
                          "got {}".format(output))
             raise ValueError
 
-        return self._request('f')
+        return self._request('f', target)
 
-    def set_mode(self, mode):
+    def set_mode(self, mode, target=None):
         """Wrapper around _request. It configures the command for setting
         the mode.
 
         """
-
         if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-            logger.error("Frequency value must be a string in {}, "\
+            logger.error("Frequency mode must be a string in {}, "\
                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
 
-        return self._request('M %s' % mode)
+        return self._request('M %s' % mode, target)
 
-    def get_mode(self):
+    def get_mode(self, target=None):
         """Wrapper around _request. It configures the command for getting
         the mode.
 

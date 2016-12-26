@@ -33,6 +33,8 @@ class UnsupportedScanningConfigError(NonRetriableError):
 
 # retriable custom exceptions
 
-class RetriableError (object):
+class RetriableError (Exception):
     pass
 
+class FormatError (RetriableError):
+    pass

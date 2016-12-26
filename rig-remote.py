@@ -40,20 +40,19 @@ def input_arguments():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(textwrap.fill(
-            "Remote app that interacts with a rig using the rigctl protocol.\
-             Gqrx partially implements rigctl since version 2.3")),
+            "Rig controller that interacts with a rig using the rigctl protocol.\
+             ")),
         epilog="""Please refer to:
+        https://github.com/Marzona/rig-remote/wiki
         http://gqrx.dk/,
         http://gqrx.dk/doc/remote-control,
         http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-        Author: Rafael Marmelo <rafael@defying.me>
-        Author: Simone Marzona
+        Author: Simone Marzona <marzona@knoway.info>
         Additional features: Tim Sweeney <mainetim@"GEE"mail.com>
 
         License: MIT License
 
-        Copyright (c) 2014 Rafael Marmelo
         Copyright (c) 2015 Simone Marzona
         Copyright (c) 2016 Tim Sweeney""")
 
@@ -125,11 +124,13 @@ if __name__ == "__main__":
     logger = log_configuration(args.verbose)
 
     if args.alternate_prefix:
-        dir_prefix = os.path.expanduser(args.alternate_prefix)
+        prefix = args.alternate_prefix
+        dir_prefix = os.path.expanduser(prefix)
     else:
         dir_prefix = os.path.expanduser(DEFAULT_PREFIX)
     if args.alternate_config_file:
-        config_file = process_path(args.alternate_config_file)
+        conf = args.alternate_config_file
+        config_file = process_path(conf)
     else:
         config_file = os.path.join(dir_prefix, DEFAULT_CONFIG_FILENAME)
 
@@ -139,13 +140,16 @@ if __name__ == "__main__":
     #   use command line alternate path
     #   use path from config file
     #   use default path
+    ac.read_conf()
     if args.alternate_bookmark_file:
-        ac.config['bookmark_filename'] = process_path(args.alternate_bookmark_file)
+        bookmarks = args.alternate_bookmark_file
+        ac.config['bookmark_filename'] = process_path(bookmarks)
     elif ac.config['bookmark_filename'] == 'noname':
         ac.config['bookmark_filename'] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
     #set activity log filename
     if args.alternate_log_file:
-        ac.config['log_filename'] = process_path(args.alternate_log_file)
+        log = args.alternate_log_file
+        ac.config['log_filename'] = process_path(log)
     elif ac.config['log_filename'] == 'noname':
         ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
     app = RigRemote(root, ac)

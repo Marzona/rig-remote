@@ -71,6 +71,7 @@ class IO(object):
         self._path_check(csv_file)
         try:
             with open(csv_file, 'r') as data_file:
+                self.row_list = []
                 reader = csv.reader(data_file, delimiter=delimiter)
                 for line in reader:
                     self.row_list.append(line)
@@ -95,8 +96,8 @@ class IO(object):
         try:
             with open(csv_file, 'w') as data_file:
                 writer = csv.writer(data_file, delimiter=delimiter)
-                for row in self.row_list:
-                    writer.writerow(row)
+                while self.row_list:
+                    writer.writerow(self.row_list.pop())
         except (IOError, OSError):
             logger.error("Error while trying to write the file: "\
                          "{}".format(csv_file))
