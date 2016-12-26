@@ -310,4 +310,3 @@ def test_cb_get_frequency(fake_target):
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.cb_get_frequency(fake_target)
-    import pdb; pdb.set_trace()
