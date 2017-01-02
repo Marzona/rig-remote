@@ -37,7 +37,7 @@ Added Features
 TODOs/desired enhancements are listed in the issues section.
 If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote-fork.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
 
 
 Version 1
