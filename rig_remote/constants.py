@@ -18,106 +18,114 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 # constant definition
-RIG_TIMEOUT=10
-RESET_CMD_DICT={"NONE" : 0,
-                "SOFTWARE_RESET": 1,
-                "VFO_RESET": 2,
-                "MEMORY_CLEAR_RESET": 4,
-                "MASTER_RESET": 8}
+RIG_TIMEOUT = 10
+RESET_CMD_DICT = {"NONE": 0,
+                  "SOFTWARE_RESET": 1,
+                  "VFO_RESET": 2,
+                  "MEMORY_CLEAR_RESET": 4,
+                  "MASTER_RESET": 8
+                  }
 
-ALLOWED_RIGCTL_MODES=("USB",
-                      "LSB",
-                      "CW",
-                      "CWR",
-                      "RTTY",
-                      "RTTYR",
-                      "AM",
-                      "FM",
-                      "WFM",
-                      "AMS",
-                      "PKTLSB",
-                      "PKTU",
-                      "SB",
-                      "PKTFM",
-                      "ECSSUSB",
-                      "ECSSLSB",
-                      "WFM_ST",
-                      "FAX",
-                      "SAM",
-                      "SAL",
-                      "SAH",
-                      "DSB")
+ALLOWED_RIGCTL_MODES = (
+                        "USB",
+                        "LSB",
+                        "CW",
+                        "CWR",
+                        "RTTY",
+                        "RTTYR",
+                        "AM",
+                        "FM",
+                        "WFM",
+                        "AMS",
+                        "PKTLSB",
+                        "PKTU",
+                        "SB",
+                        "PKTFM",
+                        "ECSSUSB",
+                        "ECSSLSB",
+                        "WFM_ST",
+                        "FAX",
+                        "SAM",
+                        "SAL",
+                        "SAH",
+                        "DSB",
+                        )
 
-ALLOWED_PARM_COMMANDS=["ANN",
-                       "APO",
-                       "BACKLIGHT",
-                       "BEEP",
-                       "TIME",
-                       "BAT",
-                       "KEYLIGHT"]
+ALLOWED_PARM_COMMANDS = ["ANN",
+                         "APO",
+                         "BACKLIGHT",
+                         "BEEP",
+                         "TIME",
+                         "BAT",
+                         "KEYLIGHT",
+                         ]
 
-ALLOWED_FUNC_COMMANDS=["FAGC",
-                       "NB",
-                       "COMP",
-                       "VOX",
-                       "TONE",
-                       "TSQL",
-                       "SBKIN",
-                       "FBKIN",
-                       "ANF",
-                       "NR",
-                       "AIP",
-                       "APF",
-                       "MON",
-                       "MN",
-                       "RF",
-                       "ARO",
-                       "LOCK",
-                       "MUTE",
-                       "VSC",
-                       "REV",
-                       "SQL",
-                       "ABM",
-                       "BC",
-                       "MBC",
-                       "AFC",
-                       "SATMODE",
-                       "SCOPE",
-                       "RESUME",
-                       "TBURST",
-                       "TUNER"]
+ALLOWED_FUNC_COMMANDS = ["FAGC",
+                         "NB",
+                         "COMP",
+                         "VOX",
+                         "TONE",
+                         "TSQL",
+                         "SBKIN",
+                         "FBKIN",
+                         "ANF",
+                         "NR",
+                         "AIP",
+                         "APF",
+                         "MON",
+                         "MN",
+                         "RF",
+                         "ARO",
+                         "LOCK",
+                         "MUTE",
+                         "VSC",
+                         "REV",
+                         "SQL",
+                         "ABM",
+                         "BC",
+                         "MBC",
+                         "AFC",
+                         "SATMODE",
+                         "SCOPE",
+                         "RESUME",
+                         "TBURST",
+                         "TUNER",
+                         ]
 
-ALLOWED_VFO_COMMANDS=["VFOA",
-                      "VFOB"
-                      "VFOC",
-                      "currVFO",
-                      "VFO",
-                      "MEM",
-                      "Main",
-                      "Sub",
-                      "TX",
-                      "RX"]
+ALLOWED_VFO_COMMANDS = ["VFOA",
+                        "VFOB"
+                        "VFOC",
+                        "currVFO",
+                        "VFO",
+                        "MEM",
+                        "Main",
+                        "Sub",
+                        "TX",
+                        "RX",
+                        ]
 
-ALLOWED_SPLIT_MODES=["AM",
-                     "FM",
-                     "CW",
-                     "CWR",
-                     "USB",
-                     "LSB",
-                     "RTTY",
-                     "RTTYR",
-                     "WFM",
-                     "AMS",
-                     "PKTLSB",
-                     "PKTUSB",
-                     "PKTFM",
-                     "ECSSUSB",
-                     "ECSSLSB",
-                     "FAX",
-                     "SAM",
-                     "SAL",
-                     "SAH",
-                     "DSB"]
+ALLOWED_SPLIT_MODES = ["AM",
+                       "FM",
+                       "CW",
+                       "CWR",
+                       "USB",
+                       "LSB",
+                       "RTTY",
+                       "RTTYR",
+                       "WFM",
+                       "AMS",
+                       "PKTLSB",
+                       "PKTUSB",
+                       "PKTFM",
+                       "ECSSUSB",
+                       "ECSSLSB",
+                       "FAX",
+                       "SAM",
+                       "SAL",
+                       "SAH",
+                       "DSB",
+                       ]
+
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
 DIRMODE = 644
 CBB_MODES = ('',
@@ -129,11 +137,12 @@ CBB_MODES = ('',
              'USB',
              'CW',
              'CWL',
-             'CWU')
+             'CWU',
+             )
 
 # scanning constants
 # once tuned a freq, check this number of times for a signal
-SIGNAL_CHECKS=2
+SIGNAL_CHECKS = 2
 # time to wait between checks on the same frequency
 NO_SIGNAL_DELAY = .1
 # once we send the cmd for tuning a freq, wait this time
@@ -171,31 +180,33 @@ REVERSE_MODE_MAP["CW-L"] = "CWL"
 REVERSE_MODE_MAP["CW-U"] = "CWU"
 
 SUPPORTED_SCANNING_ACTIONS = ("start",
-                               "stop")
+                              "stop"
+                              )
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-DEFAULT_CONFIG = {"hostname1" : "127.0.0.1",
-                  "port1" : "7356",
-                  "hostname2" : "127.0.0.1",
-                  "port2" : "7357",
-                  "interval" : "1",
-                  "delay" : "5",
-                  "passes" : "0",
-                  "sgn_level" : "-30",
-                  "range_min" : "24,000",
-                  "range_max" : "1800,000",
-                  "wait" : "false",
-                  "record" : "false",
-                  "log" : "false",
-                  "always_on_top" : "true",
-                  "save_exit" : "false",
-                  "aggr_scan" : "false",
-                  "auto_bookmark" : "false",
-                  "log_filename" : "noname",
-                  "bookmark_filename" : "noname"}
+DEFAULT_CONFIG = {"hostname1": "127.0.0.1",
+                  "port1": "7356",
+                  "hostname2": "127.0.0.1",
+                  "port2": "7357",
+                  "interval": "1",
+                  "delay": "5",
+                  "passes": "0",
+                  "sgn_level": "-30",
+                  "range_min": "24,000",
+                  "range_max": "1800,000",
+                  "wait": "false",
+                  "record": "false",
+                  "log": "false",
+                  "always_on_top": "true",
+                  "save_exit": "false",
+                  "aggr_scan": "false",
+                  "auto_bookmark": "false",
+                  "log_filename": "noname",
+                  "bookmark_filename": "noname"}
 
 LEN_BM = 4
+
 
 class BM(object):
     "Helper class with 4 attribs."
@@ -224,11 +235,11 @@ GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
 GQRX_FIRST_BOOKMARK = 5
 
 GQRX_BOOKMARK_HEADER = [
-                        ["# Tag name          ","  color"],
-                        ["Untagged            "," #c0c0c0"],
-                        ["Marine VHF          "," #c0c0c0"],
+                        ["# Tag name          ", "  color"],
+                        ["Untagged            ", " #c0c0c0"],
+                        ["Marine VHF          ", " #c0c0c0"],
                         [],
-                        ["# Frequency "," Name                     ",
+                        ["# Frequency ", " Name                     ",
                          " Modulation          ",
-                         "  Bandwidth"," Tags"],
+                         "  Bandwidth", " Tags"],
                         ]

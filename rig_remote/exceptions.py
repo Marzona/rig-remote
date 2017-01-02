@@ -15,26 +15,30 @@ License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 """
+
+
 # custom exception definition
-
 # non retriable custom exceptions
-
 class NonRetriableError (Exception):
     pass
+
 
 class InvalidPathError (NonRetriableError):
     pass
 
+
 class InvalidScanModeError (NonRetriableError):
     pass
+
 
 class UnsupportedScanningConfigError(NonRetriableError):
     pass
 
-# retriable custom exceptions
 
+# retriable custom exceptions
 class RetriableError (Exception):
     pass
+
 
 class FormatError (RetriableError):
     pass

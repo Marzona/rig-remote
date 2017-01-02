@@ -33,6 +33,8 @@ import os
 # logging configuration
 logger = logging.getLogger(__name__)
 
+
+# class definition
 class AppConfig(object):
     """This class reads the status of the UI and and parses the data
     so that it's suitable to be saved as a csv, and the reverse
@@ -73,9 +75,9 @@ class AppConfig(object):
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
-            error = 0
+            #error = 0
             for row in self.io.row_list:
-                if len(row) == 2 :
+                if len(row) == 2:
                     self.config[row[0].strip()] = row[1].strip()
                 else:
                     logger.warning("Error in config file line: " + str(row))
@@ -97,8 +99,8 @@ class AppConfig(object):
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
-            logger.info("Error while trying to create config "\
-                              "path as {}".format(self.config_file))
+            logger.info("Error while trying to create config "
+                        "path as {}".format(self.config_file))
         except OSError:
             logger.info("The config directory already exists.")
         for key in self.config.keys():

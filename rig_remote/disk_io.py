@@ -31,11 +31,12 @@ import os.path
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.constants import BM
 import datetime
-import time
 
 # logging configuration
 logger = logging.getLogger(__name__)
 
+
+# class definition
 class IO(object):
     """IO wrapper class
 
@@ -55,7 +56,6 @@ class IO(object):
         if not os.path.exists(csv_file):
             logger.info("Invalid path provided:{}".format(csv_file))
             raise InvalidPathError
-
 
     def csv_load(self, csv_file, delimiter):
         """Read the frequency bookmarks file and populate the tree.
@@ -77,12 +77,12 @@ class IO(object):
                     self.row_list.append(line)
 
         except csv.Error:
-            logger.exception("The file  provided({})"\
-                             " is not a file with values "\
+            logger.exception("The file  provided({})"
+                             " is not a file with values "
                              "separated by {}.".format(csv_file, delimiter))
 
         except (IOError, OSError):
-            logger.exception("Error while trying to read the file: "\
+            logger.exception("Error while trying to read the file: "
                              "{}".format(csv_file))
 
     def csv_save(self, csv_file, delimiter):
@@ -99,7 +99,7 @@ class IO(object):
                 while self.row_list:
                     writer.writerow(self.row_list.pop())
         except (IOError, OSError):
-            logger.error("Error while trying to write the file: "\
+            logger.error("Error while trying to write the file: "
                          "{}".format(csv_file))
 
 
@@ -116,25 +116,25 @@ class LogFile(object):
         self.log_filename = None
         self.log_file = None
 
-    def open(self, name = None):
+    def open(self, name=None):
         """Opens a log file.
 
         :param name: log file name, defaults to None
         :type name: string
         """
-        if name != None :
+        if name is not None:
             self.log_filename = name
         try:
             os.makedirs(os.path.dirname(self.log_filename))
         except IOError:
-            logger.info("Error while trying to create log file " \
+            logger.info("Error while trying to create log file "
                         "path as {}".format(self.log_filename))
         except OSError:
             logger.info("The log directory already exists.")
         try:
             self.log_file = open(self.log_filename, 'a')
         except (IOError, OSError):
-            logger.error("Error while trying to open log file: "\
+            logger.error("Error while trying to open log file: "
                          "{}".format(self.log_filename))
 
     def write(self, record_type, record, signal):
@@ -149,34 +149,30 @@ class LogFile(object):
         :raises IOError or OSError for any issue that happens while writing.
         """
 
-        if record_type not in ["B","F"]:
-            logger.error("Record type not supported, must be 'B' or 'F'"\
+        if record_type not in ["B", "F"]:
+            logger.error("Record type not supported, must be 'B' or 'F'"
                          "got {}".format(record_type))
             raise TypeError
 
-        if record_type == 'B' :
-            lstr = 'B ' + str(datetime.datetime.today().strftime\
-                              ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                record[BM.freq].replace(',', '') + ' ' + record[BM.mode] + \
-                ' ' + str(signal) + "\n"
-        else :
-            lstr = 'F ' + str(datetime.datetime.today().strftime\
-                              ("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                str(record['freq']) + ' ' + record['mode'] + \
-                ' ' + str(signal) + "\n"
+        if record_type == 'B':
+            lstr = 'B ' + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
+                record[BM.freq].replace(',', '') + ' ' + record[BM.mode] + ' ' + str(signal) + "\n"
+        else:
+            lstr = 'F ' + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
+                str(record['freq']) + ' ' + record['mode'] + ' ' + str(signal) + "\n"
         try:
             self.log_file.write(lstr)
         except AttributeError:
             logger.exception("No log file provided, but log feature selected.")
             raise
         except (IOError, OSError):
-            logger.exception("Error while trying to write log file: "\
-                         "{}".format(self.log_filename))
+            logger.exception("Error while trying to write log file: "
+                             "{}".format(self.log_filename))
         except (TypeError, IndexError):
-            logger.exception("At least one of the parameter isn't of the "\
-                             "expected type:"\
-                             "record_type {},"\
-                             "record {},"\
+            logger.exception("At least one of the parameter isn't of the "
+                             "expected type:"
+                             "record_type {},"
+                             "record {},"
                              "signal {}".format(type(record_type),
                                                 type(record),
                                                 type(signal)))
@@ -188,10 +184,9 @@ class LogFile(object):
         :raises IOError OSError: if there are issues while closing the log file
         """
 
-        if self.log_file != None :
+        if self.log_file is not None:
             try:
                 self.log_file.close()
             except (IOError, OSError):
-                logger.error("Error while trying to close log file: "\
+                logger.error("Error while trying to close log file: "
                              "{}".format(self.log_filename))
-

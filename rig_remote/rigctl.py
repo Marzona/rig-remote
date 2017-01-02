@@ -21,7 +21,7 @@ import logging
 import telnetlib
 import socket
 from rig_remote.constants import (
-                                 DEFAULT_CONFIG,
+#                                 DEFAULT_CONFIG,
                                  ALLOWED_VFO_COMMANDS,
                                  ALLOWED_SPLIT_MODES,
                                  ALLOWED_PARM_COMMANDS,
@@ -34,6 +34,8 @@ from rig_remote.constants import (
 # logging configuration
 logger = logging.getLogger(__name__)
 
+
+# classes definition
 class RigCtl(object):
     """Basic rigctl client implementation."""
 
@@ -70,8 +72,9 @@ class RigCtl(object):
                                    target["port"],
                                    RIG_TIMEOUT)
         except socket.timeout:
-            logger.error("Time out while connecting to {}:{}".format(target["hostname"],
-                                                                     ["port"]))
+            logger.error("Time out while connecting "
+                         "to {}:{}".format(target["hostname"],
+                                           ["port"]))
             raise
         except socket.error:
             logger.exception("Connection refused on {}:{}".format(["hostname"],
@@ -92,8 +95,8 @@ class RigCtl(object):
         try:
             float(frequency)
         except ValueError:
-            logger.error("Frequency value must be a float, "\
-                        "got {}".format(frequency))
+            logger.error("Frequency value must be a float, "
+                         "got {}".format(frequency))
             raise
         return self._request('F %s' % frequency, target)
 
@@ -105,8 +108,8 @@ class RigCtl(object):
 
         output = self._request('f')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio frequency, "\
-                         "got {}".format(output))
+            logger.error("Expected unicode string while getting radio "
+                         "frequency, got {}".format(output))
             raise ValueError
 
         return self._request('f', target)
@@ -117,8 +120,8 @@ class RigCtl(object):
 
         """
         if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-            logger.error("Frequency mode must be a string in {}, "\
-                        "got {}".format(ALLOWED_RIGCTL_MODES, mode))
+            logger.error("Frequency mode must be a string in {}, "
+                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
 
         return self._request('M %s' % mode, target)
@@ -131,7 +134,7 @@ class RigCtl(object):
 
         output = self._request('m')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio mode, "\
+            logger.error("Expected unicode string while getting radio mode, "
                          "got {}".format(output))
             raise ValueError
         return output
@@ -160,8 +163,8 @@ class RigCtl(object):
 
         output = self._request('l')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio signal level, "\
-                         "got {}".format(output))
+            logger.error("Expected unicode string while getting radio "
+                         "signal level, got {}".format(output))
             raise ValueError
 
         return output
@@ -173,8 +176,8 @@ class RigCtl(object):
         """
 
         if vfo not in ALLOWED_VFO_COMMANDS:
-            logger.error("VFO value must be a string inclueded in {}, "\
-                        "got {}".format(ALLOWED_VFO_COMMANDS, vfo))
+            logger.error("VFO value must be a string inclueded in {}, "
+                         "got {}".format(ALLOWED_VFO_COMMANDS, vfo))
             raise ValueError
 
         return self._request('V %s' % vfo)
@@ -187,7 +190,7 @@ class RigCtl(object):
 
         output = self._request('v')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting VFO, "\
+            logger.error("Expected unicode string while getting VFO, "
                          "got {}".format(output))
             raise ValueError
 
@@ -200,11 +203,11 @@ class RigCtl(object):
         """
 
         if not isinstance(rit, int):
-            logger.error("RIT value must be an int, "\
-                        "got {}".format(type(rit)))
+            logger.error("RIT value must be an int, "
+                         "got {}".format(type(rit)))
             raise ValueError
 
-        return self._request('J %s' % vfo)
+        return self._request('J %s' % rit)
 
     def get_rit(self):
         """Wrapper around _request. It configures the command for getting
@@ -214,7 +217,7 @@ class RigCtl(object):
 
         output = self._request('j')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting RIT, "\
+            logger.error("Expected unicode string while getting RIT, "
                          "got {}".format(type(output)))
             raise ValueError
 
@@ -227,8 +230,8 @@ class RigCtl(object):
         """
 
         if not isinstance(xit, basestring):
-            logger.error("XIT value must be a string, "\
-                        "got {}".format(type(xit)))
+            logger.error("XIT value must be a string, "
+                         "got {}".format(type(xit)))
             raise ValueError
 
         return self._request('J %s' % xit)
@@ -241,7 +244,7 @@ class RigCtl(object):
 
         output = self._request('j')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting XIT, "\
+            logger.error("Expected unicode string while getting XIT, "
                          "got {}".format(type(output)))
             raise ValueError
 
@@ -254,11 +257,11 @@ class RigCtl(object):
         """
 
         if not isinstance(split_freq, int):
-            logger.error("XIT value must be an integer, "\
-                        "got {}".format(type(split_freq)))
+            logger.error("XIT value must be an integer, "
+                         "got {}".format(type(split_freq)))
             raise ValueError
 
-        return self._request('I %s' % vfo)
+        return self._request('I %s' % split_freq)
 
     def get_split_freq(self):
         """Wrapper around _request. It configures the command for getting
@@ -268,7 +271,7 @@ class RigCtl(object):
 
         output = self._request('i')
         if not isinstance(output, int):
-            logger.error("Expected int while getting split_frequency, "\
+            logger.error("Expected int while getting split_frequency, "
                          "got {}".format(type(output)))
             raise ValueError
 
@@ -281,12 +284,12 @@ class RigCtl(object):
         """
 
         if split_mode not in ALLOWED_SPLIT_MODES:
-            logger.error("split_mode value must be a string in {}, "\
-                        "got {}".format(ALLOWED_SPLIT_MODES,
-                                        type(split_mode)))
+            logger.error("split_mode value must be a string in {}, "
+                         "got {}".format(ALLOWED_SPLIT_MODES,
+                                         type(split_mode)))
             raise ValueError
 
-        return self._request('X %s' % vfo)
+        return self._request('X %s' % split_mode)
 
     def get_split_mode(self):
         """Wrapper around _request. It configures the command for getting
@@ -296,12 +299,11 @@ class RigCtl(object):
 
         output = self._request('x')
         if not isinstance(output, str):
-            logger.error("Expected string while getting split_frequency_mode, "\
+            logger.error("Expected string while getting split_frequency_mode, "
                          "got {}".format(type(output)))
             raise ValueError
 
         return output
-
 
     def set_func(self, func):
         """Wrapper around _request. It configures the command for getting
@@ -310,8 +312,8 @@ class RigCtl(object):
         """
 
         if func not in ALLOWED_FUNC_COMMANDS:
-            logger.error("func value must be a string inclueded in {}, "\
-                        "got {}".format(ALLOWED_FUNC_COMMANDS, func))
+            logger.error("func value must be a string inclueded in {}, "
+                         "got {}".format(ALLOWED_FUNC_COMMANDS, func))
             raise ValueError
 
         return self._request('U %s' % func)
@@ -324,12 +326,10 @@ class RigCtl(object):
 
         output = self._request('u')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting func, "\
+            logger.error("Expected unicode string while getting func, "
                          "got {}".format(output))
             raise ValueError
-
         return output
-
 
     def set_parm(self, parm):
         """Wrapper around _request. It configures the command for getting
@@ -338,10 +338,9 @@ class RigCtl(object):
         """
 
         if parm not in ALLOWED_PARM_COMMANDS:
-            logger.error("parm value must be a string inclueded in {}, "\
-                        "got {}".format(ALLOWED_PARM_COMMANDS, parm))
+            logger.error("parm value must be a string inclueded in {}, "
+                         "got {}".format(ALLOWED_PARM_COMMANDS, parm))
             raise ValueError
-
         return self._request('P %s' % parm)
 
     def get_parm(self):
@@ -352,7 +351,7 @@ class RigCtl(object):
 
         output = self._request('p')
         if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting parm, "\
+            logger.error("Expected unicode string while getting parm, "
                          "got {}".format(output))
             raise ValueError
 
@@ -365,8 +364,8 @@ class RigCtl(object):
         """
 
         if not isinstance(antenna, int):
-            logger.error("antenna value must be an int, "\
-                        "got {}".format(antenna))
+            logger.error("antenna value must be an int, "
+                         "got {}".format(antenna))
             raise ValueError
 
         return self._request('Y %s' % antenna)
@@ -379,7 +378,7 @@ class RigCtl(object):
 
         output = self._request('f')
         if not isinstance(output, int):
-            logger.error("Expected integer while getting radio antenna, "\
+            logger.error("Expected integer while getting radio antenna, "
                          "got {}".format(output))
             raise ValueError
 
@@ -393,8 +392,8 @@ class RigCtl(object):
         """
 
         if reset_signal not in RESET_CMD_DICT.keys():
-            logger.error("Reset_signal must be one of "\
+            logger.error("Reset_signal must be one of "
                          "{}.".format(RESET_CMD_DICT.keys()))
             raise ValueError
 
-        return self._request('* %s' % antenna)
+        return self._request('* %s' % reset_signal)
