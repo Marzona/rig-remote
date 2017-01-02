@@ -58,22 +58,22 @@ TAS - Tim Sweeney - mainetim@gmail.com
 # import modules
 
 import datetime
-from rig_remote.rigctl import RigCtl
+#from rig_remote.rigctl import RigCtl
 from rig_remote.disk_io import LogFile
 from rig_remote.constants import SUPPORTED_SCANNING_MODES
 from rig_remote.constants import TIME_WAIT_FOR_TUNE
 from rig_remote.constants import SIGNAL_CHECKS
 from rig_remote.constants import NO_SIGNAL_DELAY
 from rig_remote.constants import MIN_INTERVAL
-from rig_remote.constants import MONITOR_MODE_DELAY
+#from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
 from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
-from rig_remote.stmessenger import STMessenger
-from rig_remote.utility import(
-                             khertz_to_hertz,
-                             dbfs_to_sgn,
-                             build_rig_uri,
-                            )
+#from rig_remote.stmessenger import STMessenger
+from rig_remote.utility import (
+                                khertz_to_hertz,
+                                dbfs_to_sgn,
+#                                build_rig_uri,
+                               )
 import socket
 import logging
 import time
@@ -82,8 +82,8 @@ import re
 # logging configuration
 logger = logging.getLogger(__name__)
 
-# class definition
 
+# class definition
 class ScanningTask(object):
     """Representation of a scan task, with helper method for checking
     for proper frequency range.
@@ -121,8 +121,8 @@ class ScanningTask(object):
         self.log_filename = log_filename
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
-            logger.error("Unsupported scanning mode "\
-                          "provided, exiting.")
+            logger.error("Unsupported scanning mode "
+                         "provided, exiting.")
             logger.error("Provided mode:{}".format(mode))
             logger.error("Supported modes:{}".format(SUPPORTED_SCANNING_MODES))
             raise UnsupportedScanningConfigError
@@ -132,11 +132,9 @@ class ScanningTask(object):
         self.rig = rig_controller
 
         try:
-            self.params["range_min"] = \
-                            khertz_to_hertz(int(filter(str.isdigit,
+            self.params["range_min"] = khertz_to_hertz(int(filter(str.isdigit,
                                                        self.params["txt_range_min"].get())))
-            self.params["range_max"] = \
-                            khertz_to_hertz(int(filter(str.isdigit,
+            self.params["range_max"] = khertz_to_hertz(int(filter(str.isdigit,
                                                        self.params["txt_range_max"].get())))
             self.params["interval"] = int(filter(str.isdigit,
                                                  self.params["txt_interval"].get()))
@@ -209,7 +207,8 @@ class Scanning(object):
             if length > 0:
                 time.sleep(1)
                 length -= 1
-            else: break
+            else:
+                break
 
     def scan(self, task):
         """Wrapper method around _frequency and _bookmarks. It calls one
@@ -224,8 +223,9 @@ class Scanning(object):
         if (not task or
             not task.mode or
             task.mode.lower() not in SUPPORTED_SCANNING_MODES):
-            logger.exception("Invalid scan mode provided:{}".format(task.mode))
-            raise InvalidScanModeError
+                logger.exception("Invalid scan mode provided:"
+                                 "{}".format(task.mode))
+                raise InvalidScanModeError
 
         log = LogFile()
         log.open(task.log_filename)
@@ -244,7 +244,7 @@ class Scanning(object):
         try:
             task.rig.set_frequency(freq)
         except ValueError:
-            logger.warning ("Bad frequency parameter passed.")
+            logger.warning("Bad frequency parameter passed.")
             raise
         except (socket.error, socket.timeout):
             logger.warning("Communications Error!")
@@ -259,11 +259,11 @@ class Scanning(object):
         nbm["time"] = datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y")
         return nbm
 
-    def _start_recording(self):
+    def _start_recording(self, task):
         task.rig.start_recording()
         logger.info("Recording started.")
 
-    def _stop_recording(self):
+    def _stop_recording(self, task):
         task.rig.stop_recording()
         logger.info("Recording stopped.")
 
@@ -284,7 +284,7 @@ class Scanning(object):
         """
 
         mode = task.params["cbb_scan_mode"].get()
-        task.rig.set_mode(mode )
+        task.rig.set_mode(mode)
 
         level = []
 
@@ -308,7 +308,7 @@ class Scanning(object):
                                       level):
 
                     if task.params["record"]:
-                        self._start_recording()
+                        self._start_recording(task)
 
                     if task.params["auto_bookmark"]:
                         nbm = self._create_new_bookmark(task, freq)
@@ -322,7 +322,7 @@ class Scanning(object):
                         self._queue_sleep(task)
 
                     if task.params["record"]:
-                        self._stop_recording()
+                        self._stop_recording(task)
 
                 freq = freq + interval
                 if not self.scan_active:
@@ -354,7 +354,7 @@ class Scanning(object):
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
-            logger.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            logger.info("Checks left:{}".format(SIGNAL_CHECKS - i))
             level = int(rig.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))
@@ -401,7 +401,7 @@ class Scanning(object):
                         "This freq is bookmarked as: {}".format(bookmark[BM.freq]))
 
                     if task.params['record']:
-                        self._start_recording()
+                        self._start_recording(task)
 
                     if task.params['log']:
                         log.write('B', bookmark, level[0])
@@ -411,13 +411,14 @@ class Scanning(object):
                                               task.rig,
                                               level) and self.scan_active:
                             self._process_queue(task)
-                        else: break
+                        else:
+                            break
 
                     if self.scan_active:
                         self._queue_sleep(task)
 
                     if task.params['record']:
-                        self._stop_recording()
+                        self._stop_recording(task)
 
                 if not self.scan_active:
                     return task
@@ -453,9 +454,9 @@ class Scanning(object):
                     logger.warning("Invalid key in event update: {}".format(key))
                     break
             except Exception as e:
-                 logger.warning("Processing event update failed with {}".format(e))
-                 logger.warning("Event list: {} {}".format(name, value))
-                 break
+                logger.warning("Processing event update failed with {}".format(e))
+                logger.warning("Event list: {} {}".format(name, value))
+                break
             processed_something = True
             logger.info("Queue passed %s %i", name, value)
             logger.info("Params[%s] = %s", key, task.params[key])

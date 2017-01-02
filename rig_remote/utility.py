@@ -28,13 +28,15 @@ import ttk
 
 logger = logging.getLogger(__name__)
 
-# function definition
 
+# function definition
 def khertz_to_hertz(value):
     return int(value)*1000
 
+
 def dbfs_to_sgn(value):
     return int(value)*10
+
 
 def frequency_pp(frequency):
     """Filter invalid chars and add thousands separator.
@@ -58,15 +60,16 @@ def frequency_pp_parse(frequency):
     """
 
     if not isinstance(frequency, basestring):
-        logger.error("frequency is not a string, "\
+        logger.error("frequency is not a string, "
                      "but {}".format(type(frequency)))
         raise ValueError
     nocommas = frequency.replace(',', '')
     results = re.search("[^0-9]", nocommas)
-    if results == None:
+    if results is None:
         return (nocommas)
     else:
         return (None)
+
 
 def build_rig_uri(number, params):
     """Returns the info regarding the rig target.
@@ -78,11 +81,11 @@ def build_rig_uri(number, params):
     :return type: dictionary
     """
 
-    if number not in (1,2):
+    if number not in (1, 2):
         logger.error("The rig number {} is not supported".format(number))
         raise NotImplementedError
 
-    rig_target= {}
+    rig_target = {}
     hostname = ("txt_hostname{}".format(number))
     port = ("txt_port{}".format(number))
     rig_target["hostname"] = params[hostname].get()
@@ -91,7 +94,8 @@ def build_rig_uri(number, params):
 
     return rig_target
 
-def shutdown(window, silent = False):
+
+def shutdown(window, silent=False):
     """Here we quit. Before exiting, if save_exit checkbox is checked
     we save the configuration of the app and the bookmarks.
     We call store_conf and we destroy the main window
@@ -108,6 +112,7 @@ def shutdown(window, silent = False):
         store_conf(window)
 
     window.master.destroy()
+
 
 def store_conf(window):
     """populates the ac object reading the info from the UI.
@@ -133,12 +138,12 @@ def store_conf(window):
     window.ac.config["always_on_top"] = window.ckb_top.get_str_val()
 #    window.ac.config["aggr_scan"] = window.params["ckb_aggr_scan"].get_str_val()
     window.ac.config["save_exit"] = window.ckb_save_exit.get_str_val()
-    window.ac.config["auto_bookmark"] = \
-                           window.params["ckb_auto_bookmark"].get_str_val()
+    window.ac.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].get_str_val()
     window.ac.config["bookmark_filename"] = window.bookmarks_file
     window.ac.config["log_filename"] = window.log_file
     window.ac.write_conf()
     return window.ac
+
 
 def center_window(window, width=300, height=200):
     """Centers a given window with a given size
@@ -156,6 +161,7 @@ def center_window(window, width=300, height=200):
     x = (screen_width/2) - (width/2)
     y = (screen_height/2) - (height/2)
     window.geometry('%dx%d+%d+%d' % (width, height, x, y))
+
 
 def is_valid_port(port):
     """Checks if the provided port is a valid one.
@@ -175,6 +181,7 @@ def is_valid_port(port):
         logger.error("Privileged port used: {}".format(port))
         raise ValueError
 
+
 def is_valid_hostname(hostname):
     """ Checks if hostname is truly a valid FQDN, or IP address.
 
@@ -187,10 +194,11 @@ def is_valid_hostname(hostname):
     if hostname == '':
         raise ValueError
     try:
-        address = gethostbyname(hostname)
+        _ = gethostbyname(hostname)
     except gaierror as e:
         logger.error("Hostname error: {}".format(e))
         raise
+
 
 def this_file_exists(filename):
     """Test if a file will open.
@@ -200,10 +208,11 @@ def this_file_exists(filename):
     :returns: filename if open was successful, None otherwise
     """
     try:
-        with open(filename) as f:
+        with open(filename) as _:
             return(filename)
     except IOError:
         return None
+
 
 def process_path(path):
     """Handle tilde expansion in a path.
@@ -217,25 +226,26 @@ def process_path(path):
         working_path = os.path.expanduser(working_path)
     return os.path.join(working_path, working_name)
 
+
 class ToolTip:
     def __init__(self, master, text='', delay=1500, **opts):
         self.master = master
-        self._opts = {'anchor':'center',
-                      'bd':1,
-                      'bg':'lightyellow',
-                      'delay':delay,
-                      'fg':'black',
-                      'follow_mouse':0,
-                      'font':None,
-                      'justify':'left',
-                      'padx':4,
-                      'pady':2,
-                      'relief':'solid',
-                      'state':'normal',
-                      'text':text,
-                      'textvariable':None,
-                      'width':0,
-                      'wraplength':150}
+        self._opts = {'anchor': 'center',
+                      'bd': 1,
+                      'bg': 'lightyellow',
+                      'delay': delay,
+                      'fg': 'black',
+                      'follow_mouse': 0,
+                      'font': None,
+                      'justify': 'left',
+                      'padx': 4,
+                      'pady': 2,
+                      'relief': 'solid',
+                      'state': 'normal',
+                      'text': text,
+                      'textvariable': None,
+                      'width': 0,
+                      'wraplength': 150}
         self.configure(**opts)
         self._tipwindow = None
         self._id = None
@@ -249,7 +259,7 @@ class ToolTip:
 
     def configure(self, **opts):
         for key in opts:
-            if self._opts.has_key(key):
+            if key in self._opts:
                 self._opts[key] = opts[key]
             else:
                 KeyError = 'KeyError: Unknown option: "%s"' %key
@@ -318,14 +328,16 @@ class ToolTip:
         if tw:
             tw.destroy()
 
-    ##----these methods might be overridden in derived classes:
 
+    #------these methods might be overridden in derived classes:
     def coords(self):
         # The tip window must be completely outside the master widget;
         # otherwise when the mouse enters the tip window we get
         # a leave event and it disappears, and then we get an enter
         # event and it reappears, and so on forever :-(
-        # or we take care that the mouse pointer is always outside the tipwindow :-)
+        # or we take care that the mouse pointer is always
+        # outside the tipwindow :-)
+
         tw = self._tipwindow
         twx, twy = tw.winfo_reqwidth(), tw.winfo_reqheight()
         w, h = tw.winfo_screenwidth(), tw.winfo_screenheight()
@@ -354,28 +366,30 @@ class ToolTip:
         label = tk.Label(self._tipwindow, **opts)
         label.pack()
 
-class RCCheckbutton(ttk.Checkbutton) :
+
+class RCCheckbutton(ttk.Checkbutton):
     """
     RCCheckbutton is derived from ttk.Checkbutton, and adds an
     "is_checked" method to simplify checking instance's state, and
     new methods to return string state values for config file.
     """
-    def __init__(self,*args,**kwargs) :
+
+    def __init__(self, *args, **kwargs):
         self.var = kwargs.get('variable', tk.BooleanVar())
         kwargs['variable'] = self.var
         ttk.Checkbutton.__init__(self, *args, **kwargs)
 
-    def is_checked(self) :
+    def is_checked(self):
         return self.var.get()
 
-    def get_str_val(self) :
-        if self.is_checked() :
+    def get_str_val(self):
+        if self.is_checked():
             return ("true")
-        else :
+        else:
             return ("false")
 
-    def set_str_val(self, value) :
-        if value.lower() in ("true", "t") :
+    def set_str_val(self, value):
+        if value.lower() in ("true", "t"):
             self.var.set(True)
-        else :
+        else:
             self.var.set(False)
