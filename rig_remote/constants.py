@@ -17,6 +17,10 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+# module import
+import os
+
+
 # constant definition
 RIG_TIMEOUT = 10
 RESET_CMD_DICT = {"NONE": 0,
@@ -202,8 +206,8 @@ DEFAULT_CONFIG = {"hostname1": "127.0.0.1",
                   "save_exit": "false",
                   "aggr_scan": "false",
                   "auto_bookmark": "false",
-                  "log_filename": "noname",
-                  "bookmark_filename": "noname"}
+                  "log_filename": "",
+                  "bookmark_filename": ""}
 
 LEN_BM = 4
 
@@ -216,7 +220,7 @@ class BM(object):
 UI_EVENT_TIMER_DELAY = 1000
 QUEUE_MAX_SIZE = 10
 
-DEFAULT_PREFIX = '~/.rig-remote'
+DEFAULT_PREFIX = os.path.expanduser("~/.rig_remote")
 DEFAULT_CONFIG_FILENAME = 'rig-remote.conf'
 DEFAULT_LOG_FILENAME = 'rig-remote-log.txt'
 DEFAULT_BOOKMARK_FILENAME = 'rig-remote-bookmarks.csv'

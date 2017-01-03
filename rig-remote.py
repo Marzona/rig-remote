@@ -119,7 +119,6 @@ def log_configuration(verbose):
 
 # entry point
 if __name__ == "__main__":
-
     args = input_arguments()
     logger = log_configuration(args.verbose)
 
@@ -127,7 +126,7 @@ if __name__ == "__main__":
         prefix = args.alternate_prefix
         dir_prefix = os.path.expanduser(prefix)
     else:
-        dir_prefix = os.path.expanduser(DEFAULT_PREFIX)
+        dir_prefix = DEFAULT_PREFIX
     if args.alternate_config_file:
         conf = args.alternate_config_file
         config_file = process_path(conf)
@@ -144,13 +143,13 @@ if __name__ == "__main__":
     if args.alternate_bookmark_file:
         bookmarks = args.alternate_bookmark_file
         ac.config['bookmark_filename'] = process_path(bookmarks)
-    elif ac.config['bookmark_filename'] == 'noname':
+    elif ac.config['bookmark_filename'] == "":
         ac.config['bookmark_filename'] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
     #set activity log filename
     if args.alternate_log_file:
         log = args.alternate_log_file
         ac.config['log_filename'] = process_path(log)
-    elif ac.config['log_filename'] == 'noname':
+    elif ac.config['log_filename'] == "":
         ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
     app = RigRemote(root, ac)
     app.apply_config(ac)
