@@ -26,7 +26,11 @@ TAS - Tim Sweeney - mainetim@gmail.com
 # import modules
 
 from rig_remote.disk_io import IO
-from rig_remote.constants import DEFAULT_CONFIG
+from rig_remote.constants import (
+                                  DEFAULT_CONFIG,
+                                  DEFAULT_BOOKMARK_FILENAME,
+                                  DEFAULT_PREFIX,
+                                  )
 import logging
 import os
 
@@ -75,13 +79,15 @@ class AppConfig(object):
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             self.io.csv_load(self.config_file, "=")
-            #error = 0
             for row in self.io.row_list:
                 if len(row) == 2:
                     self.config[row[0].strip()] = row[1].strip()
                 else:
                     logger.warning("Error in config file line: " + str(row))
         else:
+            self.config = dict.copy(DEFAULT_CONFIG)
+            self.config["bookmark_filename"] = os.path.join(DEFAULT_PREFIX,
+                                                            DEFAULT_BOOKMARK_FILENAME)
             self.write_conf()
             self.read_conf()
 
