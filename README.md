@@ -82,7 +82,12 @@ $ python ./rig-remote.py
 
 ```
 
-If you are using Windows you just need to double-click the ```rig-remote.py``` file (as the  ```.py``` file type is most likely already bound with ```python``` executable). If you want to get rid of the anoying command-line that is always running in background you may rename ```rig-remote.py``` to ```rig-remote.pyw``` and Windows will use the ```pythonw``` executable instead (which does not need the command-line).
+If you are using Windows you just need to double-click the
+`rig-remote.py` file (as the `.py` file type is most likely already
+bound with `python` executable). If you want to get rid of the anoying
+command-line that is always running in background you may rename
+`rig-remote.py` to `rig-remote.pyw` and Windows will use the `pythonw`
+executable instead (which does not need the command-line).
 
 This software consists of two files and two folder:
 =======
@@ -91,7 +96,8 @@ This software consists of two files and two folder:
 - modules: python modules
 - tests: unit tests
 
-The file ```rig-bookmarks.csv``` consists on a standard comma-separated values file. For reference, the following example file is provided:
+The file `rig-bookmarks.csv` consists of a standard comma-separated
+values file. For reference, the following example file is provided:
 
 ```
 79200000,FM,Voice
