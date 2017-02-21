@@ -92,38 +92,12 @@ executable instead (which does not need the command-line).
 This software consists of two files and two folder:
 =======
 - rig-remote.py
-- rig-bookmarks.csv (the bookmark database)
+- rig-bookmarks.csv (the bookmarks file)
 - modules: python modules
 - tests: unit tests
 
 The file `rig-bookmarks.csv` consists of a standard comma-separated
-values file. For reference, the following example file is provided:
+values file. For reference, the following wiki page provides a quick
+description of the format https://github.com/Marzona/rig-remote/wiki/Bookmark-file-format
 
-```
-79200000,FM,Voice
-
-80425000,FM,Data
-
-82275000,FM,Taxi
-
-97400000,WFM_ST,Radio
-
-118100000,AM,Airport
-
-124150000,AM,Weather
-
-137500000,FM,NOAA
-
-144800000,FM,APRS
-
-162000000,FM,Navy
-
-162025000,FM,Navy Data
-
-165000000,FM,Taxi
-
-442036000,FM,Digital
-
-1090000000,FM,ADBS
-```
 
