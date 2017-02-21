@@ -98,6 +98,7 @@ This software consists of two files and two folder:
 
 The file `rig-bookmarks.csv` consists of a standard comma-separated
 values file. For reference, the following wiki page provides a quick
-description of the format https://github.com/Marzona/rig-remote/wiki/Bookmark-file-format
+[description of the format](https://github.com/Marzona/rig-remote/wiki/Bookmark-file-format)
+on the wiki.
 
 
