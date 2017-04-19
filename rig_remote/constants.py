@@ -192,8 +192,8 @@ DEFAULT_CONFIG = {"hostname1" : "127.0.0.1",
                   "save_exit" : "false",
                   "aggr_scan" : "false",
                   "auto_bookmark" : "false",
-                  "log_filename" : "noname",
-                  "bookmark_filename" : "noname"}
+                  "log_filename" : None,
+                  "bookmark_filename" : None}
 
 LEN_BM = 4
 
@@ -232,3 +232,32 @@ GQRX_BOOKMARK_HEADER = [
                          " Modulation          ",
                          "  Bandwidth"," Tags"],
                         ]
+SCANNING_CONFIG = ["range_min",
+                   "range_max",
+                   "delay",
+                   "interval",
+                   "auto_bookmark",
+                   "sgn_level",
+                   "wait",
+                   "record",
+                   "aggr_scan",
+                   "passes",
+                   ]
+MAIN_CONFIG = ["always_on_top",
+               "save_exit",
+               "bookmark_filename",
+               "log",
+               "log_filename"
+               ]
+MONITOR_CONFIG = ["monitor_mode_loops"]
+RIG_URI_CONFIG = ["port1",
+                  "hostname1",
+                  "port2",
+                  "hostname2"
+                  ]
+CONFIG_SECTIONS = [
+                   "Scanning",
+                   "Main",
+                   "Rig URI",
+                   "Monitor",
+                  ]

@@ -102,12 +102,18 @@ class Bookmarks(object):
 
         count = 0
         for line in bookmarks:
+            logger.info(line)
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
             if frequency_pp_parse(line[BM.freq]) == None :
                 error = True
-            line[BM.freq] = frequency_pp(line[BM.freq])
+            try:
+                line[BM.freq] = frequency_pp(line[BM.freq])
+            except ValueError:
+                logger.exception("Malformed bookmark in {}"\
+                                 " skipping...".format(line))
+                continue
             if line[BM.mode] not in CBB_MODES :
                 error = True
             if error == True :
@@ -137,7 +143,7 @@ class Bookmarks(object):
             self.tree.item(item, tags = "unlocked")
 
     def import_bookmarks(self, silent = True):
-        """handles the import of the bookmarks. It is a 
+        """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
 
         :params root: main window
