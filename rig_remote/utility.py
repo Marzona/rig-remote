@@ -131,7 +131,7 @@ def store_conf(window):
     window.ac.config["record"] = window.params["ckb_record"].get_str_val()
     window.ac.config["log"] = window.params["ckb_log"].get_str_val()
     window.ac.config["always_on_top"] = window.ckb_top.get_str_val()
-    window.ac.config["aggr_scan"] = window.params["ckb_aggr_scan"].get_str_val()
+    #window.ac.config["aggr_scan"] = window.params["ckb_aggr_scan"].get_str_val()
     window.ac.config["save_exit"] = window.ckb_save_exit.get_str_val()
     window.ac.config["auto_bookmark"] = \
                            window.params["ckb_auto_bookmark"].get_str_val()
