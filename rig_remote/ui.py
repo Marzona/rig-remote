@@ -131,8 +131,6 @@ class RigRemote(ttk.Frame):
         self.update()
         # bookmarks loading on start
         self.bookmarks = Bookmarks(self.tree)
-        import pdb; pdb.set_trace()
-
         self.bookmarks.load(self.bookmarks_file, ",")
         self.scan_thread = None
         self.scan_mode = None

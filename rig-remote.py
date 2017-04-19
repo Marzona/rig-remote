@@ -141,7 +141,6 @@ if __name__ == "__main__":
     #   use path from config file
     #   use default path
     ac.read_conf()
-    import pdb; pdb.set_trace()
 
     if args.alternate_bookmark_file != None:
         bookmarks = args.alternate_bookmark_file
@@ -155,7 +154,6 @@ if __name__ == "__main__":
     else:
         ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
     app = RigRemote(root, ac)
-    import pdb; pdb.set_trace()
 
     app.apply_config(ac)
     app.mainloop()
