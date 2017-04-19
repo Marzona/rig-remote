@@ -78,18 +78,6 @@ class AppConfig(object):
         :returns: none
         """
 
-        #if os.path.isfile(self.config_file):
-            #logger.info("Using config file:{}".format(self.config_file))
-            #self.io.csv_load(self.config_file, "=")
-            #error = 0
-            #for row in self.io.row_list:
-                #if len(row) == 2 :
-                    #self.config[row[0].strip()] = row[1].strip()
-                #else:
-                    #logger.warning("Error in config file line: " + str(row))
-        #else:
-            #self.write_conf()
-            #self.read_conf()
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
             config = ConfigParser.RawConfigParser()
@@ -123,13 +111,6 @@ class AppConfig(object):
                               "path as {}".format(self.config_file))
         except OSError:
             logger.info("The config directory already exists.")
-        #for key in self.config.keys():
-            #row = []
-            #row.append(key)
-            #row.append(self.config[key])
-            #self.io.row_list.append(row)
-        #self.io.csv_save(self.config_file, "=")
-
         config = ConfigParser.RawConfigParser()
         for section in CONFIG_SECTIONS:
             config.add_section(section)
