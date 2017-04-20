@@ -18,6 +18,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+# import modules
 import argparse
 import logging
 import os
@@ -32,6 +33,7 @@ from rig_remote.constants import DEFAULT_LOG_FILENAME
 from rig_remote.constants import DEFAULT_PREFIX
 from rig_remote.utility import process_path
 
+# helper functions
 def input_arguments():
     """Argument parser.
 

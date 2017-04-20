@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import pytest
 from rig_remote.utility import (
                                 this_file_exists,
