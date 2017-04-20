@@ -59,7 +59,7 @@ def input_arguments():
 
         Copyright (c) 2017 Simone Marzona""")
 
-    parser.add_argument("--check-config",
+    parser.add_argument("--check_config",
                         "-cc",
                         type=str,
                         required=False,
