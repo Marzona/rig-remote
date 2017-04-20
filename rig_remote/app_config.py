@@ -89,7 +89,7 @@ class AppConfig(object):
             except ConfigParser.Error:
                     logger.exception("Error while loading"
                                      "{}".format(self.config_file))
-            if config.sections = []:
+            if config.sections == []:
                 logger.info("Config file needs to be upgraded.")
                 logger.info("Please execute the config-updater.")
                 raise NonRetriableError
