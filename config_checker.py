@@ -174,7 +174,6 @@ def check_config(config):
 # entry point
 if __name__ == "__main__":
     args = input_arguments()
-    #import pdb; pdb.set_trace()
 
     if args.dump:
         dump_info()
