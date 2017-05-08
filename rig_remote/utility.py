@@ -45,8 +45,16 @@ def frequency_pp(frequency):
     :return type: string
     """
 
-    return '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
+    if not frequency:
+        return
 
+    try:
+        parsed_freq =  '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
+    except ValueError:
+        logger.exception("error converting frequency "\
+                         ":{}".format(frequency))
+        raise
+    return parsed_freq
 
 def frequency_pp_parse(frequency):
     """Remove thousands separator and check for invalid chars.

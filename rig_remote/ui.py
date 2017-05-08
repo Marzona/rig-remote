@@ -74,6 +74,7 @@ import logging
 from rig_remote.constants import (
                                   ALLOWED_BOOKMARK_TASKS,
                                   SUPPORTED_SCANNING_ACTIONS,
+                                  SUPPORTED_SYNC_ACTIONS,
                                   CBB_MODES,
                                   LEN_BM,
                                   BM,
@@ -81,11 +82,16 @@ from rig_remote.constants import (
                                   UI_EVENT_TIMER_DELAY,
                                   ABOUT,
                                   )
-from rig_remote.exceptions import UnsupportedScanningConfigError
+from rig_remote.exceptions import (
+                                   UnsupportedScanningConfigError,
+                                   UnsupportedSyncConfigError,
+                                   )
 from rig_remote.bookmarks import Bookmarks
 from rig_remote.rigctl import RigCtl
-from rig_remote.scanning import ScanningTask
-from rig_remote.scanning import Scanning
+from rig_remote.scanning import (Scanning,
+                                 ScanningTask)
+from rig_remote.syncing import (Syncing,
+                                 SyncTask)
 from rig_remote.utility import (
                                 frequency_pp,
                                 frequency_pp_parse,
@@ -133,10 +139,12 @@ class RigRemote(ttk.Frame):
         self.bookmarks = Bookmarks(self.tree)
         self.bookmarks.load(self.bookmarks_file, ",")
         self.scan_thread = None
+        self.sync_thread = None
         self.scan_mode = None
         self.scanning = None
         self.selected_bookmark = None
         self.scanq = STMessenger()
+        self.syncq = STMessenger()
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event:self.focus_set(event))
         self.ac = ac
@@ -187,6 +195,7 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: None
         """
+
         self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
@@ -233,12 +242,12 @@ class RigRemote(ttk.Frame):
                             command=self.tree.yview)
         ysb.grid(row=0,
                  column=2,
-                 rowspan=5,
+                 rowspan=6,
                  sticky=tk.NS)
         xsb = ttk.Scrollbar(self,
                             orient=tk.HORIZONTAL,
                             command=self.tree.xview)
-        xsb.grid(row=5,
+        xsb.grid(row=6,
                  column=0,
                  sticky=tk.NSEW
                  )
@@ -247,7 +256,7 @@ class RigRemote(ttk.Frame):
                             )
         self.tree.grid(row=0,
                        column=0,
-                       rowspan=5,
+                       rowspan=6,
                        sticky=tk.NSEW
                        )
 
@@ -671,7 +680,8 @@ class RigRemote(ttk.Frame):
                                        column=0,
                                        sticky=tk.W)
         self.params["txt_passes"] = ttk.Entry(self.scanning_conf_menu,
-                                              name="txt_passes", width=10)
+                                              name="txt_passes",
+                                              width=10)
         self.params["txt_passes"].grid(row=14,
                                        column=1,
                                        columnspan=1,
@@ -932,8 +942,44 @@ class RigRemote(ttk.Frame):
                                padx=2,
                                sticky=tk.W)
 
+        self.sync_menu = LabelFrame(self, text="Rig Frequency Sync")
+        ttk.Frame(self.sync_menu).grid(row=19,
+                                       column=0,
+                                       columnspan=3,
+                                       pady=5)
+
+        self.sync_menu.grid(row=4,
+                            column=4,
+                            stick=tk.NSEW)
+
+        #horrible horizontal placeholder
+
+        ttk.Label(self.sync_menu,
+                  width=8).grid(row=20,
+                                column=2,
+                                sticky=tk.NSEW)
+
+        ttk.Label(self.sync_menu,
+                  width=8).grid(row=21,
+                                column=3,
+                                sticky=tk.NSEW)
+
+        self.sync = ttk.Button(self.sync_menu,
+                               text="Start",
+                               command=self.sync_toggle,
+                               )
+        t_sync = ToolTip(self.sync,
+                         follow_mouse=1,
+                         text="Non-stop get the "\
+                              "frequency from the second rig and "\
+                              "set it to the first one.")
+        self.sync.grid(row=21,
+                       column=1,
+                       columnspan=1,
+                       padx=2,
+                       sticky=tk.W)
         # horizontal separator
-        ttk.Frame(self.book_scanning_menu).grid(row=19,
+        ttk.Frame(self.book_scanning_menu).grid(row=22,
                                                 column=0,
                                                 columnspan=3,
                                                 rowspan=1,
@@ -941,8 +987,9 @@ class RigRemote(ttk.Frame):
 
         self.control_menu = LabelFrame(self, text="Options")
 
-        self.control_menu.grid(row=4,
-                               column=4,
+        self.control_menu.grid(row=5,
+                               column=3,
+                               columnspan=2,
                                stick=tk.NSEW)
 
         self.cb_top = tk.BooleanVar()
@@ -951,7 +998,7 @@ class RigRemote(ttk.Frame):
                                      onvalue=True,
                                      offvalue=False,
                                      variable=self.cb_top)
-        self.ckb_top.grid(row=21,
+        self.ckb_top.grid(row=23,
                           column=2,
                           columnspan=1,
                           padx=2,
@@ -968,7 +1015,7 @@ class RigRemote(ttk.Frame):
                                            onvalue=True,
                                            offvalue=False,
                                            variable=self.cb_save_exit)
-        self.ckb_save_exit.grid(row=21,
+        self.ckb_save_exit.grid(row=23,
                                 column=1,
                                 columnspan=1,
                                 padx=2,
@@ -979,7 +1026,7 @@ class RigRemote(ttk.Frame):
         self.ckb_save_exit.val = self.cb_save_exit
 
         # horizontal separator
-        ttk.Frame(self.control_menu).grid(row=22,
+        ttk.Frame(self.control_menu).grid(row=24,
                                           column=0,
                                           columnspan=3,
                                           pady=5)
@@ -1007,7 +1054,8 @@ class RigRemote(ttk.Frame):
         try:
             is_valid_hostname(ac.config["hostname1"])
         except ValueError:
-            self.params["txt_hostname1"].insert(0, DEFAULT_CONFIG["hostname1"])
+            self.params["txt_hostname1"].insert(0,
+                                                DEFAULT_CONFIG["hostname1"])
             if not silent:
                 tkMessageBox.showerror("Config File Error"
                                        "One (or more) "
@@ -1016,7 +1064,8 @@ class RigRemote(ttk.Frame):
                                        "instead.",
                                        parent=self)
         else:
-            self.params["txt_hostname1"].insert(0, ac.config["hostname1"])
+            self.params["txt_hostname1"].insert(0,
+                                                ac.config["hostname1"])
         # Test positive integer values
         for key in ("port1",
                     "interval",
@@ -1034,22 +1083,27 @@ class RigRemote(ttk.Frame):
         try :
             int(ac.config["sgn_level"])
         except ValueError :
-            self.params["txt_sgn_level"].insert(0, DEFAULT_CONFIG["sgn_level"])
+            self.params["txt_sgn_level"].insert(0,
+                                                DEFAULT_CONFIG["sgn_level"])
             eflag = True
         else:
-            self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
+            self.params["txt_sgn_level"].insert(0,
+                                                ac.config["sgn_level"])
         if eflag :
             if not silent:
                 tkMessageBox.showerror("Config File Error", "One (or more) "
-                                   "of the values in the config file was "
-                                   "invalid, and the default was used "
-                                   "instead.", parent = self)
+                                       "of the values in the config file was "
+                                       "invalid, and the default was used "
+                                       "instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
                 ac.config["auto_bookmark"].lower())
-        self.params["ckb_record"].set_str_val(ac.config["record"].lower())
-        self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
-        self.params["ckb_log"].set_str_val(ac.config["log"].lower())
-        self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
+        try:
+            self.params["ckb_record"].set_str_val(ac.config["record"].lower())
+            self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
+            self.params["ckb_log"].set_str_val(ac.config["log"].lower())
+            self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
+        except KeyError:
+            pass
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.is_checked() == False:
                 self.ckb_top.invoke()
@@ -1062,6 +1116,58 @@ class RigRemote(ttk.Frame):
                 self.params_last_content[key] = self.params[key].get()
             elif self.params[key].winfo_class() == "TCheckbutton" :
                 self.params_last_content[key] = self.params[key].is_checked()
+
+    def sync_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
+        action = self.sync.cget('text').lower()
+        self.sync.config(text = next(icycle))
+        self._sync(action)
+
+    def _sync(self, action):
+
+        if self.scan_thread:
+            icycle=itertools.cycle(["Start", "Stop"])
+            self.sync.config(text = next(icycle))
+            return
+
+        if action.lower() not in SUPPORTED_SYNC_ACTIONS:
+            logger.error("Provided action:{}".format(action))
+            logger.error("Supported "
+                         "actions:{}".format(SUPPORTED_SYNC_ACTIONS))
+            raise UnsupportedSyncConfigError
+
+        if action.lower() == "stop" and self.sync_thread != None:
+            # there is a sync ongoing and we want to terminate it
+            self.syncing.terminate()
+            self.sync_thread.join()
+            self.sync_thread = None
+            return
+
+        if (action.lower() == "start" and self.sync_thread != None) :
+            # we are already scanning, so another start is ignored
+            return
+
+        if (action.lower() == "stop" and self.sync_thread == None) :
+            # we already stopped scanning, another stop is ignored
+            return
+
+        if (action.lower() == "start" and self.sync_thread == None) :
+            # there is no ongoing scan task and we want to start one
+
+            try:
+                task = SyncTask(self.syncq,
+                                RigCtl(build_rig_uri(2, self.params)),
+                                RigCtl(build_rig_uri(1, self.params)))
+            except UnsupportedSyncConfigError:
+                tkMessageBox.showerror("Sync error",
+                                       "Hostname/port of both rigs "\
+                                       "must be specified")
+                self.sync_toggle()
+                return
+            self.syncing = Syncing()
+            self.sync_thread = threading.Thread(target = self.syncing.sync,
+                                                args = (task,))
+            self.sync_thread.start()
+            self.after(0, self.check_syncthread)
 
     def bookmark_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle bookmark scan Start/Stop button, changing label text as
@@ -1088,7 +1194,6 @@ class RigRemote(ttk.Frame):
                 values[BM.lockout] = "L"
             self.tree.item(self.selected_bookmark, values = values)
             self.bookmarks.bookmark_bg_tag(self.selected_bookmark, values[BM.lockout])
-
 
     def frequency_toggle(self, icycle=itertools.cycle(["Stop", "Start"])):
         """Toggle frequency scan Start/Stop button, changing label text as
@@ -1269,7 +1374,7 @@ class RigRemote(ttk.Frame):
             self.params_last_content[event_list[0]] = event_list[1]
 
     def check_scanthread(self):
-        """Check it the scan thread has sent us a termination signal.
+        """Check if the scan thread has sent us a termination signal.
         :returns: None
         """
 
@@ -1279,8 +1384,15 @@ class RigRemote(ttk.Frame):
             else:
                 self.bookmark_toggle()
         else:
-            if self.scan_thread != None:
+            if self.scan_thread != None :
                 self.after(UI_EVENT_TIMER_DELAY, self.check_scanthread)
+
+    def check_syncthread(self):
+        if self.syncq.check_end_of_sync():
+                self.sync_toggle()
+        else:
+            if self.sync_thread != None:
+                self.after(UI_EVENT_TIMER_DELAY, self.check_syncthread)
 
     def _scan(self, mode, action, silent = False):
         """Wrapper around the scanning class instance. Creates the task
@@ -1295,10 +1407,18 @@ class RigRemote(ttk.Frame):
         """
 
         if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
-            logger.error("Provided action:{}".format(action))
+            logger.error("Provided action: {}".format(action))
             logger.error("Supported "
-                         "actions:{}".format(SUPPORTED_SCANNING_ACTIONS))
+                         "actions: {}".format(SUPPORTED_SCANNING_ACTIONS))
             raise UnsupportedScanningConfigError
+
+        if self.sync_thread:
+            icycle=itertools.cycle(["Start", "Stop"])
+            if mode == "bookmarks":
+                self.book_scan_toggle.config(text = next(icycle))
+            else:
+                self.freq_scan_toggle.config(text = next(icycle))
+            return
 
         if action.lower() == "stop" and self.scan_thread != None:
             # there is a scan ongoing and we want to terminate it
