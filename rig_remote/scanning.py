@@ -337,7 +337,6 @@ class Scanning(object):
         return task
 
     def _prev_bookmark(self, hold, level, freq):
-        logger.error("dati{},{},{}".format(hold, level, freq))
         self.prev_level = level
         self.prev_freq = freq
         self.hold_bookmark = True
