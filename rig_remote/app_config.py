@@ -33,9 +33,11 @@ from rig_remote.constants import (
                                   SCANNING_CONFIG,
                                   MAIN_CONFIG,
                                   CONFIG_SECTIONS,
+                                  UPGRADE_MESSAGE,
                                   )
 import logging
 import os
+import sys
 import ConfigParser
 from rig_remote.exceptions import (
                                    NonRetriableError,
@@ -86,9 +88,14 @@ class AppConfig(object):
             config = ConfigParser.RawConfigParser()
             try:
                 config.read(self.config_file)
+            except ConfigParser.MissingSectionHeaderError:
+                    logger.error("Missing Sections in the config file.")
+                    logger.error(UPGRADE_MESSAGE)
+                    sys.exit(1)
             except ConfigParser.Error:
                     logger.exception("Error while loading"
                                      "{}".format(self.config_file))
+
             if config.sections == []:
                 logger.info("Config file needs to be upgraded.")
                 logger.info("Please execute the config-updater.")
