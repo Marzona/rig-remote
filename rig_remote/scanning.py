@@ -186,6 +186,9 @@ class Scanning(object):
 
     def __init__(self):
         self.scan_active = True
+        self.prev_level = None
+        self.prev_freq = None
+        self.hold_bookmark = False
 
     def terminate(self):
         self.scan_active = False
@@ -311,8 +314,7 @@ class Scanning(object):
                         self._start_recording()
 
                     if task.params["auto_bookmark"]:
-                        nbm = self._create_new_bookmark(task, freq)
-                        task.new_bookmark_list.append(nbm)
+                        self._autobookmark(level, task, freq)
 
                     if task.params["log"]:
                         nbm = self._create_new_bookmark(task, freq)
@@ -323,13 +325,35 @@ class Scanning(object):
 
                     if task.params["record"]:
                         self._stop_recording()
-
+                elif self.hold_bookmark:
+                    nbm = self._create_new_bookmark(task, self.prev_freq)
+                    task.new_bookmark_list.append(nbm)
+                    self.hold_bookmark = False
+                    self.prev_level = None
+                    self.prev_freq = None
                 freq = freq + interval
                 if not self.scan_active:
                     return task
             pass_count, task = self._pass_count_update(pass_count, task)
         task.scanq.notify_end_of_scan()
         return task
+
+    def _autobookmark(self, level, task, freq):
+        if not self.prev_level:
+            self.prev_level = level
+            self.prev_freq = freq
+            self.hold_bookmark = True
+            return
+        if level[0] < self.prev_level[0]:
+            nbm = self._create_new_bookmark(task, self.prev_freq)
+            task.new_bookmark_list.append(nbm)
+            self.hold_bookmark = False
+            self.prev_level = None
+            self.prev_freq = None
+        else:
+            self.prev_level = level
+            self.prev_freq = freq
+            self.hold_bookmark = True
 
     def _pass_count_update(self, pass_count, task):
         if pass_count > 0:
@@ -361,8 +385,9 @@ class Scanning(object):
             if level > sgn:
                 signal_found += 1
             time.sleep(NO_SIGNAL_DELAY)
-        logger.info("Activity found, signal level: {}".format(level))
         if signal_found > 1:
+            logger.info("Activity found, signal level: "\
+                        "{}".format(level))
             detected_level.append(level)
             return True
         return False
