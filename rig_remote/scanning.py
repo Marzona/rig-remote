@@ -328,9 +328,7 @@ class Scanning(object):
                 elif self.hold_bookmark:
                     nbm = self._create_new_bookmark(task, self.prev_freq)
                     task.new_bookmark_list.append(nbm)
-                    self.hold_bookmark = False
-                    self.prev_level = None
-                    self.prev_freq = None
+                    self._prev_bookmark(False, None, None)
                 freq = freq + interval
                 if not self.scan_active:
                     return task
@@ -338,22 +336,22 @@ class Scanning(object):
         task.scanq.notify_end_of_scan()
         return task
 
+    def _prev_bookmark(self, hold, level, freq):
+        logger.error("dati{},{},{}".format(hold, level, freq))
+        self.prev_level = level
+        self.prev_freq = freq
+        self.hold_bookmark = True
+
     def _autobookmark(self, level, task, freq):
         if not self.prev_level:
-            self.prev_level = level
-            self.prev_freq = freq
-            self.hold_bookmark = True
+            self._prev_bookmark(True, level, freq)
             return
         if level[0] < self.prev_level[0]:
             nbm = self._create_new_bookmark(task, self.prev_freq)
             task.new_bookmark_list.append(nbm)
-            self.hold_bookmark = False
-            self.prev_level = None
-            self.prev_freq = None
+            self._prev_bookmark(False, None, None)
         else:
-            self.prev_level = level
-            self.prev_freq = freq
-            self.hold_bookmark = True
+            self._prev_bookmark(True, level, freq)
 
     def _pass_count_update(self, pass_count, task):
         if pass_count > 0:
