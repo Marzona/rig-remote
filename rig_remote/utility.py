@@ -45,6 +45,9 @@ def frequency_pp(frequency):
     :return type: string
     """
 
+    if not frequency:
+        return
+
     try:
         parsed_freq =  '{:,}'.format(int(re.sub("[^0-9]", '', frequency)))
     except ValueError:
