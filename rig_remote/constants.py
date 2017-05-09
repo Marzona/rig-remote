@@ -261,3 +261,9 @@ CONFIG_SECTIONS = [
                    "Rig URI",
                    "Monitor",
                   ]
+UPGRADE_MESSAGE = ("This config file may deserve an "\
+                   "upgrade, please execute the "\
+                   "following comand: "\
+                   "python ./config_checker.py -uc ~/.rig-remote/ or "\
+                   "Check https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker "\
+                   "for more info.")
