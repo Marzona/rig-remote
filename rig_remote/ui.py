@@ -1046,10 +1046,13 @@ class RigRemote(ttk.Frame):
                                    "instead.", parent = self)
         self.params["ckb_auto_bookmark"].set_str_val(
                 ac.config["auto_bookmark"].lower())
-        self.params["ckb_record"].set_str_val(ac.config["record"].lower())
-        self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
-        self.params["ckb_log"].set_str_val(ac.config["log"].lower())
-        self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
+        try:
+            self.params["ckb_record"].set_str_val(ac.config["record"].lower())
+            self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
+            self.params["ckb_log"].set_str_val(ac.config["log"].lower())
+            self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
+        except KeyError:
+            pass
         if ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.is_checked() == False:
                 self.ckb_top.invoke()
