@@ -172,6 +172,9 @@ REVERSE_MODE_MAP["CW-U"] = "CWU"
 
 SUPPORTED_SCANNING_ACTIONS = ("start",
                                "stop")
+SUPPORTED_SYNC_ACTIONS = SUPPORTED_SCANNING_ACTIONS
+
+SYNC_INTERVAL = 0.2
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
@@ -267,3 +270,4 @@ UPGRADE_MESSAGE = ("This config file may deserve an "\
                    "python ./config_checker.py -uc ~/.rig-remote/ or "\
                    "Check https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker "\
                    "for more info.")
+

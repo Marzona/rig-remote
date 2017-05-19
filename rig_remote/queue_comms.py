@@ -134,8 +134,10 @@ class QueueComms (object):
         :returns: None
         """
 
-        if (not isinstance(signal_number, int) or 
+
+        if (not isinstance(signal_number, int) or
             not isinstance (queue, Queue)):
+
             logger.error("Value error while inserting a signal into a queue.")
             logger.error("Value to be inserted isn't int.")
             logger.error("Value type: {}".format (type(signal_number)))
@@ -158,4 +160,3 @@ class QueueComms (object):
         """
 
         self._signal(self.parent_queue, signal_number)
-

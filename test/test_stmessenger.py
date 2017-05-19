@@ -20,7 +20,6 @@ def test_good_event_update():
 
 def test_end_of_scan1():
     stm = STMessenger()
-
     assert (stm.check_end_of_scan() == False)
 
 def test_end_of_scan2():

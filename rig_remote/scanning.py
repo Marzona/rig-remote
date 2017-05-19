@@ -231,7 +231,12 @@ class Scanning(object):
             raise InvalidScanModeError
 
         log = LogFile()
-        log.open(task.log_filename)
+        try:
+            log.open(task.log_filename)
+        except IOError:
+            logger.exception("Error while opening the log file.")
+            raise
+
         if task.mode.lower() == "bookmarks":
             task = self._bookmarks(task, log)
         elif task.mode.lower() == "frequency":
