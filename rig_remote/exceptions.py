@@ -31,6 +31,9 @@ class InvalidScanModeError (NonRetriableError):
 class UnsupportedScanningConfigError(NonRetriableError):
     pass
 
+class UnsupportedSyncConfigError(NonRetriableError):
+    pass
+
 # retriable custom exceptions
 
 class RetriableError (Exception):
