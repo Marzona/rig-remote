@@ -1,16 +1,26 @@
-port1=7356
-record=1
-bookmark_filename=./test/test-bookmarks.csv
-log=1
-always_on_top=false
-save_exit=0
-sgn_level=-40
-hostname1=127.0.0.1
-delay=6
-wait=1
-interval=100
-log_filename=none
-range_max=160,000
-range_min=159,000
-auto_bookmark=0
-passes=0
+[Scanning]
+passes = 1
+aggr_scan = false
+auto_bookmark = false
+range_min = 24,000
+range_max = 1800,000
+interval = 1
+delay = 5
+record = false
+sgn_level = -30
+wait = false
+
+[Main]
+log_filename = none
+save_exit = false
+always_on_top = false
+log = false
+bookmark_filename = ./test/test-bookmarks.csv
+[Rig URI]
+hostname1 = 127.0.0.1
+hostname2 = 127.0.0.1
+port1 = 7356
+port2 = 7357
+
+[Monitor]
+

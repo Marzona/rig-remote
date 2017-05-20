@@ -57,7 +57,7 @@ def test_load_conf3():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["txt_range_max"].get() == "160,000")
+    assert (rr.params["txt_range_max"].get() == "1800,000")
     rr.root.destroy()
 
 def test_load_conf4():
@@ -66,7 +66,7 @@ def test_load_conf4():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["txt_range_min"].get() == "159,000")
+    assert (rr.params["txt_range_min"].get() == "24,000")
     rr.root.destroy()
 
 def test_load_conf5():
@@ -84,7 +84,7 @@ def test_load_conf6():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["txt_interval"].get() == "100")
+    assert (rr.params["txt_interval"].get() == "1")
     rr.root.destroy()
 
 def test_load_conf7():
@@ -93,7 +93,7 @@ def test_load_conf7():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["txt_passes"].get() == "0")
+    assert (rr.params["txt_passes"].get() == "1")
     rr.root.destroy()
 
 def test_load_conf8():
@@ -129,7 +129,7 @@ def test_load_conf11():
     ac.read_conf()
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
-    assert (rr.params["txt_sgn_level"].get() == "-40")
+    assert (rr.params["txt_sgn_level"].get() == "-30")
     rr.root.destroy()
 
 def test_load_conf12():

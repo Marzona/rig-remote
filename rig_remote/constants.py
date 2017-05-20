@@ -130,6 +130,106 @@ ALLOWED_SPLIT_MODES = ["AM",
                        "DSB",
                        ]
 
+RIG_TIMEOUT=10
+RESET_CMD_DICT={"NONE" : 0,
+                "SOFTWARE_RESET": 1,
+                "VFO_RESET": 2,
+                "MEMORY_CLEAR_RESET": 4,
+                "MASTER_RESET": 8}
+
+ALLOWED_RIGCTL_MODES=("USB",
+                      "LSB",
+                      "CW",
+                      "CWR",
+                      "RTTY",
+                      "RTTYR",
+                      "AM",
+                      "FM",
+                      "WFM",
+                      "AMS",
+                      "PKTLSB",
+                      "PKTU",
+                      "SB",
+                      "PKTFM",
+                      "ECSSUSB",
+                      "ECSSLSB",
+                      "WFM_ST",
+                      "FAX",
+                      "SAM",
+                      "SAL",
+                      "SAH",
+                      "DSB")
+
+ALLOWED_PARM_COMMANDS=["ANN",
+                       "APO",
+                       "BACKLIGHT",
+                       "BEEP",
+                       "TIME",
+                       "BAT",
+                       "KEYLIGHT"]
+
+ALLOWED_FUNC_COMMANDS=["FAGC",
+                       "NB",
+                       "COMP",
+                       "VOX",
+                       "TONE",
+                       "TSQL",
+                       "SBKIN",
+                       "FBKIN",
+                       "ANF",
+                       "NR",
+                       "AIP",
+                       "APF",
+                       "MON",
+                       "MN",
+                       "RF",
+                       "ARO",
+                       "LOCK",
+                       "MUTE",
+                       "VSC",
+                       "REV",
+                       "SQL",
+                       "ABM",
+                       "BC",
+                       "MBC",
+                       "AFC",
+                       "SATMODE",
+                       "SCOPE",
+                       "RESUME",
+                       "TBURST",
+                       "TUNER"]
+
+ALLOWED_VFO_COMMANDS=["VFOA",
+                      "VFOB"
+                      "VFOC",
+                      "currVFO",
+                      "VFO",
+                      "MEM",
+                      "Main",
+                      "Sub",
+                      "TX",
+                      "RX"]
+
+ALLOWED_SPLIT_MODES=["AM",
+                     "FM",
+                     "CW",
+                     "CWR",
+                     "USB",
+                     "LSB",
+                     "RTTY",
+                     "RTTYR",
+                     "WFM",
+                     "AMS",
+                     "PKTLSB",
+                     "PKTUSB",
+                     "PKTFM",
+                     "ECSSUSB",
+                     "ECSSLSB",
+                     "FAX",
+                     "SAM",
+                     "SAL",
+                     "SAH",
+                     "DSB"]
 ALLOWED_BOOKMARK_TASKS = ["load", "save"]
 DIRMODE = 644
 CBB_MODES = ('',
@@ -184,30 +284,32 @@ REVERSE_MODE_MAP["CW-L"] = "CWL"
 REVERSE_MODE_MAP["CW-U"] = "CWU"
 
 SUPPORTED_SCANNING_ACTIONS = ("start",
-                              "stop"
-                              )
+                              "stop")
+SUPPORTED_SYNC_ACTIONS = SUPPORTED_SCANNING_ACTIONS
+
+SYNC_INTERVAL = 0.2
 
 SUPPORTED_SCANNING_MODES = ("bookmarks",
                             "frequency")
-DEFAULT_CONFIG = {"hostname1": "127.0.0.1",
-                  "port1": "7356",
-                  "hostname2": "127.0.0.1",
-                  "port2": "7357",
-                  "interval": "1",
-                  "delay": "5",
-                  "passes": "0",
-                  "sgn_level": "-30",
-                  "range_min": "24,000",
-                  "range_max": "1800,000",
-                  "wait": "false",
-                  "record": "false",
-                  "log": "false",
-                  "always_on_top": "true",
-                  "save_exit": "false",
-                  "aggr_scan": "false",
-                  "auto_bookmark": "false",
-                  "log_filename": "",
-                  "bookmark_filename": ""}
+DEFAULT_CONFIG = {"hostname1" : "127.0.0.1",
+                  "port1" : "7356",
+                  "hostname2" : "127.0.0.1",
+                  "port2" : "7357",
+                  "interval" : "1",
+                  "delay" : "5",
+                  "passes" : "0",
+                  "sgn_level" : "-30",
+                  "range_min" : "24,000",
+                  "range_max" : "1800,000",
+                  "wait" : "false",
+                  "record" : "false",
+                  "log" : "false",
+                  "always_on_top" : "true",
+                  "save_exit" : "false",
+                  "aggr_scan" : "false",
+                  "auto_bookmark" : "false",
+                  "log_filename" : None,
+                  "bookmark_filename" : None}
 
 LEN_BM = 4
 
@@ -239,11 +341,46 @@ GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
 GQRX_FIRST_BOOKMARK = 5
 
 GQRX_BOOKMARK_HEADER = [
-                        ["# Tag name          ", "  color"],
-                        ["Untagged            ", " #c0c0c0"],
-                        ["Marine VHF          ", " #c0c0c0"],
+                        ["# Tag name          ","  color"],
+                        ["Untagged            "," #c0c0c0"],
+                        ["Marine VHF          "," #c0c0c0"],
                         [],
-                        ["# Frequency ", " Name                     ",
+                        ["# Frequency "," Name                     ",
                          " Modulation          ",
-                         "  Bandwidth", " Tags"],
+                         "  Bandwidth"," Tags"],
                         ]
+SCANNING_CONFIG = ["range_min",
+                   "range_max",
+                   "delay",
+                   "interval",
+                   "auto_bookmark",
+                   "sgn_level",
+                   "wait",
+                   "record",
+                   "aggr_scan",
+                   "passes",
+                   ]
+MAIN_CONFIG = ["always_on_top",
+               "save_exit",
+               "bookmark_filename",
+               "log",
+               "log_filename"
+               ]
+MONITOR_CONFIG = ["monitor_mode_loops"]
+RIG_URI_CONFIG = ["port1",
+                  "hostname1",
+                  "port2",
+                  "hostname2"
+                  ]
+CONFIG_SECTIONS = [
+                   "Scanning",
+                   "Main",
+                   "Rig URI",
+                   "Monitor",
+                  ]
+UPGRADE_MESSAGE = ("This config file may deserve an "\
+                   "upgrade, please execute the "\
+                   "following comand: "\
+                   "python ./config_checker.py -uc ~/.rig-remote/ or "\
+                   "Check https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker "\
+                   "for more info.")

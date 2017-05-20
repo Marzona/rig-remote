@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import pytest
 from rig_remote.utility import (
                                 this_file_exists,
@@ -17,9 +18,11 @@ import Tkinter as tk
 from mock import MagicMock
 from rig_remote.app_config import AppConfig
 
-testdata = [("auto_bookmark", "false"),
+testdata = [("aggr_scan", "false"),
+            ("auto_bookmark", "false"),
             ("hostname1", ""),
             ("passes", ""),
+            ("aggr_scan", "false"),
             ("log", "false"),
             ("record", "false"),
             ("range_max", ""),

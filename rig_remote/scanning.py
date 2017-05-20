@@ -68,12 +68,12 @@ from rig_remote.constants import MIN_INTERVAL
 #from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
 from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
-#from rig_remote.stmessenger import STMessenger
-from rig_remote.utility import (
-                                khertz_to_hertz,
-                                dbfs_to_sgn,
-#                                build_rig_uri,
-                               )
+from rig_remote.stmessenger import STMessenger
+from rig_remote.utility import(
+                             khertz_to_hertz,
+                             dbfs_to_sgn,
+                             build_rig_uri,
+                            )
 import socket
 import logging
 import time
@@ -184,6 +184,9 @@ class Scanning(object):
 
     def __init__(self):
         self.scan_active = True
+        self.prev_level = None
+        self.prev_freq = None
+        self.hold_bookmark = False
 
     def terminate(self):
         self.scan_active = False
@@ -228,7 +231,12 @@ class Scanning(object):
                 raise InvalidScanModeError
 
         log = LogFile()
-        log.open(task.log_filename)
+        try:
+            log.open(task.log_filename)
+        except IOError:
+            logger.exception("Error while opening the log file.")
+            raise
+
         if task.mode.lower() == "bookmarks":
             task = self._bookmarks(task, log)
         elif task.mode.lower() == "frequency":
@@ -311,8 +319,7 @@ class Scanning(object):
                         self._start_recording(task)
 
                     if task.params["auto_bookmark"]:
-                        nbm = self._create_new_bookmark(task, freq)
-                        task.new_bookmark_list.append(nbm)
+                        self._autobookmark(level, task, freq)
 
                     if task.params["log"]:
                         nbm = self._create_new_bookmark(task, freq)
@@ -322,14 +329,33 @@ class Scanning(object):
                         self._queue_sleep(task)
 
                     if task.params["record"]:
-                        self._stop_recording(task)
-
+                        self._stop_recording()
+                elif self.hold_bookmark:
+                    nbm = self._create_new_bookmark(task, self.prev_freq)
+                    task.new_bookmark_list.append(nbm)
+                    self._prev_bookmark(False, None, None)
                 freq = freq + interval
                 if not self.scan_active:
                     return task
             pass_count, task = self._pass_count_update(pass_count, task)
         task.scanq.notify_end_of_scan()
         return task
+
+    def _prev_bookmark(self, hold, level, freq):
+        self.prev_level = level
+        self.prev_freq = freq
+        self.hold_bookmark = True
+
+    def _autobookmark(self, level, task, freq):
+        if not self.prev_level:
+            self._prev_bookmark(True, level, freq)
+            return
+        if level[0] < self.prev_level[0]:
+            nbm = self._create_new_bookmark(task, self.prev_freq)
+            task.new_bookmark_list.append(nbm)
+            self._prev_bookmark(False, None, None)
+        else:
+            self._prev_bookmark(True, level, freq)
 
     def _pass_count_update(self, pass_count, task):
         if pass_count > 0:
@@ -354,15 +380,17 @@ class Scanning(object):
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
-            logger.info("Checks left:{}".format(SIGNAL_CHECKS - i))
+
+            logger.info("Checks left:{}".format(SIGNAL_CHECKS -i))
             level = int(rig.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))
             if level > sgn:
                 signal_found += 1
             time.sleep(NO_SIGNAL_DELAY)
-        logger.info("Activity found, signal level: {}".format(level))
         if signal_found > 1:
+            logger.info("Activity found, signal level: "\
+                        "{}".format(level))
             detected_level.append(level)
             return True
         return False
