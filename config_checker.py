@@ -24,10 +24,11 @@ import os
 import csv
 import shutil
 import ConfigParser
-from os.path import expanduser
 import platform
 import argparse
+import logging
 import pprint
+from os.path import expanduser
 from rig_remote.constants import (
                                   DEFAULT_CONFIG,
                                   RIG_URI_CONFIG,
@@ -37,6 +38,9 @@ from rig_remote.constants import (
                                   CONFIG_SECTIONS,
                                   )
 # helper functions
+
+# logging configuration
+logger = logging.getLogger(__name__)
 
 def input_arguments():
     """Argument parser.
@@ -132,7 +136,6 @@ def update_config(config):
 
 def check_config(config):
 
-
     config_file = os.path.join(config, "rig-remote.conf")
 
     with open(config_file, "r") as cf:
@@ -143,7 +146,10 @@ def check_config(config):
             row = row.rstrip("\n")
             if "bookmark_filename" in row:
                 bookmark_file = row.split("=")[1].rstrip("'").strip()
-            if "[" in row or "#" in row or "\n" == row:
+            if any (["[" in row,
+                     "#" in row,
+                     "\n" == row,
+                     "" == row]):
                 continue
             count += 1
             if len(row.split("=")) == 2:
@@ -174,6 +180,9 @@ def check_config(config):
 # entry point
 if __name__ == "__main__":
     args = input_arguments()
+    if not any([args.check_config, args.dump, args.update_config]):
+        print("At least one option is required, try "\
+                    "config_checker --help")
 
     if args.dump:
         dump_info()
