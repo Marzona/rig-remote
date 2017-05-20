@@ -1051,23 +1051,35 @@ class RigRemote(ttk.Frame):
         """
 
         eflag = False
-        try:
-            is_valid_hostname(ac.config["hostname1"])
-        except ValueError:
-            self.params["txt_hostname1"].insert(0,
-                                                DEFAULT_CONFIG["hostname1"])
-            if not silent:
-                tkMessageBox.showerror("Config File Error"
-                                       "One (or more) "
-                                       "of the values in the config file was "
-                                       "invalid, and the default was used "
-                                       "instead.",
-                                       parent=self)
-        else:
-            self.params["txt_hostname1"].insert(0,
-                                                ac.config["hostname1"])
+        hostnames = ["hostname1", "hostname2"]
+        for hostname in hostnames:
+            try:
+                is_valid_hostname(ac.config[hostname])
+            except ValueError:
+                if hostname == "hostname1":
+                    self.params["txt_hostname1"].insert(0,
+                                                    DEFAULT_CONFIG[hostname])
+                else:
+                    self.params["txt_hostname2"].insert(0,
+                                                    DEFAULT_CONFIG[hostname])
+                if not silent:
+                    tkMessageBox.showerror("Config File Error"
+                                           "One (or more) "
+                                           "of the values in the config file was "
+                                           "invalid, and the default was used "
+                                           "instead.",
+                                           parent=self)
+            else:
+                if hostname == "hostname1":
+                    self.params["txt_hostname1"].insert(0,
+                                                    ac.config[hostname])
+                else:
+                    self.params["txt_hostname2"].insert(0,
+                                                    ac.config[hostname])
+
         # Test positive integer values
         for key in ("port1",
+                    "port2",
                     "interval",
                     "delay",
                     "passes",

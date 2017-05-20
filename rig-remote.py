@@ -143,7 +143,6 @@ if __name__ == "__main__":
     #   use path from config file
     #   use default path
     ac.read_conf()
-
     if args.alternate_bookmark_file != None:
         bookmarks = args.alternate_bookmark_file
         ac.config['bookmark_filename'] = process_path(bookmarks)
