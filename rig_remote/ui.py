@@ -1125,8 +1125,9 @@ class RigRemote(ttk.Frame):
     def _sync(self, action):
 
         if self.scan_thread:
-            icycle=itertools.cycle(["Start", "Stop"])
-            self.sync.config(text = next(icycle))
+            #icycle=itertools.cycle(["Start", "Stop"])
+            #self.sync.config(text = next(icycle))
+            self.sync.config(text = "Start")
             return
 
         if action.lower() not in SUPPORTED_SYNC_ACTIONS:
@@ -1136,7 +1137,9 @@ class RigRemote(ttk.Frame):
             raise UnsupportedSyncConfigError
 
         if action.lower() == "stop" and self.sync_thread != None:
+
             # there is a sync ongoing and we want to terminate it
+
             self.syncing.terminate()
             self.sync_thread.join()
             self.sync_thread = None
@@ -1148,6 +1151,7 @@ class RigRemote(ttk.Frame):
 
         if (action.lower() == "stop" and self.sync_thread == None) :
             # we already stopped scanning, another stop is ignored
+
             return
 
         if (action.lower() == "start" and self.sync_thread == None) :
@@ -1388,9 +1392,9 @@ class RigRemote(ttk.Frame):
                 self.after(UI_EVENT_TIMER_DELAY, self.check_scanthread)
 
     def check_syncthread(self):
-        if self.syncq.check_end_of_sync():
-                self.sync_toggle()
-        else:
+        if not self.syncq.check_end_of_sync():
+            #self.sync_toggle()
+#        else:
             if self.sync_thread != None:
                 self.after(UI_EVENT_TIMER_DELAY, self.check_syncthread)
 
@@ -1413,12 +1417,19 @@ class RigRemote(ttk.Frame):
             raise UnsupportedScanningConfigError
 
         if self.sync_thread:
-            icycle=itertools.cycle(["Start", "Stop"])
+            #icycle=itertools.cycle(["Start", "Stop"])
+            #if mode == "bookmarks":
+                #self.book_scan_toggle.config(text = next(icycle))
+            #else:
+                #self.freq_scan_toggle.config(text = next(icycle))
+            #return
             if mode == "bookmarks":
-                self.book_scan_toggle.config(text = next(icycle))
+                self.book_scan_toggle.config(text = "Start")
             else:
-                self.freq_scan_toggle.config(text = next(icycle))
+                self.freq_scan_toggle.config(text = "Start")
             return
+
+
 
         if action.lower() == "stop" and self.scan_thread != None:
             # there is a scan ongoing and we want to terminate it
