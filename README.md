@@ -10,21 +10,30 @@ Some sample feature Rig-remote provides are:
 - bookmarking
 - enable/disable recording
 - enable/disable streaming
+- keep in sync the frequency of two rigs
 - ...and many more
 
-Check the wiki here on GitHub (https://github.com/Marzona/rig-remote/wiki) for more information on how Rig-remote works, there is a user guide too...
+Check the [wiki](https://github.com/Marzona/rig-remote/wiki) for more information on how Rig-remote works, there is a [user guide] (https://github.com/Marzona/rig-remote/wiki/User-Manual) too.
 
-Check the issues and milestones to see what's we are working on
+Check the [issues](https://github.com/Marzona/rig-remote/issues) and [milestones](https://github.com/Marzona/rig-remote/milestones) to see what's we are working on.
 
 Feel free to create issues for bugs, feature request or to provide us suggestions, I'll classify them accordingly.
 
-Do you want to work on this software? YAY! You're more than welcome! In the wiki there is the link to the mailing list, subscribe and ping, there is a lot of work for everybody!
+Do you want to work on this software? YAY! You're more than welcome! In the wiki there is the link to the [mailing list](https://github.com/Marzona/rig-remote/wiki), subscribe and ping, there is a lot of work for everybody!
 
-rig-remote Version 2
--------------------------------
+Notes for the users of previous versions
+---------------------------------------
 
-Added Features
---------------
+- For some reason I realized only now that the path for the configuration folder was mispelled, from this release it is .rig-remote and not .rig_remote.
+   mv ~.rig_remote ~.rig-remote
+should do the trick. Sorry for that.
+
+- Configuration format upgrade has happened... but "[config_checker](https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker) to the rescue" has happened too!
+The previous configuration file format was too weak and simple. The new one follows the standard of ini files. It has sections that makes it simple to edit manually.
+
+
+Feature highlights
+------------------
 
 - Threaded scanning of bookmarks or frequency blocks, in "police scanner" fashion.
 - Selectable infinite or limited passes.
@@ -33,52 +42,37 @@ Added Features
 - Selectable logging of scanning activity to a file.
 - On-the-fly updates of scanning parameters during active scan operation.
 - Additional user input validation checks and validation of config and bookmark files.
+- Sync between two remote rigs, so to use one as a panadapter.
+- Improved autobookmark when dealing with strong signals
+- [config_checker](https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker) is now available: provides some info on the rig-remote configuration files, diagnostics info around your python environment and configuration file format updates. This tool we will become a more complete the bug reporting tool in the next releases.
 
 TODOs/desired enhancements are listed in the issues section.
 If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
 ![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/rig-remote.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/about.png)
 
-
-Version 1
-
-Features/changes
---
-
-- small ui redesign
-- Bookmark frequencies and modes
-- monitor bookmarks and frequency range
-- trigger recording, autobookmarks, streaming for the detected signals
-- Create bookmarks from the current rig frequency and mode
-- Restore rig frequency and mode (bookmark double-click)
-- Keep window always on top
-- Auto save configuration on exit
-- scan for activity between bookmarks
-- scan for activity in a frequency range
-- auto bookmark frequencies that are discovered as active
-
-Suggestions are welcome!
 
 Requirements
----
+------------
 
 - Gqrx 2.3 (or higher), or any other software that offers rigctl support.
 
 Usage
----
+-----
 
-=======
 You just need to download and run ```rig-remote.py```.
 
 For instance, using Linux / Mac OS X, you may do:
 
 bash
-=======
+====
+```
 $ git clone https://github.com/marzona/rig-remote.git
 
 $ cd rig-remote
 
-$ python ./rig-remote.py
+$ ./rig-remote.py
 
 ```
 
@@ -90,9 +84,9 @@ command-line that is always running in background you may rename
 executable instead (which does not need the command-line).
 
 This software consists of two files and two folder:
-=======
+===================================================
 - rig-remote.py
-- rig-bookmarks.csv (the bookmarks file)
+- config_checker.py
 - modules: python modules
 - tests: unit tests
 
@@ -100,5 +94,3 @@ The file `rig-bookmarks.csv` consists of a standard comma-separated
 values file. For reference, the following wiki page provides a quick
 [description of the format](https://github.com/Marzona/rig-remote/wiki/Bookmark-file-format)
 on the wiki.
-
-
