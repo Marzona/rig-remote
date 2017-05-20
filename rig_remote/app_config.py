@@ -103,7 +103,6 @@ class AppConfig(object):
             for section in config.sections():
                 for item in config.items(section):
                     self.config[item[0]] = item[1]
-
         else:
             self.config = DEFAULT_CONFIG
 
