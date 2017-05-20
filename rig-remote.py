@@ -18,6 +18,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+# import modules
 import argparse
 import logging
 import os
@@ -32,6 +33,7 @@ from rig_remote.constants import DEFAULT_LOG_FILENAME
 from rig_remote.constants import DEFAULT_PREFIX
 from rig_remote.utility import process_path
 
+# helper functions
 def input_arguments():
     """Argument parser.
 
@@ -140,18 +142,20 @@ if __name__ == "__main__":
     #   use path from config file
     #   use default path
     ac.read_conf()
-    if args.alternate_bookmark_file:
+
+    if args.alternate_bookmark_file != None:
         bookmarks = args.alternate_bookmark_file
         ac.config['bookmark_filename'] = process_path(bookmarks)
-    elif ac.config['bookmark_filename'] == "":
-        ac.config['bookmark_filename'] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
-    #set activity log filename
-    if args.alternate_log_file:
+    elif ac.config["bookmark_filename"] == None:
+        ac.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
+    # set activity log filename
+    if args.alternate_log_file != None:
         log = args.alternate_log_file
         ac.config['log_filename'] = process_path(log)
-    elif ac.config['log_filename'] == "":
+    else:
         ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
     app = RigRemote(root, ac)
+
     app.apply_config(ac)
     app.mainloop()
     if app.scan_thread != None :

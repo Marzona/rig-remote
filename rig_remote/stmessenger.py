@@ -88,3 +88,9 @@ class STMessenger (object):
         """
 
         return (self.mqueue.get_from_parent() == 1)
+
+    def notify_end_of_sync(self):
+        self.mqueue.signal_parent(1)
+
+    def check_end_of_sync(self):
+        return (self.mqueue.get_from_parent() == 1)

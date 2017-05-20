@@ -13,7 +13,7 @@ def test_app_config2():
 def test_app_config4():
     ac = AppConfig("./test/test-config.file")
     ac.read_conf()
-    assert(len(ac.config) == 16)
+    assert(len(ac.config) == 19)
 
 def test_app_config5():
     ac = AppConfig("")
@@ -26,8 +26,8 @@ def test_app_config8():
 def test_app_config9():
     ac = AppConfig("./test-config.file")
     ac.read_conf()
-    assert(ac.config["bookmark_filename"] == "/home/marzona/.rig_remote/rig-remote-bookmarks.csv")
+    assert(ac.config["bookmark_filename"] == "/home/marzona/.rig-remote/rig-remote-bookmarks.csv")
 
 def test_app_config6():
     ac = AppConfig(DEFAULT_CONFIG)
-    assert(ac.config_file["bookmark_filename"] == "")
+    assert(ac.config_file["bookmark_filename"] == None)

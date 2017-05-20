@@ -42,6 +42,7 @@ class RigCtl(object):
     def __init__(self, target):
         """implements the rig.
 
+
         :param target: rig uri data
         :type target: dict created from build_rig_uri
         :raises TypeError: if the target is not a dict of 3 keys
@@ -72,9 +73,9 @@ class RigCtl(object):
                                    target["port"],
                                    RIG_TIMEOUT)
         except socket.timeout:
-            logger.error("Time out while connecting "
-                         "to {}:{}".format(target["hostname"],
-                                           ["port"]))
+
+            logger.error("Time out while connecting to {}:{}".format(target["hostname"],
+                                                                     ["port"]))
             raise
         except socket.error:
             logger.exception("Connection refused on {}:{}".format(["hostname"],
@@ -120,8 +121,9 @@ class RigCtl(object):
 
         """
         if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-            logger.error("Frequency mode must be a string in {}, "
-                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
+
+            logger.error("Frequency mode must be a string in {}, "\
+                        "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
 
         return self._request('M %s' % mode, target)
