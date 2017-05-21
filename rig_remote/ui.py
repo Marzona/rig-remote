@@ -971,9 +971,9 @@ class RigRemote(ttk.Frame):
                                )
         t_sync = ToolTip(self.sync,
                          follow_mouse=1,
-                         text="Non-stop get the "\
-                              "frequency from the second rig and "\
-                              "set it to the first one.")
+                         text="Keeps in sync the "\
+                              "frequency/mode. The second rig is "\
+                              "source, the first is the destination.")
         self.sync.grid(row=21,
                        column=1,
                        columnspan=1,
