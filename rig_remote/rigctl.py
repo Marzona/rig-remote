@@ -106,7 +106,6 @@ class RigCtl(object):
         a frequency.
 
         """
-
         output = self._request('f')
         if not isinstance(output, basestring):
             logger.error("Expected unicode string while getting radio "
@@ -125,7 +124,6 @@ class RigCtl(object):
             logger.error("Frequency mode must be a string in {}, "\
                         "got {}".format(ALLOWED_RIGCTL_MODES, mode))
             raise ValueError
-
         return self._request('M %s' % mode, target)
 
     def get_mode(self, target=None):
@@ -133,8 +131,12 @@ class RigCtl(object):
         the mode.
 
         """
-
-        output = self._request('m')
+        # older versions of gqrx replies with only the mode (u'WFM_ST' as an example)
+        # newer versions replie with something like u'WFM_ST\n160000'
+        if "\n" in self._request('m'):
+            output = self._request('m').split("\n")[0]
+        else:
+            output = self._request('m')
         if not isinstance(output, basestring):
             logger.error("Expected unicode string while getting radio mode, "
                          "got {}".format(output))
