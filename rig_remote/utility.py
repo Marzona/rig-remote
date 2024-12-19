@@ -22,9 +22,9 @@ TAS - Tim Sweeney - mainetim@gmail.com
 import re
 from socket import gethostbyname, gaierror
 import logging
-import Tkinter as tk
+import tkinter as tk
 import os.path
-import ttk
+from tkinter import ttk
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def frequency_pp_parse(frequency):
     :return type: string or None
     """
 
-    if not isinstance(frequency, basestring):
+    if not isinstance(frequency, str):
         logger.error("frequency is not a string, "\
                      "but {}".format(type(frequency)))
         raise ValueError

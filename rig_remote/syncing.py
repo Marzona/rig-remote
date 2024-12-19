@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # class definition
 
-class SyncTask(object):
+class SyncTask:
     """Representation of a scan task, with helper method for checking
     for proper frequency range.
 
@@ -56,7 +56,8 @@ class SyncTask(object):
         self.src_rig = src_rig_controller
         self.dst_rig = dst_rig_controller
 
-class Syncing(object):
+
+class Syncing:
     """Provides methods for doing the bookmark/frequency scan,
     updating the bookmarks with the active frequencies found.
 
@@ -82,7 +83,6 @@ class Syncing(object):
             logger.error("Unsupported task in sync queue.")
             raise UnsupportedSyncConfigError
 
-        level = []
         while self.sync_active:
             task.dst_rig.set_frequency(task.src_rig.get_frequency())
             task.dst_rig.set_mode(str(task.src_rig.get_mode()))

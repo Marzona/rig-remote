@@ -22,7 +22,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 # import modules
-from Queue import Queue, Empty, Full
+from queue import Queue, Empty, Full
 import logging
 from rig_remote.constants import QUEUE_MAX_SIZE
 

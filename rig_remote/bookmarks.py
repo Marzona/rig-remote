@@ -20,10 +20,8 @@ from rig_remote.utility import (
                                 frequency_pp,
                                )
 import logging
-import Tkinter as tk
-import Tkconstants
-import tkMessageBox
-import tkFileDialog
+import tkinter as tk
+from tkinter import messagebox, filedialog
 import os
 
 # logging configuration
@@ -122,7 +120,7 @@ class Bookmarks(object):
                 error = True
             if error == True :
                 if not silent:
-                    tkMessageBox.showerror("Error", "Invalid value in "\
+                    messagebox.showerror("Error", "Invalid value in "\
                                            "Bookmark #%i. "\
                                            "Skipping..." %count)
             else:
@@ -146,14 +144,6 @@ class Bookmarks(object):
             self.tree.tag_configure('unlocked', background='white')
             self.tree.item(item, tags="unlocked")
 
-    def import_bookmarks(self, silent=True):
-        if value == "L" :
-            self.tree.tag_configure('locked', background = 'red')
-            self.tree.item(item, tags = "locked")
-        else :
-            self.tree.tag_configure('unlocked', background = 'white')
-            self.tree.item(item, tags = "unlocked")
-
     def import_bookmarks(self, silent = True):
         """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
@@ -162,8 +152,7 @@ class Bookmarks(object):
         :type root: tkinter panel
         """
 
-
-        filename = tkFileDialog.askopenfilename(initialdir = "~/",
+        filename = filedialog.askopenfilename(initialdir = "~/",
                                                 title = "Select bookmark file",
                                                 filetypes = (("csv files","*.csv"),
                                                              ("all files","*.*")))
@@ -182,7 +171,7 @@ class Bookmarks(object):
         if not silent:
             logger.error("Unsupported format, supported formats are rig-remote"
                          "rig-remote and gqrx,")
-            tkMessageBox.showerror("Error", "Unsupported file format.")
+            messagebox.showerror("Error", "Unsupported file format.")
 
     def _detect_format(self, filename):
         """Method for detecting the bookmark type. Only two types are supported.
@@ -297,7 +286,7 @@ class Bookmarks(object):
         """handles the popup for selecting the path for saving the file.
         """
 
-        filename = tkFileDialog.asksaveasfilename(initialdir = "~/",
+        filename = filedialog.asksaveasfilename(initialdir = "~/",
                                                   title = "Select bookmark file",
                                                   initialfile = "bookmarks-export.csv",
                                                   filetypes = (("csv","*.csv"),

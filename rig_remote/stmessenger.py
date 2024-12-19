@@ -24,7 +24,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 
 # import modules
-from queue_comms import QueueComms
+from .queue_comms import QueueComms
 import logging
 
 # logging configuration

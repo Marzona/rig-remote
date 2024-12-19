@@ -38,7 +38,7 @@ from rig_remote.constants import (
 import logging
 import os
 import sys
-import ConfigParser
+import configparser
 from rig_remote.exceptions import (
                                    NonRetriableError,
                                   )

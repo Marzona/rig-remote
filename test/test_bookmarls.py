@@ -154,7 +154,7 @@ def test_save_gqrx_comment():
     bk.bookmarks.csv_save = MagicMock()
     bk.bookmarks.return_value = None
     bk._save_gqrx("test")
-    assert(isinstance(bk.bookmarks.row_list[0][1], basestring))
+    assert(isinstance(bk.bookmarks.row_list[0][1], str))
 
 def test_insert_bookmark_values_present(bk):
     assert ("values" in (bk.tree.item("I001")).keys())

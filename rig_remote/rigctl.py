@@ -107,7 +107,7 @@ class RigCtl(object):
 
         """
         output = self._request('f')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting radio "
                          "frequency, got {}".format(output))
             raise ValueError
@@ -137,7 +137,7 @@ class RigCtl(object):
             output = self._request('m').split("\n")[0]
         else:
             output = self._request('m')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting radio mode, "
                          "got {}".format(output))
             raise ValueError
@@ -166,7 +166,7 @@ class RigCtl(object):
         """
 
         output = self._request('l')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting radio "
                          "signal level, got {}".format(output))
             raise ValueError
@@ -193,7 +193,7 @@ class RigCtl(object):
         """
 
         output = self._request('v')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting VFO, "
                          "got {}".format(output))
             raise ValueError
@@ -220,7 +220,7 @@ class RigCtl(object):
         """
 
         output = self._request('j')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting RIT, "
                          "got {}".format(type(output)))
             raise ValueError
@@ -233,7 +233,7 @@ class RigCtl(object):
 
         """
 
-        if not isinstance(xit, basestring):
+        if not isinstance(xit, str):
             logger.error("XIT value must be a string, "
                          "got {}".format(type(xit)))
             raise ValueError
@@ -247,7 +247,7 @@ class RigCtl(object):
         """
 
         output = self._request('j')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting XIT, "
                          "got {}".format(type(output)))
             raise ValueError
@@ -329,7 +329,7 @@ class RigCtl(object):
         """
 
         output = self._request('u')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting func, "
                          "got {}".format(output))
             raise ValueError
@@ -354,7 +354,7 @@ class RigCtl(object):
         """
 
         output = self._request('p')
-        if not isinstance(output, basestring):
+        if not isinstance(output, str):
             logger.error("Expected unicode string while getting parm, "
                          "got {}".format(output))
             raise ValueError

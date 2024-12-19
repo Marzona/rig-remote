@@ -104,13 +104,12 @@ from rig_remote.utility import (
                                 RCCheckbutton,
                                 center_window,
                                 )
-import Tkinter as tk
-import ttk
-from Tkinter import LabelFrame
-import tkMessageBox
+import tkinter as tk
+from tkinter import ttk, LabelFrame, messagebox
+
 import threading
 import itertools
-import webbrowser
+
 from rig_remote.stmessenger import STMessenger
 
 # logging configuration
@@ -1037,7 +1036,7 @@ class RigRemote(ttk.Frame):
         force <FocusOut> callbacks.
         """
 
-        if not isinstance(event.widget, basestring) :
+        if not isinstance(event.widget, str) :
             event.widget.focus_set()
 
     def apply_config(self, ac, silent = False):
@@ -1065,7 +1064,7 @@ class RigRemote(ttk.Frame):
                     self.params["txt_hostname2"].insert(0,
                                                     DEFAULT_CONFIG[hostname])
                 if not silent:
-                    tkMessageBox.showerror("Config File Error"
+                    messagebox.showerror("Config File Error"
                                            "One (or more) "
                                            "of the values in the config file was "
                                            "invalid, and the default was used "
@@ -1105,7 +1104,7 @@ class RigRemote(ttk.Frame):
                                                 ac.config["sgn_level"])
         if eflag :
             if not silent:
-                tkMessageBox.showerror("Config File Error", "One (or more) "
+                messagebox.showerror("Config File Error", "One (or more) "
                                        "of the values in the config file was "
                                        "invalid, and the default was used "
                                        "instead.", parent = self)
@@ -1176,7 +1175,7 @@ class RigRemote(ttk.Frame):
                                 RigCtl(build_rig_uri(2, self.params)),
                                 RigCtl(build_rig_uri(1, self.params)))
             except UnsupportedSyncConfigError:
-                tkMessageBox.showerror("Sync error",
+                messagebox.showerror("Sync error",
                                        "Hostname/port of both rigs "\
                                        "must be specified")
                 self.sync_toggle()
@@ -1219,7 +1218,7 @@ class RigRemote(ttk.Frame):
         """
 
         if self.params["cbb_scan_mode"].get() == "":
-            tkMessageBox.showerror("Error",
+            messagebox.showerror("Error",
                                    "You must select a mode for "
                                    "performing a frequency scan.")
             return
@@ -1243,7 +1242,7 @@ class RigRemote(ttk.Frame):
             is_valid_port(event_value)
         except ValueError:
             if not silent:
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                        "Invalid input value in "
                                        "port. Must be integer and greater than "
                                        "1024")
@@ -1265,7 +1264,7 @@ class RigRemote(ttk.Frame):
             is_valid_hostname(event_value)
         except Exception:
             if not silent:
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                        "Invalid Hostname")
             return
         if number == 1:
@@ -1290,7 +1289,7 @@ class RigRemote(ttk.Frame):
         ekey = str(event_name.split("_",1)[1])
         if (event_value == "") or event_value.isspace() :
             if not silent:
-                answer = tkMessageBox.askyesno("Error",
+                answer = messagebox.askyesno("Error",
                                                "{} must have a value "
                                                "entered. Use the "
                                                "default?".format(ekey))
@@ -1328,7 +1327,7 @@ class RigRemote(ttk.Frame):
             event_value_int = int(event.widget.get().replace(',',''))
         except ValueError:
             if not silent:
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                    "Invalid input value in %s" % event_name)
             event.widget.focus_set()
             return
@@ -1471,7 +1470,7 @@ class RigRemote(ttk.Frame):
 
             if len(self.tree.get_children()) == 0 and mode == "bookmarks":
                 if not silent:
-                    tkMessageBox.showerror("Error",
+                    messagebox.showerror("Error",
                                            "No bookmarks to scan.")
                 self.bookmark_toggle()
             else:
@@ -1595,7 +1594,7 @@ class RigRemote(ttk.Frame):
             self.params[cbb_mode].insert(0, mode)
         except Exception as err:
             if not silent:
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                    "Could not connect to rig.\n%s" % err,
                                    parent=self)
 
@@ -1636,11 +1635,11 @@ class RigRemote(ttk.Frame):
             self.rigctl.set_mode(str((mode)), rig_target)
         except Exception as err:
             if not silent and (frequency != "" or mode != ""):
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                        "Could not set frequency.\n%s" % err,
                                        parent=self)
             if not silent and (frequency == "" or mode == ""):
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                        "Please provide frequency and mode.",
                                        parent=self)
 
@@ -1692,7 +1691,7 @@ class RigRemote(ttk.Frame):
             int(control_source["frequency"])
         except (ValueError, TypeError):
             if not (silent) :
-                tkMessageBox.showerror("Error",
+                messagebox.showerror("Error",
                                        "Invalid value in Frequency field."
                                        "Note: '.' isn't allowed.")
                 self.params[freq].focus_set()
@@ -1732,7 +1731,7 @@ class RigRemote(ttk.Frame):
         for item in self.tree.get_children():
             freq = str(self.tree.item(item).get('values')[BM.freq])
             uni_curr_freq = frequency_pp_parse(freq)
-            curr_freq = uni_curr_freq.encode("UTF-8")
+            curr_freq = uni_curr_freq
             curr_mode = self.tree.item(item).get('values')[BM.mode]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
@@ -1740,7 +1739,7 @@ class RigRemote(ttk.Frame):
             elif (frequency == curr_freq and
                   mode == curr_mode) :
                 if not (silent) :
-                    tkMessageBox.showerror("Error", "A bookmark with the "
+                    messagebox.showerror("Error", "A bookmark with the "
                                            "same frequency and mode "
                                            "already exists.", parent=self)
                 return

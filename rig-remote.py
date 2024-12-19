@@ -24,7 +24,7 @@ import logging
 import os
 import time
 import textwrap
-import Tkinter as tk
+import tkinter as tk
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
 from rig_remote.constants import DEFAULT_BOOKMARK_FILENAME
