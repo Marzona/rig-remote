@@ -49,8 +49,8 @@ Feature highlights
 TODOs/desired enhancements are listed in the issues section.
 If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/main-window.png)
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/screenshots/about.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/doc/screenshots/main-window.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/doc/screenshots/about.png)
 
 
 Requirements

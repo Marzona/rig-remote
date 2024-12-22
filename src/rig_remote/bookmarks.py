@@ -3,22 +3,22 @@
 # import modules
 from rig_remote.disk_io import IO
 from rig_remote.constants import (
-                                  LEN_BM,
-                                  BM,
-                                  CBB_MODES,
-                                  GQRX_FIRST_BOOKMARK,
-                                  GQRX_BOOKMARK_FIRST_LINE,
-                                  REVERSE_MODE_MAP,
-                                  GQRX_BOOKMARK_HEADER,
-                                 )
+    LEN_BM,
+    BM,
+    CBB_MODES,
+    GQRX_FIRST_BOOKMARK,
+    GQRX_BOOKMARK_FIRST_LINE,
+    REVERSE_MODE_MAP,
+    GQRX_BOOKMARK_HEADER,
+)
 from rig_remote.exceptions import (
-                                   InvalidPathError,
-                                   FormatError,
-                                  )
+    InvalidPathError,
+    FormatError,
+)
 from rig_remote.utility import (
-                                frequency_pp_parse,
-                                frequency_pp,
-                               )
+    frequency_pp_parse,
+    frequency_pp,
+)
 import logging
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -27,16 +27,16 @@ import os
 # logging configuration
 logger = logging.getLogger(__name__)
 
+
 # classes definition
 class Bookmarks(object):
-    """Implements the bookmarks management.
-    """
+    """Implements the bookmarks management."""
 
-    def __init__(self, tree, io = IO()):
+    def __init__(self, tree, io=IO()):
         self.bookmarks = io
         self.tree = tree
 
-    def save(self, bookmark_file, delimiter = ',', silent = False):
+    def save(self, bookmark_file, delimiter=",", silent=False):
         """Bookmarks handling. Saves the bookmarks as
         a csv file.
 
@@ -53,22 +53,23 @@ class Bookmarks(object):
 
         self.bookmarks.row_list = []
         for item in self.tree.get_children():
-            values = self.tree.item(item).get('values')
+            values = self.tree.item(item).get("values")
             values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
             self.bookmarks.row_list.append(values)
         # Not where we want to do this, and will be fixed with BookmarkSet
         try:
             os.makedirs(os.path.dirname(bookmark_file))
         except IOError:
-
-            logger.info("Error while trying to create bookmark " \
-                        "path as {}".format(bookmark_file))
+            logger.info(
+                "Error while trying to create bookmark " "path as {}".format(
+                    bookmark_file
+                )
+            )
         except OSError:
             logger.info("The bookmark file already exists.")
         self.bookmarks.csv_save(bookmark_file, delimiter)
 
-
-    def load(self, bookmark_file, delimiter, silent = False):
+    def load(self, bookmark_file, delimiter, silent=False):
         """Bookmarks handling. Loads the bookmarks as
         a csv file.
 
@@ -93,8 +94,7 @@ class Bookmarks(object):
             return
         self._insert_bookmarks(self.bookmarks.row_list)
 
-
-    def _insert_bookmarks(self, bookmarks, silent = False):
+    def _insert_bookmarks(self, bookmarks, silent=False):
         """Method for inserting bookmark data already loaded.
 
         :param bookmarks: bookmarks to import in the UI
@@ -103,31 +103,30 @@ class Bookmarks(object):
 
         count = 0
         for line in bookmarks:
-
             logger.info(line)
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
-            if frequency_pp_parse(line[BM.freq]) == None :
+            if frequency_pp_parse(line[BM.freq]) == None:
                 error = True
             try:
                 line[BM.freq] = frequency_pp(line[BM.freq])
             except ValueError:
-                logger.exception("Malformed bookmark in {}"\
-                                 " skipping...".format(line))
+                logger.exception("Malformed bookmark in {}" " skipping...".format(line))
                 continue
-            if line[BM.mode] not in CBB_MODES :
+            if line[BM.mode] not in CBB_MODES:
                 error = True
-            if error == True :
+            if error == True:
                 if not silent:
-                    messagebox.showerror("Error", "Invalid value in "\
-                                           "Bookmark #%i. "\
-                                           "Skipping..." %count)
+                    messagebox.showerror(
+                        "Error",
+                        "Invalid value in " "Bookmark #%i. " "Skipping..." % count,
+                    )
             else:
-                item = self.tree.insert('', tk.END, values=line)
+                item = self.tree.insert("", tk.END, values=line)
                 self.bookmark_bg_tag(item, line[BM.lockout])
 
-    def bookmark_bg_tag(self, item, value) :
+    def bookmark_bg_tag(self, item, value):
         """Set item background color based on lock status.
 
         :param value: Locked or unlocked
@@ -138,13 +137,13 @@ class Bookmarks(object):
         """
 
         if value == "L":
-            self.tree.tag_configure('locked', background='red')
+            self.tree.tag_configure("locked", background="red")
             self.tree.item(item, tags="locked")
         else:
-            self.tree.tag_configure('unlocked', background='white')
+            self.tree.tag_configure("unlocked", background="white")
             self.tree.item(item, tags="unlocked")
 
-    def import_bookmarks(self, silent = True):
+    def import_bookmarks(self, silent=True):
         """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
 
@@ -152,11 +151,13 @@ class Bookmarks(object):
         :type root: tkinter panel
         """
 
-        filename = filedialog.askopenfilename(initialdir = "~/",
-                                                title = "Select bookmark file",
-                                                filetypes = (("csv files","*.csv"),
-                                                             ("all files","*.*")))
-        if not filename: return
+        filename = filedialog.askopenfilename(
+            initialdir="~/",
+            title="Select bookmark file",
+            filetypes=(("csv files", "*.csv"), ("all files", "*.*")),
+        )
+        if not filename:
+            return
 
         fileformat = self._detect_format(filename)
 
@@ -169,8 +170,10 @@ class Bookmarks(object):
             return
 
         if not silent:
-            logger.error("Unsupported format, supported formats are rig-remote"
-                         "rig-remote and gqrx,")
+            logger.error(
+                "Unsupported format, supported formats are rig-remote"
+                "rig-remote and gqrx,"
+            )
             messagebox.showerror("Error", "Unsupported file format.")
 
     def _detect_format(self, filename):
@@ -201,7 +204,7 @@ class Bookmarks(object):
         """
 
         try:
-            self.load(file_path, ",", silent = False)
+            self.load(file_path, ",", silent=False)
         except ValueError:
             raise FormatError
 
@@ -217,7 +220,7 @@ class Bookmarks(object):
         count = 0
         book = []
         for line in self.bookmarks.row_list:
-            count+=1
+            count += 1
             if count < GQRX_FIRST_BOOKMARK + 1:
                 continue
             try:
@@ -238,7 +241,7 @@ class Bookmarks(object):
 
         filename = self._export_panel()
         try:
-            self.save(filename, ",", silent = False)
+            self.save(filename, ",", silent=False)
         except ValueError:
             raise FormatError
 
@@ -262,8 +265,8 @@ class Bookmarks(object):
         """
 
         for item in self.tree.get_children():
-            gqrx_bookmark =[]
-            values = self.tree.item(item).get('values')
+            gqrx_bookmark = []
+            values = self.tree.item(item).get("values")
             values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
             gqrx_bookmark.append(values[0])
             gqrx_bookmark.append(values[2])
@@ -275,20 +278,21 @@ class Bookmarks(object):
         try:
             os.makedirs(os.path.dirname(filename))
         except IOError:
-            logger.info("Error while trying to create bookmark " \
-                        "path as {}".format(filename))
+            logger.info(
+                "Error while trying to create bookmark " "path as {}".format(filename)
+            )
         except OSError:
             logger.info("The bookmark filef already exists.")
         self.bookmarks.row_list.reverse()
         self.bookmarks.csv_save(filename, ";")
 
     def _export_panel(self):
-        """handles the popup for selecting the path for saving the file.
-        """
+        """handles the popup for selecting the path for saving the file."""
 
-        filename = filedialog.asksaveasfilename(initialdir = "~/",
-                                                  title = "Select bookmark file",
-                                                  initialfile = "bookmarks-export.csv",
-                                                  filetypes = (("csv","*.csv"),
-                                                               ("all files","*.*")))
+        filename = filedialog.asksaveasfilename(
+            initialdir="~/",
+            title="Select bookmark file",
+            initialfile="bookmarks-export.csv",
+            filetypes=(("csv", "*.csv"), ("all files", "*.*")),
+        )
         return filename

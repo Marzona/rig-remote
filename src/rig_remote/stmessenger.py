@@ -22,7 +22,6 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    main threads, using QueueComms class.
 """
 
-
 # import modules
 from .queue_comms import QueueComms
 import logging
@@ -31,8 +30,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class STMessenger (object):
-
+class STMessenger(object):
     def __init__(self):
         self.mqueue = QueueComms()
 
@@ -81,16 +79,16 @@ class STMessenger (object):
         self.mqueue.signal_parent(1)
 
     def check_end_of_scan(self):
-        """ Check to see if the scanning thread as notified us of its
+        """Check to see if the scanning thread as notified us of its
         termination.
 
         :returns: True if termination signal sent.
         """
 
-        return (self.mqueue.get_from_parent() == 1)
+        return self.mqueue.get_from_parent() == 1
 
     def notify_end_of_sync(self):
         self.mqueue.signal_parent(1)
 
     def check_end_of_sync(self):
-        return (self.mqueue.get_from_parent() == 1)
+        return self.mqueue.get_from_parent() == 1

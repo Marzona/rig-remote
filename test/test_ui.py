@@ -235,7 +235,7 @@ def test_process_port_entry_1():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     rr._process_port_entry("test", True)
-    rr.rigctl.port=None
+    rr.rigctl_one.port=None
     rr.root.destroy()
 
 def test_process_port_entry_2():
@@ -245,7 +245,7 @@ def test_process_port_entry_2():
     rr = RigRemote(root, ac)
     rr.apply_config(ac)
     rr._process_port_entry("8080", True)
-    rr.rigctl.port="8080"
+    rr.rigctl_one.port= "8080"
     rr.root.destroy()
 
 def test_ko_1_is_valid_hostname():

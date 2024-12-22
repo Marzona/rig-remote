@@ -19,28 +19,32 @@ Copyright (c) 2015 Simone Marzona
 
 # custom exception definition
 # non retriable custom exceptions
-class NonRetriableError (Exception):
+class NonRetriableError(Exception):
     pass
 
 
-class InvalidPathError (NonRetriableError):
+class InvalidPathError(NonRetriableError):
     pass
 
 
-class InvalidScanModeError (NonRetriableError):
+class InvalidScanModeError(NonRetriableError):
     pass
 
 
 class UnsupportedScanningConfigError(NonRetriableError):
     pass
 
+
 class UnsupportedSyncConfigError(NonRetriableError):
     pass
 
+
 # retriable custom exceptions
 
-class RetriableError (Exception):
+
+class RetriableError(Exception):
     pass
 
-class FormatError (RetriableError):
+
+class FormatError(RetriableError):
     pass

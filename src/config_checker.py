@@ -23,7 +23,7 @@ Copyright (c) 2015 Simone Marzona
 import os
 import csv
 import shutil
-import ConfigParser
+import configparser
 import platform
 import argparse
 import logging
@@ -114,7 +114,7 @@ def dump_info():
 
 def update_config(config):
     config_file = os.path.join(config, "rig-remote.conf")
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     for section in CONFIG_SECTIONS:
         config.add_section(section)
     with open(config_file, "r") as cf:

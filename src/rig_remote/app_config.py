@@ -23,31 +23,27 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-# import modules
-
 from rig_remote.disk_io import IO
 from rig_remote.constants import (
-                                  DEFAULT_CONFIG,
-                                  RIG_URI_CONFIG,
-                                  MONITOR_CONFIG,
-                                  SCANNING_CONFIG,
-                                  MAIN_CONFIG,
-                                  CONFIG_SECTIONS,
-                                  UPGRADE_MESSAGE,
-                                  )
+    DEFAULT_CONFIG,
+    RIG_URI_CONFIG,
+    MONITOR_CONFIG,
+    SCANNING_CONFIG,
+    MAIN_CONFIG,
+    CONFIG_SECTIONS,
+    UPGRADE_MESSAGE,
+)
 import logging
 import os
 import sys
-import configparser
-from rig_remote.exceptions import (
-                                   NonRetriableError,
-                                  )
+from rig_remote.exceptions import NonRetriableError
 
-# logging configuration
+import configparser
+
+
 logger = logging.getLogger(__name__)
 
 
-# class definition
 class AppConfig(object):
     """This class reads the status of the UI and and parses the data
     so that it's suitable to be saved as a csv, and the reverse
@@ -88,16 +84,15 @@ class AppConfig(object):
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
 
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser()
             try:
                 config.read(self.config_file)
-            except ConfigParser.MissingSectionHeaderError:
-                    logger.error("Missing Sections in the config file.")
-                    logger.error(UPGRADE_MESSAGE)
-                    sys.exit(1)
-            except ConfigParser.Error:
-                    logger.exception("Error while loading"
-                                     "{}".format(self.config_file))
+            except configparser.MissingSectionHeaderError:
+                logger.error("Missing Sections in the config file.")
+                logger.error(UPGRADE_MESSAGE)
+                sys.exit(1)
+            except configparser.Error:
+                logger.exception("Error while loading" "{}".format(self.config_file))
 
             if config.sections == []:
                 logger.info("Config file needs to be upgraded.")
@@ -123,11 +118,14 @@ class AppConfig(object):
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
-            logger.info("Error while trying to create config "
-                        "path as {}".format(self.config_file))
+            logger.info(
+                "Error while trying to create config " "path as {}".format(
+                    self.config_file
+                )
+            )
         except OSError:
             logger.info("The config directory already exists.")
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         for section in CONFIG_SECTIONS:
             config.add_section(section)
 

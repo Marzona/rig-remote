@@ -21,6 +21,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    provides simple access methods for them.
 
 """
+
 # import modules
 from queue import Queue, Empty, Full
 import logging
@@ -29,8 +30,8 @@ from rig_remote.constants import QUEUE_MAX_SIZE
 # logging configuration
 logger = logging.getLogger(__name__)
 
-class QueueComms (object):
 
+class QueueComms(object):
     def __init__(self):
         """Queue instantiation. The queues are used for handling the
         communication between threads.
@@ -42,16 +43,12 @@ class QueueComms (object):
         self.child_queue = Queue(maxsize=QUEUE_MAX_SIZE)
 
     def queued_for_child(self):
-        """wrapper on self._queue_for()
-
-        """
+        """wrapper on self._queue_for()"""
 
         return self._queued_for(self.child_queue)
 
     def queued_for_parent(self):
-        """wrapper on self._queued_for
-
-        """
+        """wrapper on self._queued_for"""
 
         return self._queued_for(self.parent_queue)
 
@@ -63,11 +60,10 @@ class QueueComms (object):
         :type queue: Queue() object
         """
 
-        return (not queue_name.empty())
-
+        return not queue_name.empty()
 
     def _get_from_queue(self, queue):
-        """ retrieve an item from the queue. Wrapped by get_from_child and
+        """retrieve an item from the queue. Wrapped by get_from_child and
         get_from_parent.
 
         :returns: item or None
@@ -80,25 +76,18 @@ class QueueComms (object):
         except Empty:
             logger.info("Queue empty while getting from {}".format(queue))
 
-
     def get_from_parent(self):
-        """wrapper on _get_from_queue
-
-        """
+        """wrapper on _get_from_queue"""
 
         return self._get_from_queue(self.parent_queue)
 
-
     def get_from_child(self):
-        """wrapper on _get_from_queue
-
-        """
+        """wrapper on _get_from_queue"""
 
         return self._get_from_queue(self.child_queue)
 
-
     def _send_to_queue(self, queue, item):
-        """ place an item on the queue. Wrapped by send_to_child and
+        """place an item on the queue. Wrapped by send_to_child and
         send_to_parent.
 
         :param queue: queue to put item on.
@@ -108,24 +97,21 @@ class QueueComms (object):
         try:
             queue.put(item, False)
         except Full:
-            logger.warning("Queue {} is full.".format(queue) )
+            logger.warning("Queue {} is full.".format(queue))
             raise
-
 
     def send_to_parent(self, item):
         """Wrapper for _send_to_queue"""
 
         self._send_to_queue(self.parent_queue, item)
 
-
     def send_to_child(self, item):
         """Wrapper for _send_to_queue"""
 
         self._send_to_queue(self.child_queue, item)
 
-
     def _signal(self, queue, signal_number):
-        """ Place a signal number on the queue
+        """Place a signal number on the queue
 
         :param signal_number: value of the signal
         :type signal_number: int
@@ -134,29 +120,20 @@ class QueueComms (object):
         :returns: None
         """
 
-
-        if (not isinstance(signal_number, int) or
-            not isinstance (queue, Queue)):
-
+        if not isinstance(signal_number, int) or not isinstance(queue, Queue):
             logger.error("Value error while inserting a signal into a queue.")
             logger.error("Value to be inserted isn't int.")
-            logger.error("Value type: {}".format (type(signal_number)))
+            logger.error("Value type: {}".format(type(signal_number)))
             raise ValueError()
 
         queue.put(signal_number, False)
 
-
     def signal_parent(self, signal_number):
-        """wrapped by _signal()
-
-        """
+        """wrapped by _signal()"""
 
         self._signal(self.parent_queue, signal_number)
 
-
     def signal_child(self, signal_number):
-        """wrappedby _signal()
-
-        """
+        """wrappedby _signal()"""
 
         self._signal(self.parent_queue, signal_number)

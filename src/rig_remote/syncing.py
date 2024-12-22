@@ -16,25 +16,18 @@ Copyright (c) 2015 Simone Marzona
 
 # import modules
 
-import datetime
-from rig_remote.rigctl import RigCtl
-from rig_remote.disk_io import LogFile
-from rig_remote.constants import (MIN_INTERVAL,
-                                  BM,
-                                  REVERSE_MODE_MAP,
-                                  SYNC_INTERVAL,
-                                  )
+from rig_remote.constants import (
+    SYNC_INTERVAL,
+)
 from rig_remote.exceptions import UnsupportedSyncConfigError
-from rig_remote.stmessenger import STMessenger
-import socket
 import logging
 import time
-import re
 
 # logging configuration
 logger = logging.getLogger(__name__)
 
 # class definition
+
 
 class SyncTask:
     """Representation of a scan task, with helper method for checking
@@ -46,12 +39,17 @@ class SyncTask:
         self.error = None
         self.syncq = syncq
 
-        if not all([src_rig_controller.target["hostname"],
-                    src_rig_controller.target["hostname"],
-                    dst_rig_controller.target["hostname"],
-                    dst_rig_controller.target["hostname"]]):
-            logger.info("Source and destination hostname/port needs "
-                        "to be filled in.")
+        if not all(
+            [
+                src_rig_controller._target["hostname"],
+                src_rig_controller._target["hostname"],
+                dst_rig_controller._target["hostname"],
+                dst_rig_controller._target["hostname"],
+            ]
+        ):
+            logger.info(
+                "Source and destination hostname/port needs " "to be filled in."
+            )
             raise UnsupportedSyncConfigError
         self.src_rig = src_rig_controller
         self.dst_rig = dst_rig_controller

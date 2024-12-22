@@ -38,9 +38,8 @@ logger = logging.getLogger(__name__)
 
 # class definition
 class IO(object):
-    """IO wrapper class
+    """IO wrapper class"""
 
-    """
     def __init__(self):
         self.row_list = []
 
@@ -70,20 +69,23 @@ class IO(object):
 
         self._path_check(csv_file)
         try:
-            with open(csv_file, 'r') as data_file:
+            with open(csv_file, "r") as data_file:
                 self.row_list = []
                 reader = csv.reader(data_file, delimiter=delimiter)
                 for line in reader:
                     self.row_list.append(line)
 
         except csv.Error:
-            logger.exception("The file  provided({})"
-                             " is not a file with values "
-                             "separated by {}.".format(csv_file, delimiter))
+            logger.exception(
+                "The file  provided({})"
+                " is not a file with values "
+                "separated by {}.".format(csv_file, delimiter)
+            )
 
         except (IOError, OSError):
-            logger.exception("Error while trying to read the file: "
-                             "{}".format(csv_file))
+            logger.exception(
+                "Error while trying to read the file: " "{}".format(csv_file)
+            )
 
     def csv_save(self, csv_file, delimiter):
         """Save current frequencies to disk.
@@ -94,19 +96,16 @@ class IO(object):
         """
 
         try:
-            with open(csv_file, 'w') as data_file:
+            with open(csv_file, "w") as data_file:
                 writer = csv.writer(data_file, delimiter=delimiter)
                 while self.row_list:
                     writer.writerow(self.row_list.pop())
         except (IOError, OSError):
-            logger.error("Error while trying to write the file: "
-                         "{}".format(csv_file))
+            logger.error("Error while trying to write the file: " "{}".format(csv_file))
 
 
 class LogFile(object):
-    """Handles the tasks of logging to a file.
-
-    """
+    """Handles the tasks of logging to a file."""
 
     def __init__(self):
         """Defines the log file name and
@@ -127,15 +126,19 @@ class LogFile(object):
         try:
             os.makedirs(os.path.dirname(self.log_filename))
         except IOError:
-            logger.info("Error while trying to create log file "
-                        "path as {}".format(self.log_filename))
+            logger.info(
+                "Error while trying to create log file " "path as {}".format(
+                    self.log_filename
+                )
+            )
         except OSError:
             logger.info("The log directory already exists.")
         try:
-            self.log_file = open(self.log_filename, 'a')
+            self.log_file = open(self.log_filename, "a")
         except (IOError, OSError):
-            logger.error("Error while trying to open log file: "
-                         "{}".format(self.log_filename))
+            logger.error(
+                "Error while trying to open log file: " "{}".format(self.log_filename)
+            )
 
     def write(self, record_type, record, signal):
         """Writes a message to the log file.
@@ -150,32 +153,54 @@ class LogFile(object):
         """
 
         if record_type not in ["B", "F"]:
-            logger.error("Record type not supported, must be 'B' or 'F'"
-                         "got {}".format(record_type))
+            logger.error(
+                "Record type not supported, must be 'B' or 'F'" "got {}".format(
+                    record_type
+                )
+            )
             raise TypeError
 
-        if record_type == 'B':
-            lstr = 'B ' + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                record[BM.freq].replace(',', '') + ' ' + record[BM.mode] + ' ' + str(signal) + "\n"
+        if record_type == "B":
+            lstr = (
+                "B "
+                + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
+                + " "
+                + record[BM.freq].replace(",", "")
+                + " "
+                + record[BM.mode]
+                + " "
+                + str(signal)
+                + "\n"
+            )
         else:
-            lstr = 'F ' + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S")) + ' ' + \
-                str(record['freq']) + ' ' + record['mode'] + ' ' + str(signal) + "\n"
+            lstr = (
+                "F "
+                + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
+                + " "
+                + str(record["freq"])
+                + " "
+                + record["mode"]
+                + " "
+                + str(signal)
+                + "\n"
+            )
         try:
             self.log_file.write(lstr)
         except AttributeError:
             logger.exception("No log file provided, but log feature selected.")
             raise
         except (IOError, OSError):
-            logger.exception("Error while trying to write log file: "
-                             "{}".format(self.log_filename))
+            logger.exception(
+                "Error while trying to write log file: " "{}".format(self.log_filename)
+            )
         except (TypeError, IndexError):
-            logger.exception("At least one of the parameter isn't of the "
-                             "expected type:"
-                             "record_type {},"
-                             "record {},"
-                             "signal {}".format(type(record_type),
-                                                type(record),
-                                                type(signal)))
+            logger.exception(
+                "At least one of the parameter isn't of the "
+                "expected type:"
+                "record_type {},"
+                "record {},"
+                "signal {}".format(type(record_type), type(record), type(signal))
+            )
             raise
 
     def close(self):
@@ -188,5 +213,8 @@ class LogFile(object):
             try:
                 self.log_file.close()
             except (IOError, OSError):
-                logger.error("Error while trying to close log file: "
-                             "{}".format(self.log_filename))
+                logger.error(
+                    "Error while trying to close log file: " "{}".format(
+                        self.log_filename
+                    )
+                )

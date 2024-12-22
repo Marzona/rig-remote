@@ -58,22 +58,22 @@ TAS - Tim Sweeney - mainetim@gmail.com
 # import modules
 
 import datetime
-#from rig_remote.rigctl import RigCtl
+
+
 from rig_remote.disk_io import LogFile
 from rig_remote.constants import SUPPORTED_SCANNING_MODES
 from rig_remote.constants import TIME_WAIT_FOR_TUNE
 from rig_remote.constants import SIGNAL_CHECKS
 from rig_remote.constants import NO_SIGNAL_DELAY
 from rig_remote.constants import MIN_INTERVAL
-#from rig_remote.constants import MONITOR_MODE_DELAY
+
+# from rig_remote.constants import MONITOR_MODE_DELAY
 from rig_remote.constants import BM
 from rig_remote.exceptions import UnsupportedScanningConfigError, InvalidScanModeError
-from rig_remote.stmessenger import STMessenger
-from rig_remote.utility import(
-                             khertz_to_hertz,
-                             dbfs_to_sgn,
-                             build_rig_uri,
-                            )
+from rig_remote.utility import (
+    khertz_to_hertz,
+    dbfs_to_sgn,
+)
 import socket
 import logging
 import time
@@ -90,14 +90,9 @@ class ScanningTask(object):
 
     """
 
-    def __init__(self,
-                 scanq,
-                 mode,
-                 bookmarks,
-                 nbl,
-                 pass_params,
-                 rig_controller,
-                 log_filename):
+    def __init__(
+        self, scanq, mode, bookmarks, nbl, pass_params, rig_controller, log_filename
+    ):
         """We do some checks to see if we are good to go with the scan.
 
         :param scanq: queue used send/receive events from the UI.
@@ -121,8 +116,7 @@ class ScanningTask(object):
         self.log_filename = log_filename
 
         if mode.lower() not in SUPPORTED_SCANNING_MODES:
-            logger.error("Unsupported scanning mode "
-                         "provided, exiting.")
+            logger.error("Unsupported scanning mode " "provided, exiting.")
             logger.error("Provided mode:{}".format(mode))
             logger.error("Supported modes:{}".format(SUPPORTED_SCANNING_MODES))
             raise UnsupportedScanningConfigError
@@ -132,19 +126,29 @@ class ScanningTask(object):
         self.rig = rig_controller
 
         try:
-            self.params["range_min"] = khertz_to_hertz(int(filter(str.isdigit,
-                                                       self.params["txt_range_min"].get())))
-            self.params["range_max"] = khertz_to_hertz(int(filter(str.isdigit,
-                                                       self.params["txt_range_max"].get())))
-            self.params["interval"] = int(filter(str.isdigit,
-                                                 self.params["txt_interval"].get()))
-            self.params["delay"] = int(filter(str.isdigit,
-                                              self.params["txt_delay"].get()))
-            self.params["passes"] = int(filter(str.isdigit,
-                                               self.params["txt_passes"].get()))
-            self.params["sgn_level"] = int(re.sub("[^-0-9]",
-                                                  "",
-                                                  self.params["txt_sgn_level"].get()))
+            self.params["txt_range_min"] = khertz_to_hertz(
+                int("".join(filter(str.isdigit, self.params["txt_range_min"].get())))
+                #int(filter(str.isdigit, self.params["txt_range_min"].get()))
+            )
+            self.params["txt_range_max"] = khertz_to_hertz(
+                # int(filter(str.isdigit, self.params["txt_range_max"].get()))
+                int("".join(filter(str.isdigit, self.params["txt_range_max"].get())))
+            )
+            self.params["txt_interval"] = int(
+                # filter(str.isdigit, self.params["txt_interval"].get())
+                int("".join(filter(str.isdigit, self.params["txt_interval"].get())))
+            )
+            self.params["txt_delay"] = int(
+                # filter(str.isdigit, self.params["txt_delay"].get())
+                int("".join(filter(str.isdigit, self.params["txt_delay"].get())))
+            )
+            self.params["txt_passes"] = int(
+                # filter(str.isdigit, self.params["txt_passes"].get())
+                int("".join(filter(str.isdigit, self.params["txt_passes"].get())))
+            )
+            self.params["stxt_gn_level"] = int(
+                re.sub("[^-0-9]", "", self.params["txt_sgn_level"].get())
+            )
             self.params["log"] = self.params["ckb_log"].is_checked()
             self.params["wait"] = self.params["ckb_wait"].is_checked()
             self.params["record"] = self.params["ckb_record"].is_checked()
@@ -170,10 +174,10 @@ class ScanningTask(object):
         we overwrite and log an error.
         """
 
-        if khertz_to_hertz(self.params["interval"]) < MIN_INTERVAL:
-            logger.error("Low interval provided:{}".format(self.params["interval"]))
+        if khertz_to_hertz(self.params["txt_interval"]) < MIN_INTERVAL:
+            logger.error("Low interval provided:{}".format(self.params["txt_interval"]))
             logger.error("Overriding with {}".format(MIN_INTERVAL))
-            self.params["interval"] = MIN_INTERVAL
+            self.params["txt_interval"] = MIN_INTERVAL
 
 
 class Scanning(object):
@@ -223,12 +227,13 @@ class Scanning(object):
         :returns: updates the scanning task object with the new activity found
         """
 
-        if (not task or
-            not task.mode or
-            task.mode.lower() not in SUPPORTED_SCANNING_MODES):
-                logger.exception("Invalid scan mode provided:"
-                                 "{}".format(task.mode))
-                raise InvalidScanModeError
+        if (
+            not task
+            or not task.mode
+            or task.mode.lower() not in SUPPORTED_SCANNING_MODES
+        ):
+            logger.exception("Invalid scan mode provided:" "{}".format(task.mode))
+            raise InvalidScanModeError
 
         log = LogFile()
         try:
@@ -276,9 +281,9 @@ class Scanning(object):
         logger.info("Recording stopped.")
 
     def _get_task_items(self, task):
-        freq = task.params["range_min"]
-        pass_count = task.params["passes"]
-        interval = khertz_to_hertz(task.params["interval"])
+        freq = task.params["txt_range_min"]
+        pass_count = task.params["txt_passes"]
+        interval = khertz_to_hertz(task.params["txt_interval"])
         return freq, pass_count, interval
 
     def _frequency(self, task, log):
@@ -296,14 +301,14 @@ class Scanning(object):
 
         level = []
 
-        pass_count = task.params["passes"]
-        interval = khertz_to_hertz(task.params["interval"])
+        pass_count = task.params["txt_passes"]
+        interval = khertz_to_hertz(task.params["txt_interval"])
         while self.scan_active:
-            freq = task.params["range_min"]
+            freq = task.params["txt_range_min"]
             # If the range is negative, silently bail...
-            if freq > task.params["range_max"]:
+            if freq > task.params["txt_range_max"]:
                 self.scan_active = False
-            while freq < task.params["range_max"]:
+            while freq < task.params["txt_range_max"]:
                 if self._process_queue(task):
                     freq, pass_count, interval = self._get_task_items(task)
                 try:
@@ -311,10 +316,7 @@ class Scanning(object):
                 except (socket.error, socket.timeout):
                     break
 
-                if self._signal_check(task.params["sgn_level"],
-                                      task.rig,
-                                      level):
-
+                if self._signal_check(task.params["txt_sgn_level"], task.rig, level):
                     if task.params["record"]:
                         self._start_recording(task)
 
@@ -323,7 +325,7 @@ class Scanning(object):
 
                     if task.params["log"]:
                         nbm = self._create_new_bookmark(task, freq)
-                        log.write('F', nbm, level[0])
+                        log.write("F", nbm, level[0])
 
                     if self.scan_active:
                         self._queue_sleep(task)
@@ -360,7 +362,7 @@ class Scanning(object):
     def _pass_count_update(self, pass_count, task):
         if pass_count > 0:
             pass_count -= 1
-            if pass_count == 0 and task.params["passes"] > 0:
+            if pass_count == 0 and task.params["txt_passes"] > 0:
                 self.scan_active = False
         return pass_count, task
 
@@ -376,12 +378,11 @@ class Scanning(object):
         """
 
         del detected_level[:]
-        sgn = dbfs_to_sgn(sgn_level)
+        sgn = dbfs_to_sgn(sgn_level.get())
         signal_found = 0
 
         for i in range(0, SIGNAL_CHECKS):
-
-            logger.info("Checks left:{}".format(SIGNAL_CHECKS -i))
+            logger.info("Checks left:{}".format(SIGNAL_CHECKS - i))
             level = int(rig.get_level().replace(".", ""))
             logger.info("sgn_level:{}".format(level))
             logger.info("dbfs_sgn:{}".format(sgn))
@@ -389,8 +390,7 @@ class Scanning(object):
                 signal_found += 1
             time.sleep(NO_SIGNAL_DELAY)
         if signal_found > 1:
-            logger.info("Activity found, signal level: "\
-                        "{}".format(level))
+            logger.info("Activity found, signal level: " "{}".format(level))
             detected_level.append(level)
             return True
         return False
@@ -407,37 +407,39 @@ class Scanning(object):
         """
 
         level = []
-        old_pass_count = pass_count = task.params['passes']
+        old_pass_count = pass_count = task.params["txt_passes"]
         while self.scan_active:
             for item in task.bookmarks.get_children():
                 self._process_queue(task)
-                if old_pass_count != task.params['passes']:
-                    old_pass_count = pass_count = task.params['passes']
-                bookmark = task.bookmarks.item(item).get('values')
-                if (bookmark[BM.lockout]) == 'L':
+                if old_pass_count != task.params["txt_passes"]:
+                    old_pass_count = pass_count = task.params["txt_passes"]
+                bookmark = task.bookmarks.item(item).get("values")
+                if (bookmark[BM.lockout]) == "L":
                     continue
-                freq = bookmark[BM.freq].replace(',', '')
+                freq = bookmark[BM.freq].replace(",", "")
                 try:
                     self._frequency_tune(task, freq)
                 except (socket.error, socket.timeout):
                     break
 
-                if self._signal_check(task.params['sgn_level'],
-                                      task.rig,
-                                      level):
+                if self._signal_check(task.params["txt_sgn_level"], task.rig, level):
                     logger.info(
-                        "This freq is bookmarked as: {}".format(bookmark[BM.freq]))
+                        "This freq is bookmarked as: {}".format(bookmark[BM.freq])
+                    )
 
-                    if task.params['record']:
+                    if task.params["record"]:
                         self._start_recording(task)
 
-                    if task.params['log']:
-                        log.write('B', bookmark, level[0])
+                    if task.params["log"]:
+                        log.write("B", bookmark, level[0])
 
-                    while task.params['wait']:
-                        if self._signal_check(task.params['sgn_level'],
-                                              task.rig,
-                                              level) and self.scan_active:
+                    while task.params["wait"]:
+                        if (
+                            self._signal_check(
+                                task.params["txt_sgn_level"], task.rig, level
+                            )
+                            and self.scan_active
+                        ):
                             self._process_queue(task)
                         else:
                             break
@@ -445,7 +447,7 @@ class Scanning(object):
                     if self.scan_active:
                         self._queue_sleep(task)
 
-                    if task.params['record']:
+                    if task.params["record"]:
                         self._stop_recording(task)
 
                 if not self.scan_active:
@@ -474,7 +476,7 @@ class Scanning(object):
             try:
                 key = str(name.split("_", 1)[1])
                 if key in task.params:
-                    if key in ('range_min', 'range_max'):
+                    if key in ("range_min", "range_max"):
                         task.params[key] = khertz_to_hertz(value)
                     else:
                         task.params[key] = value
