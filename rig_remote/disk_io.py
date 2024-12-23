@@ -32,18 +32,17 @@ from rig_remote.exceptions import InvalidPathError
 from rig_remote.constants import BM
 import datetime
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 
-# class definition
-class IO(object):
+class IO:
     """IO wrapper class"""
 
     def __init__(self):
         self.row_list = []
 
-    def _path_check(self, csv_file):
+    @staticmethod
+    def _path_check(csv_file):
         """Helper function that checks if the path is valid.
 
         :param csv_file: path
@@ -104,7 +103,7 @@ class IO(object):
             logger.error("Error while trying to write the file: " "{}".format(csv_file))
 
 
-class LogFile(object):
+class LogFile:
     """Handles the tasks of logging to a file."""
 
     def __init__(self):

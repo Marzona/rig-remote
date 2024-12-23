@@ -22,16 +22,15 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-# import modules
 from queue import Queue, Empty, Full
 import logging
-from rig_remote.constants import QUEUE_MAX_SIZE
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 
-class QueueComms(object):
+class QueueComms:
+    _QUEUE_MAX_SIZE = 10
+
     def __init__(self):
         """Queue instantiation. The queues are used for handling the
         communication between threads.
@@ -39,8 +38,8 @@ class QueueComms(object):
         if we reach it we are in big trouble..
         """
 
-        self.parent_queue = Queue(maxsize=QUEUE_MAX_SIZE)
-        self.child_queue = Queue(maxsize=QUEUE_MAX_SIZE)
+        self.parent_queue = Queue(maxsize=self._QUEUE_MAX_SIZE)
+        self.child_queue = Queue(maxsize=self._QUEUE_MAX_SIZE)
 
     def queued_for_child(self):
         """wrapper on self._queue_for()"""

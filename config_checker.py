@@ -19,7 +19,6 @@ Copyright (c) 2015 Simone Marzona
 """
 
 
-# import modules
 import os
 import csv
 import shutil
@@ -28,9 +27,7 @@ import platform
 import argparse
 import logging
 import pprint
-from os.path import expanduser
 from rig_remote.constants import (
-                                  DEFAULT_CONFIG,
                                   RIG_URI_CONFIG,
                                   MONITOR_CONFIG,
                                   SCANNING_CONFIG,
@@ -39,7 +36,6 @@ from rig_remote.constants import (
                                   )
 # helper functions
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 def input_arguments():

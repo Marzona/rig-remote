@@ -215,7 +215,7 @@ def this_file_exists(filename):
     :returns: filename if open was successful, None otherwise
     """
     try:
-        with open(filename) as f:
+        with open(filename) as _:
             return filename
     except IOError:
         return None

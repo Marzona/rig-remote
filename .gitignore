@@ -83,7 +83,7 @@ celerybeat-schedule
 .venv/
 venv/
 ENV/
-
+rig-remote-venv
 # Spyder project settings
 .spyderproject
 

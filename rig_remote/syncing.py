@@ -14,19 +14,11 @@ License: MIT License
 Copyright (c) 2015 Simone Marzona
 """
 
-# import modules
-
-from rig_remote.constants import (
-    SYNC_INTERVAL,
-)
 from rig_remote.exceptions import UnsupportedSyncConfigError
 import logging
 import time
 
-# logging configuration
 logger = logging.getLogger(__name__)
-
-# class definition
 
 
 class SyncTask:
@@ -61,6 +53,8 @@ class Syncing:
 
     """
 
+    _SYNC_INTERVAL = 0.2
+
     def __init__(self):
         self.sync_active = True
 
@@ -84,7 +78,7 @@ class Syncing:
         while self.sync_active:
             task.dst_rig.set_frequency(task.src_rig.get_frequency())
             task.dst_rig.set_mode(str(task.src_rig.get_mode()))
-            time.sleep(SYNC_INTERVAL)
+            time.sleep(self._SYNC_INTERVAL)
         task.syncq.notify_end_of_scan()
         self.terminate()
         return task

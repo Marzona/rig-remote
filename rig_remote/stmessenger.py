@@ -22,15 +22,13 @@ TAS - Tim Sweeney - mainetim@gmail.com
                    main threads, using QueueComms class.
 """
 
-# import modules
 from .queue_comms import QueueComms
 import logging
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 
-class STMessenger(object):
+class STMessenger:
     def __init__(self):
         self.mqueue = QueueComms()
 

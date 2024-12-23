@@ -23,7 +23,11 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-from rig_remote.disk_io import IO
+import configparser
+import logging
+import os
+import sys
+
 from rig_remote.constants import (
     DEFAULT_CONFIG,
     RIG_URI_CONFIG,
@@ -31,24 +35,27 @@ from rig_remote.constants import (
     SCANNING_CONFIG,
     MAIN_CONFIG,
     CONFIG_SECTIONS,
-    UPGRADE_MESSAGE,
 )
-import logging
-import os
-import sys
+from rig_remote.disk_io import IO
 from rig_remote.exceptions import NonRetriableError
-
-import configparser
-
 
 logger = logging.getLogger(__name__)
 
 
-class AppConfig(object):
+class AppConfig:
     """This class reads the status of the UI and and parses the data
     so that it's suitable to be saved as a csv, and the reverse
 
     """
+
+    _UPGRADE_MESSAGE = (
+        "This config file may deserve an "
+        "upgrade, please execute the "
+        "following comand: "
+        "python ./config_checker.py -uc ~/.rig-remote/ or "
+        "Check https://github.com/Marzona/rig-remote/wiki/User-Manual#config_checker "
+        "for more info."
+    )
 
     def __init__(self, config_file):
         """Default config, they will be overwritten when a conf is loaded
@@ -83,18 +90,17 @@ class AppConfig(object):
 
         if os.path.isfile(self.config_file):
             logger.info("Using config file:{}".format(self.config_file))
-
             config = configparser.RawConfigParser()
             try:
                 config.read(self.config_file)
             except configparser.MissingSectionHeaderError:
                 logger.error("Missing Sections in the config file.")
-                logger.error(UPGRADE_MESSAGE)
+                logger.error(self._UPGRADE_MESSAGE)
                 sys.exit(1)
             except configparser.Error:
                 logger.exception("Error while loading" "{}".format(self.config_file))
 
-            if config.sections == []:
+            if not config.sections:
                 logger.info("Config file needs to be upgraded.")
                 logger.info("Please execute the config-updater.")
                 raise NonRetriableError
@@ -102,6 +108,7 @@ class AppConfig(object):
                 for item in config.items(section):
                     self.config[item[0]] = item[1]
         else:
+            logger.info("Using default configuration...")
             self.config = DEFAULT_CONFIG
 
     def write_conf(self):

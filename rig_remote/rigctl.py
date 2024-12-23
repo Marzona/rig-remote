@@ -21,19 +21,139 @@ import logging
 import socket
 from logging import Logger
 
-from rig_remote.constants import (
-    ALLOWED_VFO_COMMANDS,
-    ALLOWED_SPLIT_MODES,
-    ALLOWED_PARM_COMMANDS,
-    ALLOWED_FUNC_COMMANDS,
-    RESET_CMD_DICT,
-    ALLOWED_RIGCTL_MODES,
-)
-
 logger: Logger = logging.getLogger(__name__)
 
 
 class RigCtl:
+    _ALLOWED_RIGCTL_MODES: tuple[
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+    ] = (
+        "USB",
+        "LSB",
+        "CW",
+        "CWR",
+        "RTTY",
+        "RTTYR",
+        "AM",
+        "FM",
+        "WFM",
+        "AMS",
+        "PKTLSB",
+        "PKTU",
+        "SB",
+        "PKTFM",
+        "ECSSUSB",
+        "ECSSLSB",
+        "WFM_ST",
+        "FAX",
+        "SAM",
+        "SAL",
+        "SAH",
+        "DSB",
+    )
+    _RESET_CMD_DICT = {
+        "NONE": 0,
+        "SOFTWARE_RESET": 1,
+        "VFO_RESET": 2,
+        "MEMORY_CLEAR_RESET": 4,
+        "MASTER_RESET": 8,
+    }
+    _ALLOWED_FUNC_COMMANDS = [
+        "FAGC",
+        "NB",
+        "COMP",
+        "VOX",
+        "TONE",
+        "TSQL",
+        "SBKIN",
+        "FBKIN",
+        "ANF",
+        "NR",
+        "AIP",
+        "APF",
+        "MON",
+        "MN",
+        "RF",
+        "ARO",
+        "LOCK",
+        "MUTE",
+        "VSC",
+        "REV",
+        "SQL",
+        "ABM",
+        "BC",
+        "MBC",
+        "AFC",
+        "SATMODE",
+        "SCOPE",
+        "RESUME",
+        "TBURST",
+        "TUNER",
+    ]
+    _ALLOWED_PARM_COMMANDS = [
+        "ANN",
+        "APO",
+        "BACKLIGHT",
+        "BEEP",
+        "TIME",
+        "BAT",
+        "KEYLIGHT",
+    ]
+    _ALLOWED_SPLIT_MODES = [
+        "AM",
+        "FM",
+        "CW",
+        "CWR",
+        "USB",
+        "LSB",
+        "RTTY",
+        "RTTYR",
+        "WFM",
+        "AMS",
+        "PKTLSB",
+        "PKTUSB",
+        "PKTFM",
+        "ECSSUSB",
+        "ECSSLSB",
+        "FAX",
+        "SAM",
+        "SAL",
+        "SAH",
+        "DSB",
+    ]
+    _ALLOWED_VFO_COMMANDS = [
+        "VFOA",
+        "VFOB" "VFOC",
+        "currVFO",
+        "VFO",
+        "MEM",
+        "Main",
+        "Sub",
+        "TX",
+        "RX",
+    ]
+
     def __init__(self, target: dict):
         """Basic rigctl client implementation.
 
@@ -119,10 +239,10 @@ class RigCtl:
         the mode.
 
         """
-        if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
+        if not isinstance(mode, str) or mode not in self._ALLOWED_RIGCTL_MODES:
             logger.error(
-                "Frequency mode must be a string in %s, got %s",
-                ALLOWED_RIGCTL_MODES,
+                "Frequency modulation must be a string in %s, got %s",
+                self._ALLOWED_RIGCTL_MODES,
                 mode,
             )
             raise ValueError
@@ -137,14 +257,11 @@ class RigCtl:
         # older versions of gqrx replies with only the mode (u'WFM_ST' as an example)
         # newer versions replies with something like u'WFM_ST\n160000'
         output_message = self._send_message(request="m")
+        output = output_message
         if "\n" in output_message:
             output = output_message.split("\n")[0]
-        else:
-            output = self._send_message("m")
-        if isinstance(output, str):
-            return output
-        logger.error("Expected unicode string while getting radio mode, got %s", output)
-        raise ValueError
+
+        return output
 
     def start_recording(self) -> str:
         """Wrapper around _request. It configures the command for starting
@@ -184,10 +301,10 @@ class RigCtl:
 
         """
 
-        if vfo not in ALLOWED_VFO_COMMANDS:
+        if vfo not in self._ALLOWED_VFO_COMMANDS:
             logger.error(
                 "VFO value must be a string included in %s, got %s",
-                ALLOWED_VFO_COMMANDS,
+                self._ALLOWED_VFO_COMMANDS,
                 vfo,
             )
             raise ValueError
@@ -290,10 +407,10 @@ class RigCtl:
 
         """
 
-        if split_mode not in ALLOWED_SPLIT_MODES:
+        if split_mode not in self._ALLOWED_SPLIT_MODES:
             logger.error(
                 "split_mode value must be a string in %s, got %s",
-                ALLOWED_SPLIT_MODES,
+                self._ALLOWED_SPLIT_MODES,
                 type(split_mode),
             )
             raise ValueError
@@ -322,10 +439,10 @@ class RigCtl:
 
         """
 
-        if func not in ALLOWED_FUNC_COMMANDS:
+        if func not in self._ALLOWED_FUNC_COMMANDS:
             logger.error(
                 "func value must be a string inclueded in %s, got %s",
-                ALLOWED_FUNC_COMMANDS,
+                self._ALLOWED_FUNC_COMMANDS,
                 func,
             )
             raise ValueError
@@ -350,10 +467,10 @@ class RigCtl:
 
         """
 
-        if parm not in ALLOWED_PARM_COMMANDS:
+        if parm not in self._ALLOWED_PARM_COMMANDS:
             logger.error(
                 "parm value must be a string included in %s, got %s ",
-                ALLOWED_PARM_COMMANDS,
+                self._ALLOWED_PARM_COMMANDS,
                 parm,
             )
             raise ValueError
@@ -404,8 +521,8 @@ class RigCtl:
 
         """
 
-        if reset_signal not in RESET_CMD_DICT:
-            logger.error("Reset_signal must be one of %s", RESET_CMD_DICT.keys())
+        if reset_signal not in self._RESET_CMD_DICT:
+            logger.error("Reset_signal must be one of %s", self._RESET_CMD_DICT.keys())
             raise ValueError
 
         return self._send_message("* {reset_signal}")

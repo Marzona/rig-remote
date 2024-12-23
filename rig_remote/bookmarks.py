@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-# import modules
-from rig_remote.disk_io import IO
 from rig_remote.constants import (
     LEN_BM,
     BM,
     CBB_MODES,
-    GQRX_FIRST_BOOKMARK,
-    GQRX_BOOKMARK_FIRST_LINE,
-    REVERSE_MODE_MAP,
-    GQRX_BOOKMARK_HEADER,
 )
 from rig_remote.exceptions import (
     InvalidPathError,
@@ -23,22 +17,72 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import os
+from rig_remote.disk_io import IO
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 
 # classes definition
-class Bookmarks(object):
+class Bookmarks:
     """Implements the bookmarks management."""
 
-    def __init__(self, tree, io=IO()):
+    _MODE_MAP = {
+        "AM": "AM",
+        "FM": "NarrowFM",
+        "WFM_ST": "WFM(stereo)",
+        "WFM": "WFM(mono)",
+        "LSB": "LSB",
+        "USB": "USB",
+        "CW": "CW",
+        "CWL": "CW-L",
+        "CWU": "CW-U",
+    }
+
+    _REVERSE_MODE_MAP = {
+        "AM": "AM",
+        "Narrow FM": "FM",
+        "WFM (stereo)": "WFM_ST",
+        "WFM (mono)": "WFM",
+        "LSB": "LSB",
+        "USB": "USB",
+        "CW": "CW",
+        "CW-L": "CWL",
+        "CW-U": "CWU",
+    }
+    _GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
+    _GQRX_FIRST_BOOKMARK = 5
+    _GQRX_BOOKMARK_HEADER = [
+        ["# Tag name          ", "  color"],
+        ["Untagged            ", " #c0c0c0"],
+        ["Marine VHF          ", " #c0c0c0"],
+        [],
+        [
+            "# Frequency ",
+            " Name                     ",
+            " Modulation          ",
+            "  Bandwidth",
+            " Tags",
+        ],
+    ]
+
+    def __init__(self, tree, io: IO = IO()):
         self.bookmarks = io
         self.tree = tree
 
+    def extract_bookmarks(self, tree) -> list:
+        """extract bookarks data from tk ui structures
+
+        :returns: bookmarks as a list of listss, each inner list is a bookmark
+        """
+        bookmark_list = []
+        for item in tree.get_children():
+            values = self.tree.item(item).get("values")
+            values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
+            bookmark_list.append(values)
+        return bookmark_list
+
     def save(self, bookmark_file, delimiter=",", silent=False):
-        """Bookmarks handling. Saves the bookmarks as
-        a csv file.
+        """Bookmarks handling. Saves the bookmarks as a csv file.
 
         :param bookmark_file: filename to load, with full path
         :type bookmark_file: string
@@ -51,12 +95,7 @@ class Bookmarks(object):
         :returns : none
         """
 
-        self.bookmarks.row_list = []
-        for item in self.tree.get_children():
-            values = self.tree.item(item).get("values")
-            values[BM.freq] = str(frequency_pp_parse(values[BM.freq]))
-            self.bookmarks.row_list.append(values)
-        # Not where we want to do this, and will be fixed with BookmarkSet
+        self.bookmarks.row_list = self.extract_bookmarks(tree=self.tree)
         try:
             os.makedirs(os.path.dirname(bookmark_file))
         except IOError:
@@ -107,16 +146,16 @@ class Bookmarks(object):
             error = False
             if len(line) < LEN_BM:
                 line.append("O")
-            if frequency_pp_parse(line[BM.freq]) == None:
+            if frequency_pp_parse(line[BM.freq]) is None:
                 error = True
             try:
                 line[BM.freq] = frequency_pp(line[BM.freq])
             except ValueError:
                 logger.exception("Malformed bookmark in {}" " skipping...".format(line))
                 continue
-            if line[BM.mode] not in CBB_MODES:
+            if line[BM.modulation] not in CBB_MODES:
                 error = True
-            if error == True:
+            if error:
                 if not silent:
                     messagebox.showerror(
                         "Error",
@@ -189,7 +228,7 @@ class Bookmarks(object):
 
         with open(filename, "r") as fn:
             line = fn.readline()
-        if GQRX_BOOKMARK_FIRST_LINE == line:
+        if self._GQRX_BOOKMARK_FIRST_LINE == line:
             return "gqrx"
         if len(line.split(",")) == 4:
             return "rig-remote"
@@ -221,12 +260,12 @@ class Bookmarks(object):
         book = []
         for line in self.bookmarks.row_list:
             count += 1
-            if count < GQRX_FIRST_BOOKMARK + 1:
+            if count < self._GQRX_FIRST_BOOKMARK + 1:
                 continue
             try:
                 new_line = []
                 new_line.append(line[0].strip())
-                new_line.append(REVERSE_MODE_MAP[line[2].strip()])
+                new_line.append(self._REVERSE_MODE_MAP[line[2].strip()])
                 new_line.append(line[1].strip())
                 book.append(new_line)
             except IndexError:
@@ -252,7 +291,7 @@ class Bookmarks(object):
         """
 
         filename = self._export_panel()
-        self.bookmarks.row_list = GQRX_BOOKMARK_HEADER
+        self.bookmarks.row_list = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
     def _save_gqrx(self, filename):

@@ -68,17 +68,11 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/05/30 - TAS - Stripped out old path support.
 """
 
-# import modules
-
 import logging
 from rig_remote.constants import (
-    SUPPORTED_SCANNING_ACTIONS,
-    SUPPORTED_SYNC_ACTIONS,
     CBB_MODES,
     BM,
     DEFAULT_CONFIG,
-    UI_EVENT_TIMER_DELAY,
-    ABOUT,
 )
 
 from rig_remote.exceptions import (
@@ -108,7 +102,6 @@ import itertools
 
 from rig_remote.stmessenger import STMessenger
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 
@@ -120,21 +113,38 @@ class RigRemote(ttk.Frame):
     :returns: none
     """
 
+    _SUPPORTED_SYNC_ACTIONS = ("start", "stop")
+    _SUPPORTED_SCANNING_ACTIONS = ("start", "stop")
+    _UI_EVENT_TIMER_DELAY = 1000
+
+    _ABOUT = """
+    Rig remote is a software for controlling a rig
+    via tcp/ip and RigCtl.
+
+    GitHub: https://github.com/Marzona/rig-remote
+
+    Project wiki: https://github.com/Marzona/rig-remote/wiki
+
+    GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
+    """
+
     def __init__(self, root, ac):
         ttk.Frame.__init__(self, root)
+        self.tree = None
+        self.rigctl_one = None
+        self.rigctl_two = None
         self.root = root
         self.params = {}
         self.params_last_content = {}
         self.alt_files = {}
         self.bookmarks_file = ac.config["bookmark_filename"]
         self.log_file = ac.config["log_filename"]
-        self.build(ac)
+        self.build_ac(ac)
         self.params["cbb_mode1"].current(0)
         self.focus_force()
         self.update()
         # bookmarks loading on start
         self.bookmarks = Bookmarks(self.tree)
-        self.bookmarks.load(self.bookmarks_file, ",")
         self.scan_thread = None
         self.sync_thread = None
         self.scan_mode = None
@@ -145,10 +155,8 @@ class RigRemote(ttk.Frame):
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event: self.focus_set(event))
         self.ac = ac
+        self.bookmarks.load(self.bookmarks_file, ",")
         self.buildmenu(root)
-        self.rigctl_one = None
-        self.rigctl_two = None
-        self.tree = None
 
     def pop_up_about(self):
         """Describes a pop-up window."""
@@ -159,7 +167,7 @@ class RigRemote(ttk.Frame):
         center_window(panel, 500, 150)
         text = tk.StringVar()
         label = tk.Label(panel, textvariable=text)
-        text.set(ABOUT)
+        text.set(self._ABOUT)
         label.pack()
 
     def buildmenu(self, root):
@@ -185,7 +193,7 @@ class RigRemote(ttk.Frame):
         menubar.add_cascade(label="Rig Remote", menu=appmenu)
         menubar.add_cascade(label="Bookmarks", menu=bookmarksmenu)
 
-    def build(self, ac):
+    def build_ac(self, ac):
         """Build and initialize the GUI widgets.
         :param: ac
         :raises: none
@@ -206,7 +214,7 @@ class RigRemote(ttk.Frame):
             displaycolumns=("frequency", "mode", "description"),
             show="headings",
         )
-        t_tree = ToolTip(self.tree, follow_mouse=1, text="Your bookmark list")
+        _ = ToolTip(self.tree, follow_mouse=1, text="Your bookmark list")
 
         self.tree.heading("frequency", text="Frequency", anchor=tk.CENTER)
         self.tree.column("frequency", width=100, stretch=True, anchor=tk.CENTER)
@@ -244,7 +252,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_hostname1"].grid(
             row=1, column=3, columnspan=2, padx=2, pady=2, sticky=tk.EW
         )
-        t_txt_hostname = ToolTip(
+        _ = ToolTip(
             self.params["txt_hostname1"], follow_mouse=1, text="Hostname to connect."
         )
         self.params["txt_hostname1"].bind("<Return>", self.process_entry)
@@ -253,9 +261,7 @@ class RigRemote(ttk.Frame):
         ttk.Label(self.rig_config_menu, text="Port:").grid(row=2, column=2, sticky=tk.W)
         self.params["txt_port1"] = ttk.Entry(self.rig_config_menu, name="txt_port1")
         self.params["txt_port1"].grid(row=2, column=3, padx=2, pady=2, sticky=tk.EW)
-        t_txt_port1 = ToolTip(
-            self.params["txt_port1"], follow_mouse=1, text="Port to connect."
-        )
+        _ = ToolTip(self.params["txt_port1"], follow_mouse=1, text="Port to connect.")
         self.params["txt_port1"].bind("<Return>", self.process_entry)
         self.params["txt_port1"].bind("<FocusOut>", self.process_entry)
 
@@ -273,7 +279,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_hostname2"].grid(
             row=1, column=4, columnspan=2, padx=2, pady=2, sticky=tk.EW
         )
-        t_txt_hostname = ToolTip(
+        _ = ToolTip(
             self.params["txt_hostname2"], follow_mouse=1, text="Hostname to connect."
         )
         self.params["txt_hostname2"].bind("<Return>", self.process_entry)
@@ -282,9 +288,7 @@ class RigRemote(ttk.Frame):
         ttk.Label(self.rig_config_menu, text="Port:").grid(row=2, column=3, sticky=tk.W)
         self.params["txt_port2"] = ttk.Entry(self.rig_config_menu, name="txt_port2")
         self.params["txt_port2"].grid(row=2, column=4, padx=2, pady=2, sticky=tk.EW)
-        t_txt_port2 = ToolTip(
-            self.params["txt_port2"], follow_mouse=1, text="Port to connect."
-        )
+        _ = ToolTip(self.params["txt_port2"], follow_mouse=1, text="Port to connect.")
         self.params["txt_port2"].bind("<Return>", self.process_entry)
         self.params["txt_port2"].bind("<FocusOut>", self.process_entry)
 
@@ -304,7 +308,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_frequency2"].grid(
             row=5, column=2, columnspan=3, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_frequency = ToolTip(
+        _ = ToolTip(
             self.params["txt_frequency2"],
             follow_mouse=1,
             text="Frequency to tune on this rig.",
@@ -320,7 +324,7 @@ class RigRemote(ttk.Frame):
         self.params["cbb_mode2"].grid(
             row=6, column=2, columnspan=3, padx=2, pady=2, sticky=tk.EW
         )
-        t_cbb_mode2 = ToolTip(
+        _ = ToolTip(
             self.params["cbb_mode2"],
             follow_mouse=1,
             text="Mode to use for tuning the frequency.",
@@ -336,7 +340,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_description2"].grid(
             row=7, column=2, columnspan=3, padx=2, pady=2, sticky=tk.EW
         )
-        t_txt_description2 = ToolTip(
+        _ = ToolTip(
             self.params["txt_description2"],
             follow_mouse=1,
             text="Description of the bookmark.",
@@ -345,15 +349,13 @@ class RigRemote(ttk.Frame):
         self.btn_add2 = ttk.Button(
             self.rig_control_menu, text="Add", width=7, command=self.cb_second_add
         )
-        t_btn_add2 = ToolTip(
-            self.btn_add2, follow_mouse=1, text="Bookmark this frequency."
-        )
+        _ = ToolTip(self.btn_add2, follow_mouse=1, text="Bookmark this frequency.")
         self.btn_add2.grid(row=9, column=2, padx=2, pady=2)
 
         self.btn_delete2 = ttk.Button(
             self.rig_control_menu, text="Remove", width=7, command=self.cb_delete2
         )
-        t_btn_delete2 = ToolTip(
+        _ = ToolTip(
             self.btn_delete2,
             follow_mouse=1,
             text="Remove this frequency from bookmarks.",
@@ -366,7 +368,7 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_second_get_frequency,
         )
-        t_btn_load2 = ToolTip(
+        _ = ToolTip(
             self.btn_load2,
             follow_mouse=1,
             text="Get the frequency and mode from the rig.",
@@ -379,7 +381,7 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_second_set_frequency,
         )
-        t_btn_tune2 = ToolTip(
+        _ = ToolTip(
             self.btn_tune2,
             follow_mouse=1,
             text="Tune the frequency and mode from the " "rig control panel above.",
@@ -393,13 +395,13 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_second_fill_form,
         )
-        t_btn_recall2 = ToolTip(
+        _ = ToolTip(
             self.btn_recall2,
             follow_mouse=1,
             text="Recall the frequency and mode from the "
             "bookmarks into this rig control panel.",
         )
-        t_btn_recall2 = ToolTip(
+        _ = ToolTip(
             self.btn_recall2,
             follow_mouse=1,
             text="Recall the frequency and mode from the "
@@ -423,7 +425,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_frequency1"].grid(
             row=5, column=1, columnspan=3, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_frequency = ToolTip(
+        _ = ToolTip(
             self.params["txt_frequency1"],
             follow_mouse=1,
             text="Frequency to tune on this rig.",
@@ -439,7 +441,7 @@ class RigRemote(ttk.Frame):
         self.params["cbb_mode1"].grid(
             row=6, column=1, columnspan=3, padx=2, pady=2, sticky=tk.EW
         )
-        t_cbb_mode1 = ToolTip(
+        _ = ToolTip(
             self.params["cbb_mode1"],
             follow_mouse=1,
             text="Mode to use for tuning the frequency.",
@@ -455,7 +457,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_description1"].grid(
             row=7, column=1, columnspan=3, padx=2, pady=2, sticky=tk.EW
         )
-        t_txt_description1 = ToolTip(
+        _ = ToolTip(
             self.params["txt_description1"],
             follow_mouse=1,
             text="Description of the bookmark.",
@@ -464,15 +466,13 @@ class RigRemote(ttk.Frame):
         self.btn_add1 = ttk.Button(
             self.rig_control_menu, text="Add", width=7, command=self.cb_first_add
         )
-        t_btn_add1 = ToolTip(
-            self.btn_add1, follow_mouse=1, text="Bookmark this frequency."
-        )
+        _ = ToolTip(self.btn_add1, follow_mouse=1, text="Bookmark this frequency.")
         self.btn_add1.grid(row=9, column=1, padx=2, pady=2)
 
         self.btn_delete1 = ttk.Button(
             self.rig_control_menu, text="Remove", width=7, command=self.cb_delete1
         )
-        t_btn_delete1 = ToolTip(
+        _ = ToolTip(
             self.btn_delete1, follow_mouse=1, text="Remove the selected bookmark."
         )
         self.btn_delete1.grid(row=9, column=0, padx=2, pady=2)
@@ -483,7 +483,7 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_first_get_frequency,
         )
-        t_btn_load1 = ToolTip(
+        _ = ToolTip(
             self.btn_load1,
             follow_mouse=1,
             text="Get the frequency and mode from the rig.",
@@ -497,7 +497,7 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_first_set_frequency,
         )
-        t_btn_tune1 = ToolTip(
+        _ = ToolTip(
             self.btn_tune1,
             follow_mouse=1,
             text="Tune the frequency and mode from the " "rig control panel above.",
@@ -511,7 +511,7 @@ class RigRemote(ttk.Frame):
             width=7,
             command=self.cb_first_fill_form,
         )
-        t_btn_recall1 = ToolTip(
+        _ = ToolTip(
             self.btn_recall1,
             follow_mouse=1,
             text="Recall the frequency and mode from the "
@@ -535,7 +535,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_sgn_level"].grid(
             row=10, column=1, columnspan=1, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_sgn_level = ToolTip(
+        _ = ToolTip(
             self.params["txt_sgn_level"],
             follow_mouse=1,
             text="Signal level to trigger on.",
@@ -553,7 +553,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_delay"] = ttk.Entry(
             self.scanning_conf_menu, name="txt_delay", width=10
         )
-        t_txt_delay = ToolTip(
+        _ = ToolTip(
             self.params["txt_delay"],
             follow_mouse=1,
             text="Delay after finding a signal.",
@@ -576,9 +576,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_passes"].grid(
             row=14, column=1, columnspan=1, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_passes = ToolTip(
-            self.params["txt_passes"], follow_mouse=1, text="Number of scans."
-        )
+        _ = ToolTip(self.params["txt_passes"], follow_mouse=1, text="Number of scans.")
         ttk.Label(self.scanning_conf_menu, text="  0=Infinite").grid(
             row=14, padx=0, column=2, sticky=tk.EW
         )
@@ -595,7 +593,7 @@ class RigRemote(ttk.Frame):
             variable=self.cb_wait,
         )
         self.params["ckb_wait"].grid(row=15, column=0, columnspan=1, sticky=tk.E)
-        t_ckb_wait = ToolTip(
+        _ = ToolTip(
             self.params["ckb_wait"],
             follow_mouse=1,
             text="Waits after having found an active" " frequency.",
@@ -613,7 +611,7 @@ class RigRemote(ttk.Frame):
             variable=self.cb_record,
         )
         self.params["ckb_record"].grid(row=15, column=1, columnspan=1, sticky=tk.E)
-        t_ckb_record = ToolTip(
+        _ = ToolTip(
             self.params["ckb_record"],
             follow_mouse=1,
             text="Enable the recording of signal to" " a file.",
@@ -630,7 +628,7 @@ class RigRemote(ttk.Frame):
             offvalue=False,
             variable=self.cb_log,
         )
-        t_ckb_log = ToolTip(
+        _ = ToolTip(
             self.params["ckb_log"],
             follow_mouse=1,
             text="Logs the activities to a file.",
@@ -652,7 +650,7 @@ class RigRemote(ttk.Frame):
             text="Start",
             command=self.frequency_toggle,
         )
-        t_freq_scan_toggle = ToolTip(
+        _ = ToolTip(
             self.freq_scan_toggle, follow_mouse=1, text="Starts a frequency scan."
         )
         self.freq_scan_toggle.grid(row=17, column=2, padx=2, sticky=tk.W)
@@ -669,7 +667,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_range_min"].grid(
             row=12, column=1, columnspan=1, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_range_min = ToolTip(
+        _ = ToolTip(
             self.params["txt_range_min"],
             follow_mouse=1,
             text="Lower bound of the frequency" " band to scan.",
@@ -683,7 +681,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_range_max"].grid(
             row=12, column=2, columnspan=1, padx=0, pady=0, sticky=tk.W
         )
-        t_txt_range_max = ToolTip(
+        _ = ToolTip(
             self.params["txt_range_max"],
             follow_mouse=1,
             text="Upper bound of the frequency" " band to scan.",
@@ -700,7 +698,7 @@ class RigRemote(ttk.Frame):
         self.params["txt_interval"].grid(
             row=13, column=1, columnspan=1, padx=2, pady=2, sticky=tk.W
         )
-        t_txt_interval = ToolTip(
+        ToolTip(
             self.params["txt_interval"],
             follow_mouse=1,
             text="Tune once every interval khz.",
@@ -720,7 +718,7 @@ class RigRemote(ttk.Frame):
             offvalue=False,
             variable=self.cb_auto_bookmark,
         )
-        t_ckb_auto_bookmark = ToolTip(
+        _ = ToolTip(
             self.params["ckb_auto_bookmark"],
             follow_mouse=1,
             text="Bookmark any active frequency" " found.",
@@ -732,18 +730,18 @@ class RigRemote(ttk.Frame):
         ttk.Label(self.freq_scanning_menu, text="Scan mode:").grid(
             row=16, column=0, sticky=tk.W
         )
-        self.params["cbb_scan_mode"] = ttk.Combobox(
-            self.freq_scanning_menu, name="cbb_scan_mode", width=4
+        self.params["cbb_freq_modulation"] = ttk.Combobox(
+            self.freq_scanning_menu, name="cbb_freq_modulation", width=4
         )
-        self.params["cbb_scan_mode"].grid(
+        self.params["cbb_freq_modulation"].grid(
             row=16, column=1, padx=2, pady=2, sticky=tk.EW
         )
-        t_cbb_scan_mode = ToolTip(
-            self.params["cbb_scan_mode"],
+        _ = ToolTip(
+            self.params["cbb_freq_modulation"],
             follow_mouse=1,
             text="Mode to use for the frequency scan.",
         )
-        self.params["cbb_scan_mode"]["values"] = CBB_MODES
+        self.params["cbb_freq_modulation"]["values"] = CBB_MODES
 
         ########### not ready yet
         #        self.cb_aggr_scan = tk.BooleanVar()
@@ -787,7 +785,7 @@ class RigRemote(ttk.Frame):
             text="Start",
             command=self.bookmark_toggle,
         )
-        t_book_scan_toggle = ToolTip(
+        _ = ToolTip(
             self.book_scan_toggle, follow_mouse=1, text="Starts a bookmark scan."
         )
         self.book_scan_toggle.grid(row=18, column=1, columnspan=1, padx=2, sticky=tk.W)
@@ -797,7 +795,7 @@ class RigRemote(ttk.Frame):
             text="Lock",
             command=self.bookmark_lockout,
         )
-        t_book_lockout = ToolTip(
+        _ = ToolTip(
             self.book_lockout, follow_mouse=1, text="Toggle skipping selected bookmark."
         )
         self.book_lockout.grid(row=18, column=3, columnspan=1, padx=2, sticky=tk.W)
@@ -818,7 +816,7 @@ class RigRemote(ttk.Frame):
             text="Start",
             command=self.sync_toggle,
         )
-        t_sync = ToolTip(
+        _ = ToolTip(
             self.sync,
             follow_mouse=1,
             text="Keeps in sync the "
@@ -844,9 +842,7 @@ class RigRemote(ttk.Frame):
             variable=self.cb_top,
         )
         self.ckb_top.grid(row=23, column=2, columnspan=1, padx=2, sticky=tk.EW)
-        t_ckb_top = ToolTip(
-            self.ckb_top, follow_mouse=1, text="This window is always on top."
-        )
+        _ = ToolTip(self.ckb_top, follow_mouse=1, text="This window is always on top.")
         self.ckb_top.val = self.cb_top
         self.cb_top.trace("w", self.toggle_cb_top)
 
@@ -859,9 +855,7 @@ class RigRemote(ttk.Frame):
             variable=self.cb_save_exit,
         )
         self.ckb_save_exit.grid(row=23, column=1, columnspan=1, padx=2, sticky=tk.EW)
-        t_ckb_save_exit = ToolTip(
-            self.ckb_save_exit, follow_mouse=1, text="Save setting on exit."
-        )
+        _ = ToolTip(self.ckb_save_exit, follow_mouse=1, text="Save setting on exit.")
         self.ckb_save_exit.val = self.cb_save_exit
 
         # horizontal separator
@@ -955,7 +949,7 @@ class RigRemote(ttk.Frame):
         except KeyError:
             pass
         if ac.config["always_on_top"].lower() == "true":
-            if self.ckb_top.is_checked() == False:
+            if self.ckb_top.is_checked() is False:
                 self.ckb_top.invoke()
 
         self.rigctl_one = RigCtl(build_rig_uri(1, self.params))
@@ -980,12 +974,12 @@ class RigRemote(ttk.Frame):
             self.sync.config(text="Start")
             return
 
-        if action.lower() not in SUPPORTED_SYNC_ACTIONS:
+        if action.lower() not in self._SUPPORTED_SYNC_ACTIONS:
             logger.error("Provided action:{}".format(action))
-            logger.error("Supported " "actions:{}".format(SUPPORTED_SYNC_ACTIONS))
+            logger.error("Supported " "actions:{}".format(self._SUPPORTED_SYNC_ACTIONS))
             raise UnsupportedSyncConfigError
 
-        if action.lower() == "stop" and self.sync_thread != None:
+        if action.lower() == "stop" and self.sync_thread is not None:
             # there is a sync ongoing and we want to terminate it
 
             self.syncing.terminate()
@@ -993,16 +987,16 @@ class RigRemote(ttk.Frame):
             self.sync_thread = None
             return
 
-        if action.lower() == "start" and self.sync_thread != None:
+        if action.lower() == "start" and self.sync_thread is not None:
             # we are already scanning, so another start is ignored
             return
 
-        if action.lower() == "stop" and self.sync_thread == None:
+        if action.lower() == "stop" and self.sync_thread is None:
             # we already stopped scanning, another stop is ignored
 
             return
 
-        if action.lower() == "start" and self.sync_thread == None:
+        if action.lower() == "start" and self.sync_thread is None:
             # there is no ongoing scan task and we want to start one
 
             try:
@@ -1027,15 +1021,20 @@ class RigRemote(ttk.Frame):
         appropriate.
         """
 
-        if self.scan_mode == None or self.scan_mode == "bookmarks":
+        if self.scan_mode is None or self.scan_mode == "bookmarks":
             action = self.book_scan_toggle.cget("text").lower()
             self.book_scan_toggle.config(text=next(icycle))
-            self._scan("bookmarks", action)
+
+            self._scan(
+                scan_mode="bookmarks",
+                action=action,
+                frequency_modulation=self.params["cbb_freq_modulation"].get(),
+            )
 
     def bookmark_lockout(self, icycle=itertools.cycle(["L", "O"])):
         """Toggle lockout of selected bookmark."""
 
-        if self.selected_bookmark == None:
+        if self.selected_bookmark is None:
             # will use this in future to support "current scan" lockout
             return
         else:
@@ -1052,16 +1051,19 @@ class RigRemote(ttk.Frame):
         appropriate.
         """
 
-        if self.params["cbb_scan_mode"].get() == "":
+        if self.params["cbb_freq_modulation"].get() == "":
             messagebox.showerror(
                 "Error", "You must select a mode for " "performing a frequency scan."
             )
             return
-
-        if self.scan_mode == None or self.scan_mode == "frequency":
+        if not self.scan_mode or self.scan_mode == "frequency":
             action = self.freq_scan_toggle.cget("text").lower()
             self.freq_scan_toggle.config(text=next(icycle))
-            self._scan("frequency", action)
+            self._scan(
+                scan_mode="frequency",
+                action=action,
+                frequency_modulation=self.params["cbb_freq_modulation"].get(),
+            )
 
     def _process_port_entry(self, event_value, number, silent=False):
         """Process event for port number entry
@@ -1167,7 +1169,7 @@ class RigRemote(ttk.Frame):
             event.widget.focus_set()
             return
         self.params_last_content[event_name] = event_value
-        if self.scan_thread != None:
+        if self.scan_thread is not None:
             event_list = (event_name, event_value_int)
             self.scanq.send_event_update(event_list)
 
@@ -1221,8 +1223,7 @@ class RigRemote(ttk.Frame):
         :type event_list: list
         :returns: None
         """
-
-        if self.scan_thread != None:
+        if self.scan_thread is not None:
             self.scanq.send_event_update(event_list)
             self.params_last_content[event_list[0]] = event_list[1]
 
@@ -1237,95 +1238,98 @@ class RigRemote(ttk.Frame):
             else:
                 self.bookmark_toggle()
         else:
-            if self.scan_thread != None:
-                self.after(UI_EVENT_TIMER_DELAY, self.check_scanthread)
+            if self.scan_thread is not None:
+                self.after(self._UI_EVENT_TIMER_DELAY, self.check_scanthread)
 
     def check_syncthread(self):
         if not self.syncq.check_end_of_sync():
             # self.sync_toggle()
             #        else:
-            if self.sync_thread != None:
-                self.after(UI_EVENT_TIMER_DELAY, self.check_syncthread)
+            if self.sync_thread is not None:
+                self.after(self._UI_EVENT_TIMER_DELAY, self.check_syncthread)
 
-    def _scan(self, mode, action, silent=False):
+    def _scan(
+        self, scan_mode: str, action: str, frequency_modulation: str, silent=False
+    ):
         """Wrapper around the scanning class instance. Creates the task
         object and issues the scan.
 
-        :param mode: bookmark or frequency
-        :type mode: string
-        :param action: supported actions defined in UPPORTED_SCANNING_ACTIONS
-        :type action: string
+        :param scan_mode: bookmark or frequency
+        :param frequency_modulation: am/fm...
         :raises: NotImplementedError if action different than "start" is passed
         :returns: None
         """
-
-        if action.lower() not in SUPPORTED_SCANNING_ACTIONS:
+        logger.info("scan action %s with scan mode %s.", action, scan_mode)
+        if action.lower() not in self._SUPPORTED_SCANNING_ACTIONS:
             logger.error("Provided action: {}".format(action))
-            logger.error("Supported " "actions: {}".format(SUPPORTED_SCANNING_ACTIONS))
+            logger.error(
+                "Supported " "actions: {}".format(self._SUPPORTED_SCANNING_ACTIONS)
+            )
             raise UnsupportedScanningConfigError
 
         if self.sync_thread:
-            # icycle=itertools.cycle(["Start", "Stop"])
-            # if mode == "bookmarks":
-            # self.book_scan_toggle.config(text = next(icycle))
-            # else:
-            # self.freq_scan_toggle.config(text = next(icycle))
-            # return
-            if mode == "bookmarks":
+            if scan_mode == "bookmarks":
                 self.book_scan_toggle.config(text="Start")
             else:
                 self.freq_scan_toggle.config(text="Start")
             return
 
-        if action.lower() == "stop" and self.scan_thread != None:
+        if action.lower() == "stop" and self.scan_thread is not None:
             # there is a scan ongoing and we want to terminate it
+            logger.info("Stopping ongoing scan")
             self.scanning.terminate()
             self.scan_thread.join()
             self.scan_thread = None
-            if mode.lower() == "frequency":
+            if scan_mode.lower() == "frequency":
+                logger.info("adding collected bookmarks...")
                 self._add_new_bookmarks(self.new_bookmark_list)
                 self.new_bookmark_list = []
             self.scan_mode = None
             return
 
-        if action.lower() == "start" and self.scan_thread != None:
+        if action.lower() == "start" and self.scan_thread is not None:
             # we are already scanning, so another start is ignored
+            logger.info(
+                "Ignoring scan start command as there is already an ongping scan"
+            )
             return
 
-        if action.lower() == "stop" and self.scan_thread == None:
+        if action.lower() == "stop" and self.scan_thread is None:
             # we already stopped scanning, another stop is ignored
+            logger.info(
+                "Ignoring scan stop command as there is already an ongping scan"
+            )
             return
 
-        if action.lower() == "start" and self.scan_thread == None:
+        if action.lower() == "start" and self.scan_thread is None:
             # there is no ongoing scan task and we want to start one
-
-            if len(self.tree.get_children()) == 0 and mode == "bookmarks":
+            if len(self.tree.get_children()) == 0 and scan_mode == "bookmarks":
                 if not silent:
                     messagebox.showerror("Error", "No bookmarks to scan.")
                 self.bookmark_toggle()
             else:
-                self.scan_mode = mode
-                scanq = self.scanq
-                bookmarks = self.tree
-                pass_params = dict.copy(self.params)
-                nbl = self.new_bookmark_list
+                logger.info("Frequency scan start command accepted")
                 task = ScanningTask(
-                    scanq,
-                    mode,
-                    bookmarks,
-                    nbl,
-                    pass_params,
-                    self.rigctl_one,
-                    self.log_file,
+                    frequency_modulation=frequency_modulation,
+                    scan_mode=scan_mode,
+                    new_bookmark_list=self.new_bookmark_list,
+                    pass_params=dict.copy(self.params),
+                    bookmarks=self.tree,
                 )
-                self.scanning = Scanning()
+
+                self.scanning = Scanning(
+                    scan_queue=self.scanq,
+                    log_filename=self.log_file,
+                    rigctl=self.rigctl_one,
+                )
                 self.scan_thread = threading.Thread(
                     target=self.scanning.scan, args=(task,)
                 )
                 self.scan_thread.start()
                 self.after(0, self.check_scanthread)
 
-    def _new_activity_message(self, nbl):
+    @staticmethod
+    def _new_activity_message(nbl):
         """Provides a little formatting from the new bookmark list.
 
         :param nbl: new bookmark list
@@ -1393,12 +1397,10 @@ class RigRemote(ttk.Frame):
 
     def cb_second_get_frequency(self):
         """Wrapper around cb_set_frequency."""
-        rig_target = build_rig_uri(2, self.params)
         self.cb_get_frequency(self.rigctl_two.target)
 
     def cb_first_get_frequency(self):
         """Wrapper around cb_set_frequency."""
-        rig_target = build_rig_uri(1, self.params)
         self.cb_get_frequency(self.rigctl_one.target)
 
     def cb_get_frequency(self, rig_target, silent=False):
@@ -1429,13 +1431,11 @@ class RigRemote(ttk.Frame):
     def cb_second_set_frequency(self):
         """Wrapper around cb_set_frequency."""
 
-        rig_target = build_rig_uri(2, self.params)
         self.cb_set_frequency(self.rigctl_two.target, event=None)
 
     def cb_first_set_frequency(self):
         """Wrapper around cb_set_frequency."""
 
-        rig_target = build_rig_uri(1, self.params)
         self.cb_set_frequency(self.rigctl_one.target, event=None)
 
     def cb_set_frequency(self, rig_target, event, silent=False):
@@ -1555,7 +1555,7 @@ class RigRemote(ttk.Frame):
             freq = str(self.tree.item(item).get("values")[BM.freq])
             uni_curr_freq = frequency_pp_parse(freq)
             curr_freq = uni_curr_freq
-            curr_mode = self.tree.item(item).get("values")[BM.mode]
+            curr_mode = self.tree.item(item).get("values")[BM.modulation]
             if frequency < curr_freq:
                 idx = self.tree.index(item)
                 break
