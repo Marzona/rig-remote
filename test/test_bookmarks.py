@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import pytest
-from rig_remote.bookmarks import Bookmarks
+from rig_remote.bookmarksmanager import BookmarksManager
 from rig_remote.disk_io import IO
 from mock import MagicMock
 from tkinter import filedialog
@@ -26,27 +26,27 @@ def bk():
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     bk_list = []
     bk_list.append(value)
-    bk = Bookmarks(tree, io=IO())
+    bk = BookmarksManager(tree, io=IO())
     bk._insert_bookmarks(bk_list)
 
     return bk
 
 
 def test_export_panel():
-    bk = Bookmarks("test", io=IO())
+    bk = BookmarksManager("test", io=IO())
     filedialog.asksaveasfilename = MagicMock()
     filedialog.asksaveasfilename.return_Value = "testfile"
     bk._export_panel() == "testfile"
 
 
 def test_detect_format():
-    bk = Bookmarks("test", io=IO())
+    bk = BookmarksManager("test", io=IO())
     with pytest.raises(InvalidPathError):
         bk._detect_format("")
 
 
 def test_export_rig_remote_bad_attrib():
-    bk = Bookmarks("test", io=IO())
+    bk = BookmarksManager("test", io=IO())
     bk._export_panel = MagicMock()
     bk._export_panel.return_value == ""
     with pytest.raises(AttributeError):
@@ -59,12 +59,12 @@ def test_save_gqrx():
         displaycolumns=("frequency", "mode", "description"),
         show="headings",
     )
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    assert isinstance(bk.bookmarks.row_list, list)
-    assert len(bk.bookmarks.row_list) == 0
+    assert isinstance(bk.io.row_list, list)
+    assert len(bk.io.row_list) == 0
 
 
 def test_save_gqrx_len():
@@ -75,11 +75,11 @@ def test_save_gqrx_len():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    assert len(bk.bookmarks.row_list) == 1
+    assert len(bk.io.row_list) == 1
 
 
 def test_save_gqrx_freq():
@@ -90,11 +90,11 @@ def test_save_gqrx_freq():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    int(bk.bookmarks.row_list[0][0])
+    int(bk.io.row_list[0][0])
 
 
 def test_save_gqrx_mode():
@@ -105,11 +105,11 @@ def test_save_gqrx_mode():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    assert bk.bookmarks.row_list[0][2] in CBB_MODES
+    assert bk.io.row_list[0][2] in CBB_MODES
 
 
 def test_save_gqrx_tag():
@@ -120,11 +120,11 @@ def test_save_gqrx_tag():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    assert bk.bookmarks.row_list[0][4] == "Untagged"
+    assert bk.io.row_list[0][4] == "Untagged"
 
 
 def test_save_gqrx_comment():
@@ -135,11 +135,11 @@ def test_save_gqrx_comment():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_save = MagicMock()
-    bk.bookmarks.return_value = None
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_save = MagicMock()
+    bk.io.return_value = None
     bk._save_gqrx("test")
-    assert isinstance(bk.bookmarks.row_list[0][1], str)
+    assert isinstance(bk.io.row_list[0][1], str)
 
 
 def test_insert_bookmark_values_present(bk):
@@ -193,7 +193,7 @@ def test_import_rig_remote():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
+    bk = BookmarksManager(tree, io=IO())
     bk.load = MagicMock()
     bk.load.return_value = "test"
     bk._import_rig_remote("test")
@@ -208,15 +208,15 @@ def test_import_gqrx():
     )
     value = ["5,955,000", "AM", "found on 18.34 jan 08 2015", "O"]
     tree.insert("", 0, values=value)
-    bk = Bookmarks(tree, io=IO())
-    bk.bookmarks.csv_load = MagicMock()
-    bk.bookmarks.csv_load.return_value = "test"
-    bk.bookmarks.row_list.append([""])
-    bk.bookmarks.row_list.append([""])
-    bk.bookmarks.row_list.append([""])
-    bk.bookmarks.row_list.append([""])
-    bk.bookmarks.row_list.append([""])
-    bk.bookmarks.row_list.append(
+    bk = BookmarksManager(tree, io=IO())
+    bk.io.csv_load = MagicMock()
+    bk.io.csv_load.return_value = "test"
+    bk.io.row_list.append([""])
+    bk.io.row_list.append([""])
+    bk.io.row_list.append([""])
+    bk.io.row_list.append([""])
+    bk.io.row_list.append([""])
+    bk.io.row_list.append(
         [
             "    28800000",
             " standing spike           ",

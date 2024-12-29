@@ -85,6 +85,7 @@ class IO:
             logger.exception(
                 "Error while trying to read the file: " "{}".format(csv_file)
             )
+        logger.info("loaded %i rows from csv %s", len(self.row_list), csv_file)
 
     def csv_save(self, csv_file, delimiter):
         """Save current frequencies to disk.
@@ -93,14 +94,16 @@ class IO:
         :type delimiter: string
         :raises: IOError, OSError
         """
-
+        count = 0
         try:
             with open(csv_file, "w") as data_file:
                 writer = csv.writer(data_file, delimiter=delimiter)
                 while self.row_list:
+                    count += 1
                     writer.writerow(self.row_list.pop())
         except (IOError, OSError):
             logger.error("Error while trying to write the file: " "{}".format(csv_file))
+        logger.info("saved %i rows", count)
 
 
 class LogFile:

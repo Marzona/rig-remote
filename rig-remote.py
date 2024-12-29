@@ -26,7 +26,6 @@ import textwrap
 import tkinter as tk
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
-from rig_remote.utility import process_path
 
 # helper functions
 def input_arguments():
@@ -113,6 +112,20 @@ def log_configuration(verbose):
                             datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 
     return logging.getLogger(__name__)
+
+
+def process_path(path):
+    """Handle tilde expansion in a path.
+
+    :param path: path to expand
+    :type path: string
+    """
+
+    working_path, working_name = os.path.split(path)
+    if working_path:
+        working_path = os.path.expanduser(working_path)
+    return os.path.join(working_path, working_name)
+
 
 # entry point
 if __name__ == "__main__":

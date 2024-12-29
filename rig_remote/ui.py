@@ -79,13 +79,13 @@ from rig_remote.exceptions import (
     UnsupportedScanningConfigError,
     UnsupportedSyncConfigError,
 )
-from rig_remote.bookmarks import Bookmarks
+from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
 from rig_remote.rigctl import RigCtl
-from rig_remote.scanning import Scanning, ScanningTask
+from rig_remote.scanning import Scanning
 from rig_remote.syncing import Syncing, SyncTask
+from rig_remote.models.scanning_task import ScanningTask
+from rig_remote.models.bookmark import Bookmark
 from rig_remote.utility import (
-    frequency_pp,
-    frequency_pp_parse,
     is_valid_port,
     is_valid_hostname,
     ToolTip,
@@ -129,6 +129,14 @@ class RigRemote(ttk.Frame):
     """
 
     def __init__(self, root, ac):
+        self.rig_control_menu = None
+        self.btn_delete1 = None
+        self.btn_add1 = None
+        self.btn_recall1 = None
+        self.scanning_conf_menu = None
+        self.btn_tune1 = None
+        self.btn_load1 = None
+        self.rig_config_menu = None
         ttk.Frame.__init__(self, root)
         self.tree = None
         self.rigctl_one = None
@@ -137,14 +145,12 @@ class RigRemote(ttk.Frame):
         self.params = {}
         self.params_last_content = {}
         self.alt_files = {}
-        self.bookmarks_file = ac.config["bookmark_filename"]
         self.log_file = ac.config["log_filename"]
         self.build_ac(ac)
         self.params["cbb_mode1"].current(0)
         self.focus_force()
         self.update()
-        # bookmarks loading on start
-        self.bookmarks = Bookmarks(self.tree)
+        self.bookmarks = BookmarksManager()
         self.scan_thread = None
         self.sync_thread = None
         self.scan_mode = None
@@ -155,8 +161,46 @@ class RigRemote(ttk.Frame):
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event: self.focus_set(event))
         self.ac = ac
-        self.bookmarks.load(self.bookmarks_file, ",")
+        # bookmarks loading on start
+        self._load_bookmarks()
+
         self.buildmenu(root)
+
+    def _import_bookmarks(self):
+        bookmark_list = self.bookmarks.import_bookmarks()
+        self._insert_bookmarks(bookmarks=bookmark_list)
+        [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
+
+    def _load_bookmarks(self):
+        self.bookmarks_file = self.ac.config["bookmark_filename"]
+        self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
+
+    def _insert_bookmarks(self, bookmarks: list, silent=False):
+        """Method for inserting bookmark data already loaded.
+
+        :param bookmarks: list of bookmark objects
+        :type bookmarks: dict
+        """
+
+        logger.info("adding %i bookmarks", len(bookmarks))
+        for entry in bookmarks:
+            item = self.tree.insert(
+                "",
+                tk.END,
+                values=[
+                    entry.channel.frequency,
+                    entry.channel.modulation,
+                    entry.description,
+                    entry.lockout,
+                ],
+            )
+
+            if entry.lockout == "L":
+                self.tree.tag_configure("locked", background="red")
+                self.tree.item(item, tags="locked")
+            else:
+                self.tree.tag_configure("unlocked", background="white")
+                self.tree.item(item, tags="unlocked")
 
     def pop_up_about(self):
         """Describes a pop-up window."""
@@ -180,9 +224,7 @@ class RigRemote(ttk.Frame):
 
         bookmarksmenu = tk.Menu(menubar, tearoff=0)
         exportmenu = tk.Menu(menubar, tearoff=0)
-        bookmarksmenu.add_command(
-            label="Import", command=self.bookmarks.import_bookmarks
-        )
+        bookmarksmenu.add_command(label="Import", command=self._import_bookmarks)
         bookmarksmenu.add_cascade(label="Export", menu=exportmenu)
         exportmenu.add_command(label="Export GQRX", command=self.bookmarks.export_gqrx)
         exportmenu.add_command(
@@ -1374,12 +1416,18 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: none
         """
+        import pdb
+
+        pdb.set_trace()
         self._clear_form(1)
         for nb in nbl:
             self.params["txt_description1"].insert(
                 0, "activity on {}".format(nb["time"])
             )
-            self.params["txt_frequency1"].insert(0, frequency_pp(str(nb["freq"])))
+            import pdb
+
+            pdb.set_trace()
+            self.params["txt_frequency1"].insert(0, str(nb["freq"]).strip())
             self.params["cbb_mode1"].insert(0, nb["mode"])
             # adding bookmark to the list
             self.cb_first_add(True)
@@ -1419,7 +1467,7 @@ class RigRemote(ttk.Frame):
             mode = self.rigctl_one.get_mode()
             # update fields
             txt_frequency = "txt_frequency{}".format(rig_target["rig_number"])
-            self.params[txt_frequency].insert(0, frequency_pp(frequency))
+            self.params[txt_frequency].insert(0, frequency.strip())
             cbb_mode = "cbb_mode{}".format(rig_target["rig_number"])
             self.params[cbb_mode].insert(0, mode)
         except Exception as err:
@@ -1510,7 +1558,7 @@ class RigRemote(ttk.Frame):
         freq = "txt_frequency{}".format(number)
         mode = "cbb_mode{}".format(number)
         description = "txt_description{}".format(number)
-        control_source["frequency"] = frequency_pp_parse(self.params[freq].get())
+        control_source["frequency"] = self.params[freq].get()
         try:
             int(control_source["frequency"])
         except (ValueError, TypeError):
@@ -1544,41 +1592,50 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: none
         """
+        if not control_source["description"]:
+            if not silent:
+                messagebox.showerror("Error", "Please add a description")
+            return
+        bookmark = bookmark_factory(
+            input_frequency=control_source["frequency"],
+            modulation=control_source["mode"],
+            description=control_source["description"],
+            lockout="0",
+        )
 
-        frequency = control_source["frequency"]
-        mode = control_source["mode"]
-        description = control_source["description"]
-        lockout = "O"
         # find where to insert (insertion sort)
         idx = tk.END
         for item in self.tree.get_children():
-            freq = str(self.tree.item(item).get("values")[BM.freq])
-            uni_curr_freq = frequency_pp_parse(freq)
+            uni_curr_freq = bookmark.channel.frequency
             curr_freq = uni_curr_freq
-            curr_mode = self.tree.item(item).get("values")[BM.modulation]
-            if frequency < curr_freq:
+            if bookmark.channel.frequency < curr_freq:
                 idx = self.tree.index(item)
                 break
-            elif frequency == curr_freq and mode == curr_mode:
-                if not (silent):
-                    messagebox.showerror(
-                        "Error",
-                        "A bookmark with the "
-                        "same frequency and mode "
-                        "already exists.",
-                        parent=self,
-                    )
-                return
-        # insert
-        item = self.tree.insert(
-            "", idx, values=[frequency_pp(frequency), mode, description, lockout]
-        )
+        if self.bookmarks.add_bookmark(bookmark):
+            item = self.tree.insert(
+                "",
+                idx,
+                values=[
+                    bookmark.channel.frequency,
+                    bookmark.channel.modulation,
+                    bookmark.description,
+                    bookmark.lockout,
+                ],
+            )
 
         self.tree.selection_set(item)
         self.tree.focus(item)
         self.tree.see(item)
         # save
-        self.bookmarks.save(self.bookmarks_file)
+        self.bookmarks.save(
+            bookmarks_file=self.bookmarks_file, bookmarks=self._extract_bookmarks()
+        )
+
+    def _extract_bookmarks(self) -> list:
+        bookmark_list = []
+        for item in self.tree.get_children():
+            bookmark_list.append(self._get_bookmark_from_item(item))
+        return bookmark_list
 
     def cb_delete2(self):
         """wrapper around cb_delete"""
@@ -1599,8 +1656,188 @@ class RigRemote(ttk.Frame):
         """
 
         item = self.tree.focus()
-        if item != "":
-            self.tree.delete(item)
-            # save
-        self.bookmarks.save(self.bookmarks_file)
+        if not item:
+            return
+        self.bookmarks.delete_bookmark(self._get_bookmark_from_item(item))
+        self.tree.delete(item)
+        # save
+        self.bookmarks.save(
+            bookmarks_file=self.bookmarks_file, bookmarks=self._extract_bookmarks()
+        )
         self._clear_form(source)
+
+    def _get_bookmark_from_item(self, item) -> Bookmark:
+        values = self.tree.item(item).get("values")
+        return bookmark_factory(
+            input_frequency=values[0],
+            modulation=values[1],
+            description=values[2],
+            lockout=str(values[3]),
+        )
+
+
+class ToolTip:
+    def __init__(self, master, text="", delay=1500, **opts):
+        self.master = master
+        self._opts = {
+            "anchor": "center",
+            "bd": 1,
+            "bg": "lightyellow",
+            "delay": delay,
+            "fg": "black",
+            "follow_mouse": 0,
+            "font": None,
+            "justify": "left",
+            "padx": 4,
+            "pady": 2,
+            "relief": "solid",
+            "state": "normal",
+            "text": text,
+            "textvariable": None,
+            "width": 0,
+            "wraplength": 150,
+        }
+        self.configure(**opts)
+        self._tipwindow = None
+        self._id = None
+        self._id1 = self.master.bind("<Enter>", self.enter, "+")
+        self._id2 = self.master.bind("<Leave>", self.leave, "+")
+        self._id3 = self.master.bind("<ButtonPress>", self.leave, "+")
+        self._follow_mouse = 0
+        if self._opts["follow_mouse"]:
+            self._id4 = self.master.bind("<Motion>", self.motion, "+")
+            self._follow_mouse = 1
+
+    def configure(self, **opts):
+        for key in opts:
+            if key in self._opts:
+                self._opts[key] = opts[key]
+            else:
+                KeyError = 'KeyError: Unknown option: "%s"' % key
+                raise KeyError
+
+    """
+    these methods handle the callbacks on "<Enter>", "<Leave>" and "<Motion>"
+    events on the parent widget; override them if you want to change the
+    widget's behavior
+    """
+
+    def enter(self, event=None):
+        self._schedule()
+
+    def leave(self, event=None):
+        self._unschedule()
+        self._hide()
+
+    def motion(self, event=None):
+        if self._tipwindow and self._follow_mouse:
+            x, y = self.coords()
+            self._tipwindow.wm_geometry("+%d+%d" % (x, y))
+
+    """
+    ------the methods that do the work:
+    """
+
+    def _schedule(self):
+        self._unschedule()
+        if self._opts["state"] == "disabled":
+            return
+        self._id = self.master.after(self._opts["delay"], self._show)
+
+    def _unschedule(self):
+        id = self._id
+        self._id = None
+        if id:
+            self.master.after_cancel(id)
+
+    def _show(self):
+        if self._opts["state"] == "disabled":
+            self._unschedule()
+            return
+        if not self._tipwindow:
+            self._tipwindow = tw = tk.Toplevel(self.master)
+            # hide the window until we know the geometry
+            tw.withdraw()
+            tw.wm_overrideredirect(1)
+
+            if tw.tk.call("tk", "windowingsystem") == "aqua":
+                tw.tk.call(
+                    "::tk::unsupported::MacWindowStyle", "style", tw._w, "help", "none"
+                )
+
+            self.create_contents()
+            tw.update_idletasks()
+            x, y = self.coords()
+            tw.wm_geometry("+%d+%d" % (x, y))
+            tw.deiconify()
+
+    def _hide(self):
+        tw = self._tipwindow
+        self._tipwindow = None
+        if tw:
+            tw.destroy()
+
+    # ------these methods might be overridden in derived classes:
+    def coords(self):
+        # The tip window must be completely outside the master widget;
+        # otherwise when the mouse enters the tip window we get
+        # a leave event and it disappears, and then we get an enter
+        # event and it reappears, and so on forever :-(
+        # or we take care that the mouse pointer is always
+        # outside the tipwindow :-)
+
+        tw = self._tipwindow
+        twx, twy = tw.winfo_reqwidth(), tw.winfo_reqheight()
+        w, h = tw.winfo_screenwidth(), tw.winfo_screenheight()
+        # calculate the y coordinate:
+        if self._follow_mouse:
+            y = tw.winfo_pointery() + 20
+            # make sure the tipwindow is never outside the screen:
+            if y + twy > h:
+                y = y - twy - 30
+        else:
+            y = self.master.winfo_rooty() + self.master.winfo_height() + 3
+            if y + twy > h:
+                y = self.master.winfo_rooty() - twy - 3
+        # we can use the same x coord in both cases:
+        x = tw.winfo_pointerx() - twx / 2
+        if x < 0:
+            x = 0
+        elif x + twx > w:
+            x = w - twx
+        return x, y
+
+    def create_contents(self):
+        opts = self._opts.copy()
+        for opt in ("delay", "follow_mouse", "state"):
+            del opts[opt]
+        label = tk.Label(self._tipwindow, **opts)
+        label.pack()
+
+
+class RCCheckbutton(ttk.Checkbutton):
+    """
+    RCCheckbutton is derived from ttk.Checkbutton, and adds an
+    "is_checked" method to simplify checking instance's state, and
+    new methods to return string state values for config file.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.var = kwargs.get("variable", tk.BooleanVar())
+        kwargs["variable"] = self.var
+        ttk.Checkbutton.__init__(self, *args, **kwargs)
+
+    def is_checked(self):
+        return self.var.get()
+
+    def get_str_val(self):
+        if self.is_checked():
+            return "true"
+        else:
+            return "false"
+
+    def set_str_val(self, value):
+        if value.lower() in ("true", "t"):
+            self.var.set(True)
+        else:
+            self.var.set(False)
