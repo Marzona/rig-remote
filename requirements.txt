@@ -13,6 +13,7 @@ packaging==24.2
 platformdirs==4.3.6
 pluggy==1.5.0
 pylint==3.3.2
+pyside6>=6.8,<7.0
 pytest==8.3.4
 pytest-cov==6.0.0
 pytest-xdist==3.6.1
