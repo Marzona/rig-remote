@@ -70,11 +70,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 import logging
 from rig_remote.constants import (
-    CBB_MODES,
     BM,
-    DEFAULT_CONFIG,
 )
-
 from rig_remote.exceptions import (
     UnsupportedScanningConfigError,
     UnsupportedSyncConfigError,
@@ -86,12 +83,7 @@ from rig_remote.syncing import Syncing, SyncTask
 from rig_remote.models.scanning_task import ScanningTask
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.utility import (
-    is_valid_port,
-    is_valid_hostname,
-    ToolTip,
-    build_rig_uri,
     shutdown,
-    RCCheckbutton,
     center_window,
 )
 import tkinter as tk
@@ -99,13 +91,14 @@ from tkinter import ttk, LabelFrame, messagebox
 
 import threading
 import itertools
-
+from rig_remote.utility import (
+    khertz_to_hertz,
+)
 from rig_remote.stmessenger import STMessenger
 
 logger = logging.getLogger(__name__)
 
 
-# classes definition
 class RigRemote(ttk.Frame):
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
@@ -141,11 +134,14 @@ class RigRemote(ttk.Frame):
         self.tree = None
         self.rigctl_one = None
         self.rigctl_two = None
+
         self.root = root
         self.params = {}
         self.params_last_content = {}
         self.alt_files = {}
         self.log_file = ac.config["log_filename"]
+        self.ac = ac
+        self._configure_rigs()
         self.build_ac(ac)
         self.params["cbb_mode1"].current(0)
         self.focus_force()
@@ -160,7 +156,6 @@ class RigRemote(ttk.Frame):
         self.syncq = STMessenger()
         self.new_bookmark_list = []
         self.bind_all("<1>", lambda event: self.focus_set(event))
-        self.ac = ac
         # bookmarks loading on start
         self._load_bookmarks()
 
@@ -371,7 +366,7 @@ class RigRemote(ttk.Frame):
             follow_mouse=1,
             text="Mode to use for tuning the frequency.",
         )
-        self.params["cbb_mode2"]["values"] = CBB_MODES
+        self.params["cbb_mode2"]["values"] = self.rigctl_two.SUPPORTED_MODULATION_MODES
 
         ttk.Label(self.rig_control_menu, text="Description:").grid(
             row=7, column=1, sticky=tk.EW
@@ -488,7 +483,7 @@ class RigRemote(ttk.Frame):
             follow_mouse=1,
             text="Mode to use for tuning the frequency.",
         )
-        self.params["cbb_mode1"]["values"] = CBB_MODES
+        self.params["cbb_mode1"]["values"] = self.rigctl_one.SUPPORTED_MODULATION_MODES
 
         ttk.Label(self.rig_control_menu, text="Description:").grid(
             row=7, column=0, sticky=tk.EW
@@ -783,27 +778,7 @@ class RigRemote(ttk.Frame):
             follow_mouse=1,
             text="Mode to use for the frequency scan.",
         )
-        self.params["cbb_freq_modulation"]["values"] = CBB_MODES
-
-        ########### not ready yet
-        #        self.cb_aggr_scan = tk.BooleanVar()
-        #        self.params["ckb_aggr_scan"] = RCCheckbutton(self.scanning_conf_menu,
-        #                                                  name="aggr_scan",
-        #                                                  text="Aggr",
-        #                                                  onvalue=True,
-        #                                                  offvalue=False,
-        #                                                  variable=self.cb_aggr_scan)
-        #        self.params["ckb_aggr_scan"].grid(row=15,
-        #                                           column=2,
-        #                                           columnspan=1,
-        #                                           sticky=tk.E)
-        #        t_ckb_aggr_scan = ToolTip(self.params["ckb_aggr_scan"],
-        #                                   follow_mouse=1,
-        #                                   text="Split the frequency range "
-        #                                        "and use both rigs "
-        #                                        "simultaneously. Implies auto bookmark")
-        #        self.params["ckb_aggr_scan"].val = self.cb_aggr_scan
-        #        self.cb_aggr_scan.trace("w", self.process_record)
+        self.params["cbb_freq_modulation"]["values"] = self.rigctl_one.SUPPORTED_MODULATION_MODES
 
         ttk.Frame(self.freq_scanning_menu).grid(row=17, column=0, columnspan=3, pady=5)
 
@@ -862,8 +837,8 @@ class RigRemote(ttk.Frame):
             self.sync,
             follow_mouse=1,
             text="Keeps in sync the "
-            "frequency/mode. The second rig is "
-            "source, the first is the destination.",
+            "frequency/mode. The first rig is "
+            "source, the second is the destination.",
         )
         self.sync.grid(row=21, column=1, columnspan=1, padx=2, sticky=tk.W)
         # horizontal separator
@@ -911,11 +886,13 @@ class RigRemote(ttk.Frame):
         if not isinstance(event.widget, str):
             event.widget.focus_set()
 
-    def apply_config(self, ac, silent=False):
+    def _configure_rigs(self):
+        self.rigctl_one = RigCtl(self.ac.rig_endpoints[0])
+        self.rigctl_two = RigCtl(self.ac.rig_endpoints[1])
+
+    def apply_config(self, silent=False):
         """Applies the config to the UI.
 
-        :param ac: object instance for handling the app config
-        :type ac: AppConfig object
         :param silent: suppress messagebox
         :type silent: boolean
         :raises : none
@@ -924,29 +901,8 @@ class RigRemote(ttk.Frame):
 
         eflag = False
 
-        hostnames = ["hostname1", "hostname2"]
-        for hostname in hostnames:
-            try:
-                is_valid_hostname(ac.config[hostname])
-            except ValueError:
-                if hostname == "hostname1":
-                    self.params["txt_hostname1"].insert(0, DEFAULT_CONFIG[hostname])
-                else:
-                    self.params["txt_hostname2"].insert(0, DEFAULT_CONFIG[hostname])
-                if not silent:
-                    messagebox.showerror(
-                        "Config File Error"
-                        "One (or more) "
-                        "of the values in the config file was "
-                        "invalid, and the default was used "
-                        "instead.",
-                        parent=self,
-                    )
-            else:
-                if hostname == "hostname1":
-                    self.params["txt_hostname1"].insert(0, ac.config[hostname])
-                else:
-                    self.params["txt_hostname2"].insert(0, ac.config[hostname])
+        self.params["txt_hostname1"].insert(0, self.ac.rig_endpoints[0].hostname)
+        self.params["txt_hostname2"].insert(0, self.ac.rig_endpoints[1].hostname)
 
         # Test positive integer values
         for key in (
@@ -959,19 +915,19 @@ class RigRemote(ttk.Frame):
             "range_max",
         ):
             ekey = "txt_" + key
-            if str.isdigit(ac.config[key].replace(",", "")):
-                self.params[ekey].insert(0, ac.config[key])
+            if str.isdigit(self.ac.config[key].replace(",", "")):
+                self.params[ekey].insert(0, self.ac.config[key])
             else:
-                self.params[ekey].insert(0, DEFAULT_CONFIG[key])
+                self.params[ekey].insert(0, self.ac.DEFAULT_CONFIG[key])
                 eflag = True
         # Test integer values
         try:
-            int(ac.config["sgn_level"])
+            int(self.ac.config["sgn_level"])
         except ValueError:
-            self.params["txt_sgn_level"].insert(0, DEFAULT_CONFIG["sgn_level"])
+            self.params["txt_sgn_level"].insert(0, self.ac.DEFAULT_CONFIG["sgn_level"])
             eflag = True
         else:
-            self.params["txt_sgn_level"].insert(0, ac.config["sgn_level"])
+            self.params["txt_sgn_level"].insert(0, self.ac.config["sgn_level"])
         if eflag:
             if not silent:
                 messagebox.showerror(
@@ -982,20 +938,21 @@ class RigRemote(ttk.Frame):
                     "instead.",
                     parent=self,
                 )
-        self.params["ckb_auto_bookmark"].set_str_val(ac.config["auto_bookmark"].lower())
+        self.params["ckb_auto_bookmark"].set_str_val(
+            self.ac.config["auto_bookmark"].lower()
+        )
         try:
-            self.params["ckb_record"].set_str_val(ac.config["record"].lower())
-            self.params["ckb_wait"].set_str_val(ac.config["wait"].lower())
-            self.params["ckb_log"].set_str_val(ac.config["log"].lower())
-            self.ckb_save_exit.set_str_val(ac.config["save_exit"].lower())
+            self.params["ckb_record"].set_str_val(self.ac.config["record"].lower())
+            self.params["ckb_wait"].set_str_val(self.ac.config["wait"].lower())
+            self.params["ckb_log"].set_str_val(self.ac.config["log"].lower())
+            self.ckb_save_exit.set_str_val(self.ac.config["save_exit"].lower())
         except KeyError:
             pass
-        if ac.config["always_on_top"].lower() == "true":
+        if self.ac.config["always_on_top"].lower() == "true":
             if self.ckb_top.is_checked() is False:
                 self.ckb_top.invoke()
 
-        self.rigctl_one = RigCtl(build_rig_uri(1, self.params))
-        self.rigctl_two = RigCtl(build_rig_uri(2, self.params))
+        self._configure_rigs()
         # Here we create a copy of the params dict to use when
         # checking validity of new input
         for key in self.params:
@@ -1043,9 +1000,9 @@ class RigRemote(ttk.Frame):
 
             try:
                 task = SyncTask(
-                    self.syncq,
-                    RigCtl(build_rig_uri(2, self.params)),
-                    RigCtl(build_rig_uri(1, self.params)),
+                    syncq=self.syncq,
+                    src_rig=RigCtl(self.ac.rig_endpoints[0]),
+                    dst_rig=RigCtl(self.ac.rig_endpoints[1]),
                 )
             except UnsupportedSyncConfigError:
                 messagebox.showerror(
@@ -1116,9 +1073,8 @@ class RigRemote(ttk.Frame):
         :type silent: boolean
         :return:
         """
-
         try:
-            is_valid_port(event_value)
+            self.ac.rig_endpoints[number - 1].set_port(event_value)
         except ValueError:
             if not silent:
                 messagebox.showerror(
@@ -1128,8 +1084,6 @@ class RigRemote(ttk.Frame):
                     "1024",
                 )
             return
-        if number == 1:
-            self.rigctl_one.target["port"] = event_value
 
     def _process_hostname_entry(self, event_value, number, silent=False):
         """Process event for hostname entry
@@ -1142,13 +1096,11 @@ class RigRemote(ttk.Frame):
         """
 
         try:
-            is_valid_hostname(event_value)
-        except Exception:
+            self.ac.rig_endpoints[number - 1].set_hostname(event_value)
+        except ValueError:
             if not silent:
                 messagebox.showerror("Error", "Invalid Hostname")
             return
-        if number == 1:
-            self.rigctl_one.target["hostname"] = event_value
 
     def process_entry(self, event, silent=False):
         """Process a change in an entry widget. Check validity of
@@ -1175,7 +1127,7 @@ class RigRemote(ttk.Frame):
             else:
                 answer = True  # default answer for testing
             if answer:
-                event_value = DEFAULT_CONFIG[ekey]
+                event_value = self.ac.DEFAULT_CONFIG[ekey]
                 event.widget.delete(0, "end")
                 event.widget.insert(0, event_value)
                 self.params_last_content[event_name] = event_value
@@ -1355,8 +1307,21 @@ class RigRemote(ttk.Frame):
                     frequency_modulation=frequency_modulation,
                     scan_mode=scan_mode,
                     new_bookmark_list=self.new_bookmark_list,
-                    pass_params=dict.copy(self.params),
-                    bookmarks=self.tree,
+                    range_min=khertz_to_hertz(
+                        int(self.params["txt_range_min"].get().replace(",", ""))
+                    ),
+                    range_max=khertz_to_hertz(
+                        int(self.params["txt_range_max"].get().replace(",", ""))
+                    ),
+                    interval=int(self.params["txt_interval"].get()),
+                    delay=int(self.params["txt_delay"].get()),
+                    passes=int(self.params["txt_passes"].get()),
+                    sgn_level=int(self.params["txt_sgn_level"].get()),
+                    wait=self.params["ckb_wait"].is_checked(),
+                    record=self.params["ckb_record"].is_checked(),
+                    auto_bookmark=self.params["ckb_auto_bookmark"].is_checked(),
+                    log=self.params["ckb_log"].is_checked(),
+                    bookmarks=self._extract_bookmarks(),
                 )
 
                 self.scanning = Scanning(
@@ -1416,17 +1381,11 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: none
         """
-        import pdb
-
-        pdb.set_trace()
         self._clear_form(1)
         for nb in nbl:
             self.params["txt_description1"].insert(
                 0, "activity on {}".format(nb["time"])
             )
-            import pdb
-
-            pdb.set_trace()
             self.params["txt_frequency1"].insert(0, str(nb["freq"]).strip())
             self.params["cbb_mode1"].insert(0, nb["mode"])
             # adding bookmark to the list
@@ -1445,11 +1404,11 @@ class RigRemote(ttk.Frame):
 
     def cb_second_get_frequency(self):
         """Wrapper around cb_set_frequency."""
-        self.cb_get_frequency(self.rigctl_two.target)
+        self.cb_get_frequency(self.rigctl_two)
 
     def cb_first_get_frequency(self):
         """Wrapper around cb_set_frequency."""
-        self.cb_get_frequency(self.rigctl_one.target)
+        self.cb_get_frequency(self.rigctl_one)
 
     def cb_get_frequency(self, rig_target, silent=False):
         """Get current rig frequency and mode.
@@ -1459,16 +1418,15 @@ class RigRemote(ttk.Frame):
         :raises: none
         :returns: none
         """
-
         # clear fields
-        self._clear_form(rig_target["rig_number"])
+        self._clear_form(rig_target.target.rig_number)
         try:
-            frequency = self.rigctl_one.get_frequency()
-            mode = self.rigctl_one.get_mode()
+            frequency = rig_target.get_frequency()
+            mode = rig_target.get_mode()
             # update fields
-            txt_frequency = "txt_frequency{}".format(rig_target["rig_number"])
-            self.params[txt_frequency].insert(0, frequency.strip())
-            cbb_mode = "cbb_mode{}".format(rig_target["rig_number"])
+            txt_frequency = "txt_frequency{}".format(rig_target.target.rig_number)
+            self.params[txt_frequency].insert(0, frequency)
+            cbb_mode = "cbb_mode{}".format(rig_target.target.rig_number)
             self.params[cbb_mode].insert(0, mode)
         except Exception as err:
             if not silent:
@@ -1478,13 +1436,12 @@ class RigRemote(ttk.Frame):
 
     def cb_second_set_frequency(self):
         """Wrapper around cb_set_frequency."""
-
-        self.cb_set_frequency(self.rigctl_two.target, event=None)
+        self.cb_set_frequency(self.rigctl_two, event=None)
 
     def cb_first_set_frequency(self):
         """Wrapper around cb_set_frequency."""
 
-        self.cb_set_frequency(self.rigctl_one.target, event=None)
+        self.cb_set_frequency(self.rigctl_one, event=None)
 
     def cb_set_frequency(self, rig_target, event, silent=False):
         """Set the rig frequency and mode.
@@ -1492,21 +1449,18 @@ class RigRemote(ttk.Frame):
         :param event: not used?
         :type event:
         :param rig_target: rig we are referring to (hostname and port)
-        :type rig_target: dict
         :param silent: suppress messagebox
         :type silent: boolean
         :raises: none
         :returns: none
         """
-
-        txt_frequency = "txt_frequency{}".format(rig_target["rig_number"])
-        cbb_mode = "cbb_mode{}".format(rig_target["rig_number"])
+        txt_frequency = "txt_frequency{}".format(rig_target.target.rig_number)
+        cbb_mode = "cbb_mode{}".format(rig_target.target.rig_number)
         frequency = self.params[txt_frequency].get().replace(",", "")
         mode = str(self.params[cbb_mode].get())
-
         try:
-            self.rigctl_one.set_frequency(frequency)
-            self.rigctl_one.set_mode(mode)
+            rig_target.set_frequency(frequency)
+            rig_target.set_mode(mode)
         except Exception as err:
             if not silent and (frequency != "" or mode != ""):
                 messagebox.showerror(
@@ -1527,7 +1481,7 @@ class RigRemote(ttk.Frame):
 
         self.cb_autofill_form(1, event=None)
 
-    def cb_autofill_form(self, rig_target, event):
+    def cb_autofill_form(self, rig_number, event):
         """Auto-fill bookmark fields with details
         of currently selected Treeview entry.
 
@@ -1539,12 +1493,11 @@ class RigRemote(ttk.Frame):
 
         self.selected_bookmark = self.tree.focus()
         values = self.tree.item(self.selected_bookmark).get("values")
-        self._clear_form(rig_target)
+        self._clear_form(rig_number)
 
-        cbb_mode = "cbb_mode{}".format(rig_target)
-        txt_frequency = "txt_frequency{}".format(rig_target)
-        txt_description = "txt_description{}".format(rig_target)
-
+        cbb_mode = "cbb_mode{}".format(rig_number)
+        txt_frequency = "txt_frequency{}".format(rig_number)
+        txt_description = "txt_description{}".format(rig_number)
         self.params[cbb_mode].insert(0, values[1])
         self.params[txt_frequency].insert(0, values[0])
         self.params[txt_description].insert(0, values[2])
@@ -1562,7 +1515,7 @@ class RigRemote(ttk.Frame):
         try:
             int(control_source["frequency"])
         except (ValueError, TypeError):
-            if not (silent):
+            if not silent:
                 messagebox.showerror(
                     "Error",
                     "Invalid value in Frequency field." "Note: '.' isn't allowed.",

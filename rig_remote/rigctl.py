@@ -20,12 +20,17 @@ Copyright (c) 2015 Simone Marzona
 import logging
 import socket
 from logging import Logger
+from rig_remote.models.rig_endpoint import RigEndpoint
 
 logger: Logger = logging.getLogger(__name__)
 
 
 class RigCtl:
-    _ALLOWED_RIGCTL_MODES: tuple[
+    SUPPORTED_MODULATION_MODES: tuple[
+        str,
+        str,
+        str,
+        str,
         str,
         str,
         str,
@@ -49,7 +54,11 @@ class RigCtl:
         str,
         str,
     ] = (
+        "WFM_ST_OIRT",
+        "AMS",
+        "CWU",
         "USB",
+        "CWL",
         "LSB",
         "CW",
         "CWR",
@@ -154,16 +163,13 @@ class RigCtl:
         "RX",
     ]
 
-    def __init__(self, target: dict):
+    def __init__(self, target: RigEndpoint):
         """Basic rigctl client implementation.
 
         :param target: rig uri data
         :raises TypeError: if the target is not a dict of 3 keys
         """
 
-        if not isinstance(target, dict) or not len(target.keys()) == 3:
-            logger.error("target is not of type dict but %s", type(target))
-            raise TypeError
         self.target = target
 
     def _send_message(self, request: str) -> str:
@@ -173,37 +179,38 @@ class RigCtl:
         :return: response from the rig endpoint
         """
         rig_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         logger.info(
             "sending : %s to target %s, %i",
             request,
-            self.target["hostname"],
-            self.target["port"],
+            self.target.hostname,
+            self.target.port,
         )
         request = f"{request}\n"
         try:
-            rig_socket.connect((self.target["hostname"], self.target["port"]))
+            rig_socket.connect((self.target.hostname, self.target.port))
             rig_socket.sendall(bytearray(request.encode()))
             response = rig_socket.recv(1024)
             rig_socket.close()
         except socket.timeout:
             logger.error(
                 "Time out while connecting to %s %s",
-                self.target["hostname"],
-                self.target["port"],
+                self.target.hostname,
+                self.target.port,
             )
             raise
         except socket.error:
             logger.exception(
                 "Connection refused on %s %s",
-                self.target["hostname"],
-                self.target["port"],
+                self.target.hostname,
+                self.target.port,
             )
             raise
         logger.info(
-            "received %s to target %s %s",
+            "received %s from target %s %s",
             response,
-            self.target["hostname"],
-            self.target["port"],
+            self.target.hostname,
+            self.target.port,
         )
         return str(response.decode())
 
@@ -220,7 +227,7 @@ class RigCtl:
             raise
         self._send_message(request=f"F {frequency}")
 
-    def get_frequency(self) -> str:
+    def get_frequency(self) -> float:
         """Wrapper around _request. It configures the command for getting
         a frequency.
 
@@ -232,22 +239,21 @@ class RigCtl:
             )
             raise ValueError
 
-        return output
+        return float(output)
 
     def set_mode(self, mode: str):
         """Wrapper around _request. It configures the command for setting
         the mode.
 
         """
-        if not isinstance(mode, str) or mode not in self._ALLOWED_RIGCTL_MODES:
+        if not isinstance(mode, str) or mode not in self.SUPPORTED_MODULATION_MODES:
             logger.error(
                 "Frequency modulation must be a string in %s, got %s",
-                self._ALLOWED_RIGCTL_MODES,
+                self.SUPPORTED_MODULATION_MODES,
                 mode,
             )
             raise ValueError
-
-        self._send_message(request=mode)
+        self._send_message(request=f"M {mode}")
 
     def get_mode(self) -> str:
         """Wrapper around _request. It configures the command for getting
@@ -279,7 +285,7 @@ class RigCtl:
 
         return self._send_message(request="LOS")
 
-    def get_level(self) -> str:
+    def get_level(self) -> float:
         """Wrapper around _request. It configures the command for getting
         the signal level.
 
@@ -293,7 +299,7 @@ class RigCtl:
             )
             raise ValueError
 
-        return output
+        return float(output.strip())
 
     def set_vfo(self, vfo: str) -> str:
         """Wrapper around _request. It configures the command for setting

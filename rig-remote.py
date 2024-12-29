@@ -149,27 +149,27 @@ if __name__ == "__main__":
         config_file = os.path.join(dir_prefix, DEFAULT_CONFIG_FILENAME)
 
     root = tk.Tk()
-    ac = AppConfig(config_file)
+    app_config = AppConfig(config_file=config_file)
     # set bookmarks and log filename in this order:
     #   use command line alternate path
     #   use path from config file
     #   use default path
-    ac.read_conf()
+    app_config.read_conf()
 
     if args.alternate_bookmark_file is not None:
         bookmarks = args.alternate_bookmark_file
-        ac.config['bookmark_filename'] = process_path(bookmarks)
-    elif ac.config["bookmark_filename"] is None:
-        ac.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
+        app_config.config['bookmark_filename'] = process_path(bookmarks)
+    elif app_config.config["bookmark_filename"] is None:
+        app_config.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
     # set activity log filename
     if args.alternate_log_file is not None:
         log = args.alternate_log_file
-        ac.config['log_filename'] = process_path(log)
+        app_config.config['log_filename'] = process_path(log)
     else:
-        ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
-    app = RigRemote(root, ac)
+        app_config.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
+    app = RigRemote(root, app_config)
 
-    app.apply_config(ac)
+    app.apply_config()
     app.mainloop()
     if app.scan_thread is not None :
         app.scanning.terminate()

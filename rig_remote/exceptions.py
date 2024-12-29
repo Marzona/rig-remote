@@ -17,8 +17,6 @@ Copyright (c) 2015 Simone Marzona
 """
 
 
-# custom exception definition
-# non retriable custom exceptions
 class NonRetriableError(Exception):
     pass
 
@@ -37,9 +35,6 @@ class UnsupportedScanningConfigError(NonRetriableError):
 
 class UnsupportedSyncConfigError(NonRetriableError):
     pass
-
-
-# retriable custom exceptions
 
 
 class RetriableError(Exception):

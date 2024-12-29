@@ -34,10 +34,12 @@ class Channel:
 
     def __post_init__(self):
         if self.modulation.upper() not in self._MODULATIONS:
-            raise ValueError(
+            message = (
                 "Provided modulation is not supported, supported modulations are %s",
                 self._MODULATIONS,
             )
+            logger.error(message)
+            raise ValueError(message)
 
         self._frequency_validator()
 
@@ -49,17 +51,15 @@ class Channel:
                     int(re.sub("[^0-9]", "", self.input_frequency))
                 )
             except ValueError:
-                logger.exception(
-                    "error converting frequency " ":{}".format(self.frequency)
-                )
+                logger.error("error converting frequency " ":{}".format(self.frequency))
                 raise
 
             nocommas: str = parsed_input_freq.replace(",", "")
 
             if re.search("[^0-9]", nocommas) or int(nocommas) <= 0:
-                raise ValueError(
-                    "Frequency must be int, value provided %i", self.frequency
-                )
+                message = "Frequency must be int, value provided %i", self.frequency
+                logger.error(message)
+                raise ValueError(message)
 
             self.frequency = int(nocommas)
         self.frequency = int(self.input_frequency)

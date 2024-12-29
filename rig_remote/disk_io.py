@@ -25,6 +25,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
+from typing import Tuple
 import csv
 import logging
 import os.path
@@ -42,7 +43,7 @@ class IO:
         self.row_list = []
 
     @staticmethod
-    def _path_check(csv_file):
+    def _path_check(csv_file: str):
         """Helper function that checks if the path is valid.
 
         :param csv_file: path
@@ -55,7 +56,7 @@ class IO:
             logger.info("Invalid path provided:{}".format(csv_file))
             raise InvalidPathError
 
-    def csv_load(self, csv_file, delimiter):
+    def csv_load(self, csv_file: str, delimiter: str):
         """Read the frequency bookmarks file and populate the tree.
 
         :param csv_file: path of the file to be written
@@ -87,7 +88,7 @@ class IO:
             )
         logger.info("loaded %i rows from csv %s", len(self.row_list), csv_file)
 
-    def csv_save(self, csv_file, delimiter):
+    def csv_save(self, csv_file: str, delimiter: str):
         """Save current frequencies to disk.
 
         :param delimiter: delimiter char used in the csv
@@ -117,7 +118,7 @@ class LogFile:
         self.log_filename = None
         self.log_file = None
 
-    def open(self, name=None):
+    def open(self, name: str = None):
         """Opens a log file.
 
         :param name: log file name, defaults to None
@@ -142,7 +143,7 @@ class LogFile:
                 "Error while trying to open log file: " "{}".format(self.log_filename)
             )
 
-    def write(self, record_type, record, signal):
+    def write(self, record_type: str, record: Tuple, signal: list):
         """Writes a message to the log file.
 
         :param record_type: type of the record to write

@@ -25,10 +25,12 @@ class Bookmark:
 
     def __post_init__(self):
         if self.lockout.upper() not in self._LOCKOUTS:
-            raise ValueError(
+            message = (
                 "Provided lockout value %s is not supported, supported values are %s",
                 self.lockout,
                 self._LOCKOUTS,
             )
+            logger.error(message)
+            raise ValueError(message)
         if not self.description:
             raise ValueError("Please add a description")

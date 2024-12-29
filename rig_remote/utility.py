@@ -25,9 +25,45 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# function definition
 def khertz_to_hertz(value):
     return int(value) * 1000
+
+
+def center_window(window, width=300, height=200):
+    """Centers a given window with a given size
+
+    :param window: the window instance to be centered
+    :param width: width of the window
+    :param height: height of the window
+    """
+
+    # get screen width and height
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    # calculate position x and y coordinates
+    x = (screen_width / 2) - (width / 2)
+    y = (screen_height / 2) - (height / 2)
+    window.geometry("%dx%d+%d+%d" % (width, height, x, y))
+
+
+def shutdown(window, silent=False):
+    """Here we quit. Before exiting, if save_exit checkbox is checked
+    we save the configuration of the app and the bookmarks.
+    We call store_conf and we destroy the main window
+
+    :param window: object that represent the UI
+    :type window: tkk instance
+    :param silent: handles the visualization of the message box
+    :type silent: boolean
+    :returns: none
+    """
+
+    if window.ckb_save_exit.get_str_val() == "true":
+        window.io.save(window.bookmarks_file)
+        store_conf(window)
+
+    window.master.destroy()
 
 
 def store_conf(window):
@@ -52,7 +88,6 @@ def store_conf(window):
     window.ac.config["record"] = window.params["ckb_record"].get_str_val()
     window.ac.config["log"] = window.params["ckb_log"].get_str_val()
     window.ac.config["always_on_top"] = window.ckb_top.get_str_val()
-    # window.ac.config["aggr_scan"] = window.params["ckb_aggr_scan"].get_str_val()
     window.ac.config["save_exit"] = window.ckb_save_exit.get_str_val()
     window.ac.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].get_str_val()
     window.ac.config["bookmark_filename"] = window.bookmarks_file
@@ -77,83 +112,3 @@ def center_window(window, width=300, height=200):
     x = (screen_width / 2) - (width / 2)
     y = (screen_height / 2) - (height / 2)
     window.geometry("%dx%d+%d+%d" % (width, height, x, y))
-
-
-def build_rig_uri(number, params):
-    """Returns the info regarding the rig target.
-
-    :param number: number that identifies the rig, needs to be 1 or 2 so far.
-    :type number: integer
-    :param params: window parameters
-    :returns: the info regarding a single rig, like ip, number and port
-    :return type: dictionary
-    """
-
-    if number not in (1, 2):
-        logger.error("The rig number {} is not supported".format(number))
-        raise NotImplementedError
-
-    rig_target = {}
-    hostname = "txt_hostname{}".format(number)
-    port = "txt_port{}".format(number)
-    rig_target["hostname"] = params[hostname].get()
-    rig_target["port"] = int(params[port].get())
-    rig_target["rig_number"] = number
-
-    return rig_target
-
-
-def shutdown(window, silent=False):
-    """Here we quit. Before exiting, if save_exit checkbox is checked
-    we save the configuration of the app and the bookmarks.
-    We call store_conf and we destroy the main window
-
-    :param window: object that represent the UI
-    :type window: tkk instance
-    :param silent: handles the visualization of the message box
-    :type silent: boolean
-    :returns: none
-    """
-
-    if window.ckb_save_exit.get_str_val() == "true":
-        window.io.save(window.bookmarks_file)
-        store_conf(window)
-
-    window.master.destroy()
-
-
-def is_valid_port(port):
-    """Checks if the provided port is a valid one.
-
-    :param: port to connect to
-    :type port: str as provided by tkinter
-    :raises: ValueError if the string can't be converted to integer and
-    if the converted ingeger is lesser than 2014 (privileged port)
-    """
-
-    try:
-        int(port)
-    except ValueError:
-        logger.error("Incorrect data: port number must be int.")
-        raise
-    if int(port) <= 1024:
-        logger.error("Privileged port used: {}".format(port))
-        raise ValueError
-
-
-def is_valid_hostname(hostname):
-    """Checks if hostname is truly a valid FQDN, or IP address.
-
-    :param hostname: hostname to validate.
-    :type hostname: str
-    :raises: ValueError if hostname is empty string
-    :raises: Exception based on result of gethostbyname() call
-    """
-
-    if hostname == "":
-        raise ValueError
-    try:
-        _ = gethostbyname(hostname)
-    except gaierror as e:
-        logger.error("Hostname error: {}".format(e))
-        raise

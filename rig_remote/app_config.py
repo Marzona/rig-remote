@@ -29,7 +29,6 @@ import os
 import sys
 
 from rig_remote.constants import (
-    DEFAULT_CONFIG,
     RIG_URI_CONFIG,
     MONITOR_CONFIG,
     SCANNING_CONFIG,
@@ -38,6 +37,7 @@ from rig_remote.constants import (
 )
 from rig_remote.disk_io import IO
 from rig_remote.exceptions import NonRetriableError
+from rig_remote.models.rig_endpoint import RigEndpoint
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,27 @@ class AppConfig:
 
     """
 
+    DEFAULT_CONFIG = {
+        "hostname1": "127.0.0.1",
+        "port1": "7356",
+        "hostname2": "127.0.0.1",
+        "port2": "7357",
+        "interval": "1",
+        "delay": "5",
+        "passes": "0",
+        "sgn_level": "-30",
+        "range_min": "24,000",
+        "range_max": "1800,000",
+        "wait": "false",
+        "record": "false",
+        "log": "false",
+        "always_on_top": "true",
+        "save_exit": "false",
+        "aggr_scan": "false",
+        "auto_bookmark": "false",
+        "log_filename": None,
+        "bookmark_filename": None,
+    }
     _UPGRADE_MESSAGE = (
         "This config file may deserve an "
         "upgrade, please execute the "
@@ -57,7 +78,7 @@ class AppConfig:
         "for more info."
     )
 
-    def __init__(self, config_file):
+    def __init__(self, config_file: str):
         """Default config, they will be overwritten when a conf is loaded
         this will be used to write a default config file.
         If the command line specifies a config file we note it in
@@ -71,9 +92,10 @@ class AppConfig:
         """
 
         self.io = IO()
+        self.rig_endpoints = []
         self.config_file = config_file
         if not self.config_file:
-            self.config = dict.copy(DEFAULT_CONFIG)
+            self.config = dict.copy(self.DEFAULT_CONFIG)
         else:
             self.config = {}
 
@@ -83,9 +105,6 @@ class AppConfig:
         and then we re-read it. It logs an error if a line of the file is not
         valid and moves on to the next one.
 
-        :param: none
-        :raises: none
-        :returns: none
         """
 
         if os.path.isfile(self.config_file):
@@ -94,7 +113,7 @@ class AppConfig:
             try:
                 config.read(self.config_file)
             except configparser.MissingSectionHeaderError:
-                logger.error("Missing Sections in the config file.")
+                logger.errorshutdown("Missing Sections in the config file.")
                 logger.error(self._UPGRADE_MESSAGE)
                 sys.exit(1)
             except configparser.Error:
@@ -109,7 +128,17 @@ class AppConfig:
                     self.config[item[0]] = item[1]
         else:
             logger.info("Using default configuration...")
-            self.config = DEFAULT_CONFIG
+            self.config = self.DEFAULT_CONFIG
+
+        # generate the rig endpoints from config
+        self.rig_endpoints = [
+            RigEndpoint(
+                hostname=self.config["hostname{}".format(instance_number)],
+                port=int(self.config["port{}".format(instance_number)]),
+                rig_number=instance_number,
+            )
+            for instance_number in (1, 2)
+        ]
 
     def write_conf(self):
         """Writes the configuration to file. If the default config path

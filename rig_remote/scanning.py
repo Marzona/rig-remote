@@ -60,8 +60,7 @@ import logging
 
 import socket
 import time
-
-from rig_remote.constants import BM
+from rig_remote.bookmarksmanager import bookmark_factory
 from rig_remote.rigctl import RigCtl
 from rig_remote.disk_io import LogFile
 from rig_remote.stmessenger import STMessenger
@@ -96,6 +95,7 @@ class Scanning:
         self.hold_bookmark = False
 
     def terminate(self):
+        logger.info("Terminating scan.")
         self._scan_active = False
 
     def _queue_sleep(self, task: ScanningTask):
@@ -147,21 +147,23 @@ class Scanning:
         try:
             self._rigctl.set_frequency(freq)
         except ValueError:
-            logger.warning("Bad frequency parameter passed.")
+            logger.error("Bad frequency parameter passed.")
             raise
         except (socket.error, socket.timeout):
-            logger.warning("Communications Error!")
+            logger.error("Communications Error!")
             self.scan_active = False
             raise
         time.sleep(self._TIME_WAIT_FOR_TUNE)
 
     def _create_new_bookmark(self, freq):
-        nbm = {
-            "freq": freq,
-            "mode": self._rigctl.get_mode(),
-            "time": datetime.datetime.utcnow().strftime("%a %b %d %H:%M %Y"),
-        }
-        return nbm
+        bookmark = bookmark_factory(
+            input_frequency=freq,
+            modulation=self._rigctl.get_mode(),
+            description="auto added by scan",
+            lockout="",
+        )
+        logger.info("nuew bookmkar created %s", bookmark)
+        return bookmark
 
     def _start_recording(self, task):
         self._rigctl.start_recording()
@@ -184,12 +186,14 @@ class Scanning:
         level = []
 
         pass_count = task.passes
-        interval = task.interval
+        logger.info("Starting frequency scan")
         while self._scan_active:
+            logger.info("scan pass %i with interval %i", pass_count, task.interval)
             freq = task.range_min
             # If the range is negative, silently bail...
             if freq > task.range_max:
-                self._scan_active = False
+                logger.info("Frequency beyond than max, stopping scan")
+                self.terminate()
             while freq < task.range_max:
                 if self._process_queue(task):
                     try:
@@ -199,10 +203,8 @@ class Scanning:
                 if self._signal_check(task.sgn_level, self._rigctl, level):
                     if task.record:
                         self._start_recording(task)
-
                     if task.auto_bookmark:
                         self._autobookmark(level, task, freq)
-
                     if task.log:
                         nbm = self._create_new_bookmark(freq)
                         log.write("F", nbm, level[0])
@@ -213,9 +215,10 @@ class Scanning:
                         self._stop_recording()
                 elif self.hold_bookmark:
                     nbm = self._create_new_bookmark(self.prev_freq)
+                    logger.info("adding new bookmark to list")
                     task.new_bookmark_list.append(nbm)
                     self._prev_bookmark(False, None, None)
-                freq = freq + interval
+                freq = freq + task.interval
                 if not self._scan_active:
                     return task
             pass_count, task = self._pass_count_update(pass_count, task)
@@ -233,6 +236,7 @@ class Scanning:
             return
         if level[0] < self.prev_level[0]:
             nbm = self._create_new_bookmark(self.prev_freq)
+            logger.info("adding new bookmark to list")
             task.new_bookmark_list.append(nbm)
             self._prev_bookmark(False, None, None)
         else:
@@ -242,6 +246,7 @@ class Scanning:
         if pass_count > 0:
             pass_count -= 1
             if pass_count == 0 and task.passes > 0:
+                logger.info("max passes reached.")
                 self._scan_active = False
         return pass_count, task
 
@@ -249,7 +254,7 @@ class Scanning:
     def _dbfs_to_sgn(value: int):
         return int(value) * 10
 
-    def _signal_check(self, sgn_level, rig, detected_level):
+    def _signal_check(self, sgn_level: int, rig: RigCtl, detected_level: list):
         """check for the signal self._SIGNAL_CHECKS times pausing
         self._NO_SIGNAL_DELAY between checks. Puts signal level in
         list to hand back to caller for logging.
@@ -259,7 +264,6 @@ class Scanning:
         :returns true/false: signal found, signal not found
         :return type: boolean
         """
-
         del detected_level[:]
         sgn = self._dbfs_to_sgn(sgn_level)
         signal_found = 0
@@ -267,10 +271,12 @@ class Scanning:
 
         for i in range(0, self._SIGNAL_CHECKS):
             logger.info("Checks left:{}".format(self._SIGNAL_CHECKS - i))
-            level = int(rig.get_level().replace(".", ""))
-            logger.info("sgn_level:{}".format(level))
-            logger.info("dbfs_sgn:{}".format(sgn))
+            level = int(rig.get_level())
+            logger.info(
+                "detected signal level sgn_level:%f, dbfs signal level %f", level, sgn
+            )
             if level > sgn:
+                logger.info("Signal found")
                 signal_found += 1
             time.sleep(self._NO_SIGNAL_DELAY)
         if signal_found > 1:
@@ -291,23 +297,23 @@ class Scanning:
 
         level = []
         old_pass_count = pass_count = task.passes
+        logger.info("Starting bookmark scan")
         while self._scan_active:
-            for item in task.bookmarks.get_children():
+            for bookmark in task.bookmarks:
+                logger.info("tuning bookmark %s with id ", bookmark, bookmark.id)
                 self._process_queue(task)
                 if old_pass_count != task.passes:
                     old_pass_count = pass_count = task.passes
-                bookmark = task.bookmarks.item(item).get("values")
-                if (bookmark[BM.lockout]) == "L":
+                if bookmark.lockout == "L":
                     continue
-                freq = bookmark[BM.freq].replace(",", "")
                 try:
-                    self._frequency_tune(freq)
+                    self._frequency_tune(bookmark.channel.frequency)
                 except (socket.error, socket.timeout):
                     break
 
                 if self._signal_check(task.sgn_level, self._rigctl, level):
                     logger.info(
-                        "This freq is bookmarked as: {}".format(bookmark[BM.freq])
+                        "This freq is bookmarked as: %s", bookmark.channel.frequency
                     )
 
                     if task.record:
