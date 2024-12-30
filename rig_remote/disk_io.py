@@ -64,7 +64,7 @@ class IO:
         :param delimiter: delimiter char
         :type delimiter: string
         :raises: csv.Error if the data to be written as csv isn't valid
-        :returns: none
+
         """
 
         self._path_check(csv_file)

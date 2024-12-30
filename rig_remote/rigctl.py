@@ -22,6 +22,7 @@ import socket
 from logging import Logger
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.models.modulation_modes import ModulationModes
+
 logger: Logger = logging.getLogger(__name__)
 
 
@@ -133,6 +134,7 @@ class RigCtl:
             self.target.port,
         )
         request = f"{request}\n"
+
         try:
             rig_socket.connect((self.target.hostname, self.target.port))
             rig_socket.sendall(bytearray(request.encode()))
@@ -192,7 +194,10 @@ class RigCtl:
         the mode.
 
         """
-        if not isinstance(mode, str) or mode.upper() not in self.SUPPORTED_MODULATION_MODES:
+        if (
+            not isinstance(mode, str)
+            or mode.upper() not in self.SUPPORTED_MODULATION_MODES
+        ):
             logger.error(
                 "Frequency modulation must be a string in %s, got %s",
                 [mode.value for mode in self.SUPPORTED_MODULATION_MODES],

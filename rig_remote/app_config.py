@@ -87,7 +87,7 @@ class AppConfig:
 
         :param config_file: config file passed as input argument
         :type config_file: string
-        :raises: none
+
         :returns:none
         """
 
@@ -147,7 +147,7 @@ class AppConfig:
 
         :param: none
         :raises: IOError, OSError if it is not possible to write the config
-        :returns: none
+
         """
 
         self.io.row_list = []

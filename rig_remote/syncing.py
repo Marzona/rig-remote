@@ -43,7 +43,7 @@ class Syncing:
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
-        :raises: none
+
         :returns: updates the scanning task object with the new activity found
         """
 

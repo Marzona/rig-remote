@@ -41,7 +41,7 @@ class ScanningTask:
         :raises: InvalidScanModeError if action or mode are not
         allowed
         :raises: ValueError if the pass_params dictionary contains invalid data
-        :returns: none
+
         """
         self.bookmarks = bookmarks
         self.error = None

@@ -14,14 +14,16 @@ from rig_remote.disk_io import IO
 logger = logging.getLogger(__name__)
 from typing import Callable
 
+
 def bookmark_factory(
-    input_frequency: int | str , modulation: str, description: str, lockout: str = ""
+    input_frequency: int | str, modulation: str, description: str, lockout: str = ""
 ):
     return Bookmark(
         channel=Channel(input_frequency=input_frequency, modulation=modulation),
         description=description,
         lockout=lockout,
     )
+
 
 class BookmarksManager:
     """Implements the bookmarks management."""
@@ -46,7 +48,12 @@ class BookmarksManager:
         ],
     ]
 
-    def __init__(self, io: IO = IO(), bookmark_factory:Callable=bookmark_factory, modulation_modes:ModulationModes = ModulationModes):
+    def __init__(
+        self,
+        io: IO = IO(),
+        bookmark_factory: Callable = bookmark_factory,
+        modulation_modes: ModulationModes = ModulationModes,
+    ):
         self.io = io
         self.bookmarks = []
         self._bookmark_factory = bookmark_factory
@@ -118,7 +125,7 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename:str):
+    def import_bookmarks(self, filename: str):
         """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
 
@@ -127,7 +134,6 @@ class BookmarksManager:
             logger.info("no filename provided, nothing to import.")
             return
         return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
-
 
     def _detect_format(self, filename: str):
         """Method for detecting the bookmark type. Only two types are supported.
@@ -199,7 +205,7 @@ class BookmarksManager:
         logger.info("bookmark %s added", bookmark)
         return False
 
-    def export_rig_remote(self, filename:str):
+    def export_rig_remote(self, filename: str):
         """Wrapper method for exporting using rig remote csv format.
         it wraps around the save method used when "save on exit" is selected.
         """
@@ -213,7 +219,7 @@ class BookmarksManager:
         except ValueError:
             raise BookmarkFormatError
 
-    def export_gqrx(self, filename:str):
+    def export_gqrx(self, filename: str):
         """Wrapper method for exporting using rig remote csv format.
         It wraps around the save method used when "save on exit" is selected
         and around a function that provides the format/data conversion.

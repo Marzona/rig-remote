@@ -101,7 +101,7 @@ class Scanning:
         """check the queue regularly during 'sleep'
 
         :param task: current scanning task
-        :returns: None
+
         """
 
         length = task.delay
@@ -120,7 +120,7 @@ class Scanning:
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
-        :raises: none
+
         :returns: updates the scanning task object with the new activity found
         """
 
@@ -137,12 +137,12 @@ class Scanning:
             _ = self._frequency(task, log)
         log.close()
 
-    def _frequency_tune(self, freq:int):
+    def _frequency_tune(self, freq: int):
         """helper function called inside _frequency().
         This is for reducing the code inside the while true loops
         """
 
-        logger.info("Tuning to %i",freq)
+        logger.info("Tuning to %i", freq)
         try:
             self._rigctl.set_frequency(freq)
         except ValueError:
@@ -154,7 +154,7 @@ class Scanning:
             raise
         time.sleep(self._TIME_WAIT_FOR_TUNE)
 
-    def _create_new_bookmark(self, freq:int):
+    def _create_new_bookmark(self, freq: int):
         bookmark = bookmark_factory(
             input_frequency=freq,
             modulation=self._rigctl.get_mode(),
@@ -164,17 +164,13 @@ class Scanning:
         logger.info("nuew bookmkar created %s", bookmark)
         return bookmark
 
-
-
-
-
     def _frequency(self, task, log):
         """Performs a frequency scan, using the task obj for finding
         all the info. This function is wrapped by Scanning.scan()
 
         :param task: object that represent a scanning task
         :type task: object from ScanningTask
-        :raises: none
+
         :returns: updates the scanning task object with the new activity found
         """
         self._rigctl.set_mode(task.frequency_modulation)
