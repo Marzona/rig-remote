@@ -115,7 +115,7 @@ class QueueComms:
         self._send_to_queue(self.parent_queue, item)
         logger.info("parent queue size %i", self.parent_queue.qsize())
 
-    def send_to_child(self, item: str):
+    def send_to_child(self, item: str|tuple):
         """Wrapper for _send_to_queue"""
 
         self._send_to_queue(self.child_queue, item)
