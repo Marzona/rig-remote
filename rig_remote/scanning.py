@@ -55,7 +55,6 @@ TAS - Tim Sweeney - mainetim@gmail.com
 2016/05/30 - TAS - Small fixes and modify _create_new_bookmark for multiple uses.
 """
 
-import datetime
 import logging
 
 import socket
@@ -138,12 +137,12 @@ class Scanning:
             _ = self._frequency(task, log)
         log.close()
 
-    def _frequency_tune(self, freq):
+    def _frequency_tune(self, freq:int):
         """helper function called inside _frequency().
         This is for reducing the code inside the while true loops
         """
 
-        logger.info("Tuning to {}".format(freq))
+        logger.info("Tuning to %i",freq)
         try:
             self._rigctl.set_frequency(freq)
         except ValueError:
@@ -155,7 +154,7 @@ class Scanning:
             raise
         time.sleep(self._TIME_WAIT_FOR_TUNE)
 
-    def _create_new_bookmark(self, freq):
+    def _create_new_bookmark(self, freq:int):
         bookmark = bookmark_factory(
             input_frequency=freq,
             modulation=self._rigctl.get_mode(),
@@ -165,13 +164,9 @@ class Scanning:
         logger.info("nuew bookmkar created %s", bookmark)
         return bookmark
 
-    def _start_recording(self, task):
-        self._rigctl.start_recording()
-        logger.info("Recording started.")
 
-    def _stop_recording(self, task):
-        self._rigctl.stop_recording()
-        logger.info("Recording stopped.")
+
+
 
     def _frequency(self, task, log):
         """Performs a frequency scan, using the task obj for finding
@@ -202,7 +197,9 @@ class Scanning:
                         break
                 if self._signal_check(task.sgn_level, self._rigctl, level):
                     if task.record:
-                        self._start_recording(task)
+                        self._rigctl.start_recording()
+                        logger.info("Recording started.")
+
                     if task.auto_bookmark:
                         self._autobookmark(level, task, freq)
                     if task.log:
@@ -212,7 +209,8 @@ class Scanning:
                     if self._scan_active:
                         self._queue_sleep(task)
                     if task.record:
-                        self._stop_recording()
+                        self._rigctl.stop_recording()
+                        logger.info("Recording stopped.")
                 elif self.hold_bookmark:
                     nbm = self._create_new_bookmark(self.prev_freq)
                     logger.info("adding new bookmark to list")
@@ -317,7 +315,8 @@ class Scanning:
                     )
 
                     if task.record:
-                        self._start_recording(task)
+                        self._rigctl.start_rezcording()
+                        logger.info("Recording started.")
 
                     if task.log:
                         log.write("B", bookmark, level[0])
@@ -335,7 +334,8 @@ class Scanning:
                         self._queue_sleep(task)
 
                     if task.record:
-                        self._stop_recording(task)
+                        self._rigctl.stop_recording()
+                        logger.info("Recording stopped.")
 
                 if not self._scan_active:
                     return task

@@ -2,21 +2,20 @@
 
 from rig_remote.exceptions import (
     InvalidPathError,
-    FormatError,
+    BookmarkFormatError,
 )
 from rig_remote.models.channel import Channel
 from rig_remote.models.bookmark import Bookmark
-
-
+from rig_remote.models.modulation_modes import ModulationModes
 import logging
-from tkinter import messagebox, filedialog
+
 from rig_remote.disk_io import IO
 
 logger = logging.getLogger(__name__)
-
+from typing import Callable
 
 def bookmark_factory(
-    input_frequency: str, modulation: str, description: str, lockout: str = ""
+    input_frequency: int | str , modulation: str, description: str, lockout: str = ""
 ):
     return Bookmark(
         channel=Channel(input_frequency=input_frequency, modulation=modulation),
@@ -24,35 +23,12 @@ def bookmark_factory(
         lockout=lockout,
     )
 
-
 class BookmarksManager:
     """Implements the bookmarks management."""
 
     io: IO
     _BOOKMARK_ENTRY_FIELDS = 4
-    _MODE_MAP = {
-        "AM": "AM",
-        "FM": "NarrowFM",
-        "WFM_ST": "WFM(stereo)",
-        "WFM": "WFM(mono)",
-        "LSB": "LSB",
-        "USB": "USB",
-        "CW": "CW",
-        "CWL": "CW-L",
-        "CWU": "CW-U",
-    }
 
-    _REVERSE_MODE_MAP = {
-        "AM": "AM",
-        "Narrow FM": "FM",
-        "WFM (stereo)": "WFM_ST",
-        "WFM (mono)": "WFM",
-        "LSB": "LSB",
-        "USB": "USB",
-        "CW": "CW",
-        "CW-L": "CWL",
-        "CW-U": "CWU",
-    }
     _GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
     # gqrx bookmark file has 5 lines of header
     _GQRX_FIRST_BOOKMARK = 5
@@ -70,13 +46,14 @@ class BookmarksManager:
         ],
     ]
 
-    def __init__(self, io: IO = IO(), bookmark_factory=bookmark_factory):
+    def __init__(self, io: IO = IO(), bookmark_factory:Callable=bookmark_factory, modulation_modes:ModulationModes = ModulationModes):
         self.io = io
         self.bookmarks = []
         self._bookmark_factory = bookmark_factory
+        self._modulation_modes = modulation_modes
         self._IMPORTERS_MAP = {
             "gqrx": self._import_gqrx,
-            "rig_remote": self._import_rig_remote,
+            "rig-remote": self._import_rig_remote,
         }
 
     def save(self, bookmarks_file: str, bookmarks: list, delimiter: str = ","):
@@ -86,7 +63,6 @@ class BookmarksManager:
         :param delimiter: delimiter to use for creating the csv file,
 
         defaults to ','
-        :param silent: suppress messagebox
         :raises : none
         :returns : none
         """
@@ -142,30 +118,16 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, silent=True):
+    def import_bookmarks(self, filename:str):
         """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
 
         """
-
-        filename = filedialog.askopenfilename(
-            initialdir="~/",
-            title="Select bookmark file",
-            filetypes=(("csv files", "*.csv"), ("all files", "*.*")),
-        )
         if not filename:
-            logger.info("No filename provided in import dialog...")
+            logger.info("no filename provided, nothing to import.")
             return
-        try:
-            return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
-        except FormatError:
-            logger.info("no valid format found.")
-            if not silent:
-                logger.error(
-                    "Unsupported format, supported formats are rig-remote"
-                    "rig-remote and gqrx,"
-                )
-                messagebox.showerror("Error", "Unsupported file format.")
+        return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
+
 
     def _detect_format(self, filename: str):
         """Method for detecting the bookmark type. Only two types are supported.
@@ -180,7 +142,7 @@ class BookmarksManager:
             return "gqrx"
         if len(line.split(",")) == 4:
             return "rig-remote"
-        raise FormatError
+        raise BookmarkFormatError
 
     def _import_rig_remote(self, file_path):
         """Imports the bookmarks using rig-remote format. It wraps around
@@ -191,9 +153,9 @@ class BookmarksManager:
         """
 
         try:
-            return self.load(file_path, ",", silent=False)
+            return self.load(file_path, ",")
         except ValueError:
-            raise FormatError
+            raise BookmarkFormatError
 
     def _import_gqrx(self, file_path):
         """Method for importing gqrx bookmarks.
@@ -211,10 +173,9 @@ class BookmarksManager:
             if count < self._GQRX_FIRST_BOOKMARK + 1:
                 continue
             try:
-                # new_line = [row[0].strip(), self._REVERSE_MODE_MAP[row[2].strip()], row[1].strip()]
                 bookmark = self._bookmark_factory(
                     input_frequency=row[0].strip(),
-                    modulation=self._REVERSE_MODE_MAP[row[2].strip()],
+                    modulation=self._modulation_modes[row[2].strip().upper()].value,
                     description=row[1].strip(),
                 )
                 self.add_bookmark(bookmark)
@@ -238,27 +199,26 @@ class BookmarksManager:
         logger.info("bookmark %s added", bookmark)
         return False
 
-    def export_rig_remote(self):
+    def export_rig_remote(self, filename:str):
         """Wrapper method for exporting using rig remote csv format.
         it wraps around the save method used when "save on exit" is selected.
         """
 
         try:
             self.save(
-                bookmarks_file=self._export_panel(),
+                bookmarks_file=filename,
                 bookmarks=self.bookmarks,
                 delimiter=",",
             )
         except ValueError:
-            raise FormatError
+            raise BookmarkFormatError
 
-    def export_gqrx(self):
+    def export_gqrx(self, filename:str):
         """Wrapper method for exporting using rig remote csv format.
         It wraps around the save method used when "save on exit" is selected
         and around a function that provides the format/data conversion.
         """
 
-        filename = self._export_panel()
         self.io.row_list = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
@@ -285,15 +245,3 @@ class BookmarksManager:
 
         logger.info("saving %i bookmarks", len(self.io.row_list))
         self.io.csv_save(filename, ";")
-
-    @staticmethod
-    def _export_panel():
-        """handles the popup for selecting the path for saving the file."""
-
-        filename = filedialog.asksaveasfilename(
-            initialdir="~/",
-            title="Select bookmark file",
-            initialfile="bookmarks-export.csv",
-            filetypes=(("csv", "*.csv"), ("all files", "*.*")),
-        )
-        return filename

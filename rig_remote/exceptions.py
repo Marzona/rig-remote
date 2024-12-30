@@ -41,5 +41,5 @@ class RetriableError(Exception):
     pass
 
 
-class FormatError(RetriableError):
+class BookmarkFormatError(RetriableError):
     pass

@@ -21,66 +21,12 @@ import logging
 import socket
 from logging import Logger
 from rig_remote.models.rig_endpoint import RigEndpoint
-
+from rig_remote.models.modulation_modes import ModulationModes
 logger: Logger = logging.getLogger(__name__)
 
 
 class RigCtl:
-    SUPPORTED_MODULATION_MODES: tuple[
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-    ] = (
-        "WFM_ST_OIRT",
-        "AMS",
-        "CWU",
-        "USB",
-        "CWL",
-        "LSB",
-        "CW",
-        "CWR",
-        "RTTY",
-        "RTTYR",
-        "AM",
-        "FM",
-        "WFM",
-        "AMS",
-        "PKTLSB",
-        "PKTU",
-        "SB",
-        "PKTFM",
-        "ECSSUSB",
-        "ECSSLSB",
-        "WFM_ST",
-        "FAX",
-        "SAM",
-        "SAL",
-        "SAH",
-        "DSB",
-    )
+    SUPPORTED_MODULATION_MODES = ModulationModes
     _RESET_CMD_DICT = {
         "NONE": 0,
         "SOFTWARE_RESET": 1,
@@ -246,10 +192,10 @@ class RigCtl:
         the mode.
 
         """
-        if not isinstance(mode, str) or mode not in self.SUPPORTED_MODULATION_MODES:
+        if not isinstance(mode, str) or mode.upper() not in self.SUPPORTED_MODULATION_MODES:
             logger.error(
                 "Frequency modulation must be a string in %s, got %s",
-                self.SUPPORTED_MODULATION_MODES,
+                [mode.value for mode in self.SUPPORTED_MODULATION_MODES],
                 mode,
             )
             raise ValueError

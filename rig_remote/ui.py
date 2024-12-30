@@ -75,6 +75,7 @@ from rig_remote.constants import (
 from rig_remote.exceptions import (
     UnsupportedScanningConfigError,
     UnsupportedSyncConfigError,
+    BookmarkFormatError
 )
 from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
 from rig_remote.rigctl import RigCtl
@@ -87,8 +88,7 @@ from rig_remote.utility import (
     center_window,
 )
 import tkinter as tk
-from tkinter import ttk, LabelFrame, messagebox
-
+from tkinter import ttk, LabelFrame, messagebox, filedialog
 import threading
 import itertools
 from rig_remote.utility import (
@@ -162,7 +162,16 @@ class RigRemote(ttk.Frame):
         self.buildmenu(root)
 
     def _import_bookmarks(self):
-        bookmark_list = self.bookmarks.import_bookmarks()
+
+        filename = filedialog.askopenfilename(
+            initialdir="~/",
+            title="Select bookmark file",
+            filetypes=(("csv files", "*.csv"), ("all files", "*.*")),
+        )
+        try:
+            bookmark_list = self.bookmarks.import_bookmarks(filename=filename)
+        except BookmarkFormatError:
+            messagebox.showerror("Error", "Unsupported file format.")
         self._insert_bookmarks(bookmarks=bookmark_list)
         [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
 
@@ -221,15 +230,29 @@ class RigRemote(ttk.Frame):
         exportmenu = tk.Menu(menubar, tearoff=0)
         bookmarksmenu.add_command(label="Import", command=self._import_bookmarks)
         bookmarksmenu.add_cascade(label="Export", menu=exportmenu)
-        exportmenu.add_command(label="Export GQRX", command=self.bookmarks.export_gqrx)
-        exportmenu.add_command(
-            label="Export rig-remote", command=self.bookmarks.export_rig_remote
-        )
+        exportmenu.add_command(label="Export GQRX", command=self._export_gqrx)
+        exportmenu.add_command(label="Export rig-remote", command=self._export_rig_remote)
 
         root.config(menu=menubar)
         menubar.add_cascade(label="Rig Remote", menu=appmenu)
         menubar.add_cascade(label="Bookmarks", menu=bookmarksmenu)
 
+
+    @staticmethod
+    def _export_panel():
+        """handles the popup for selecting the path for saving the file."""
+
+        filename = filedialog.asksaveasfilename(
+            initialdir="~/",
+            title="Select bookmark file",
+            initialfile="bookmarks-export.csv",
+            filetypes=(("csv", "*.csv"), ("all files", "*.*")),
+        )
+        return filename
+    def _export_gqrx(self):
+        self.bookmarks.export_gqrx(filename=self._export_panel())
+    def _export_rig_remote(self):
+        self.bookmarks.export_rig_remote(filename=self._export_panel())
     def build_ac(self, ac):
         """Build and initialize the GUI widgets.
         :param: ac
