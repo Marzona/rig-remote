@@ -1,4 +1,20 @@
-#!/usr/bin/env python
+"""
+Remote application that interacts with rigs using rigctl protocol.
+
+Please refer to:
+http://gqrx.dk/
+http://gqrx.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+
+Author: Simone Marzona
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
+"""
 
 from rig_remote.exceptions import (
     InvalidPathError,
@@ -11,13 +27,14 @@ import logging
 
 from rig_remote.disk_io import IO
 
-logger = logging.getLogger(__name__)
 from typing import Callable
+
+logger = logging.getLogger(__name__)
 
 
 def bookmark_factory(
     input_frequency: int | str, modulation: str, description: str, lockout: str = ""
-):
+) -> Bookmark:
     return Bookmark(
         channel=Channel(input_frequency=input_frequency, modulation=modulation),
         description=description,
@@ -28,12 +45,27 @@ def bookmark_factory(
 class BookmarksManager:
     """Implements the bookmarks management."""
 
-    io: IO
     _BOOKMARK_ENTRY_FIELDS = 4
+
+    def __init__(
+        self,
+        io: IO = IO(),
+        bookmark_factory: Callable = bookmark_factory,
+        modulation_modes: ModulationModes = ModulationModes,
+    ):
+        self._io = io
+        self.bookmarks = []
+        self._bookmark_factory = bookmark_factory
+        self._modulation_modes = modulation_modes
+        self._IMPORTERS_MAP = {
+            "gqrx": self._import_gqrx,
+            "rig-remote": self._import_rig_remote,
+        }
 
     _GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
     # gqrx bookmark file has 5 lines of header
     _GQRX_FIRST_BOOKMARK = 5
+
     _GQRX_BOOKMARK_HEADER = [
         ["# Tag name          ", "  color"],
         ["Untagged            ", " #c0c0c0"],
@@ -48,21 +80,6 @@ class BookmarksManager:
         ],
     ]
 
-    def __init__(
-        self,
-        io: IO = IO(),
-        bookmark_factory: Callable = bookmark_factory,
-        modulation_modes: ModulationModes = ModulationModes,
-    ):
-        self.io = io
-        self.bookmarks = []
-        self._bookmark_factory = bookmark_factory
-        self._modulation_modes = modulation_modes
-        self._IMPORTERS_MAP = {
-            "gqrx": self._import_gqrx,
-            "rig-remote": self._import_rig_remote,
-        }
-
     def save(self, bookmarks_file: str, bookmarks: list, delimiter: str = ","):
         """Bookmarks handling. Saves the bookmarks as a csv file.
 
@@ -74,10 +91,10 @@ class BookmarksManager:
         :returns : none
         """
 
-        self.io.row_list = []
+        self._io.row_list = []
 
         for bookmark in bookmarks:
-            self.io.row_list.append(
+            self._io.row_list.append(
                 [
                     bookmark.channel.frequency,
                     bookmark.channel.modulation,
@@ -86,29 +103,27 @@ class BookmarksManager:
                 ]
             )
 
-        self.io.csv_save(bookmarks_file, delimiter)
+        self._io.csv_save(bookmarks_file, delimiter)
 
     def load(self, bookmark_file: str, delimiter: str = ",") -> list:
         """Bookmarks handling. Loads the bookmarks as
         a csv file.
 
         :param bookmark_file: filename to load, with full path
-        :type bookmark_file: string
         :param delimiter: delimiter to use for creating the csv file,
         defaults to ',''
-        :type delimiter: string
         :raises : none
         :returns : none
         """
-
         try:
-            self.io.csv_load(bookmark_file, delimiter)
+            self._io.csv_load(bookmark_file, delimiter)
         except InvalidPathError:
             logger.info("No bookmarks file found, skipping.")
             return []
         skipped_count = 0
-        for entry in self.io.row_list:
-            if len(entry) < self._BOOKMARK_ENTRY_FIELDS:
+
+        for entry in self._io.row_list:
+            if len(entry) != self._BOOKMARK_ENTRY_FIELDS:
                 logger.info(
                     "skipping line %s as invalid, not enough fields, expecting 4", entry
                 )
@@ -139,7 +154,6 @@ class BookmarksManager:
         """Method for detecting the bookmark type. Only two types are supported.
 
         :param filename: file path to read
-        :type filename: string
         """
 
         with open(filename, "r") as fn:
@@ -148,46 +162,40 @@ class BookmarksManager:
             return "gqrx"
         if len(line.split(",")) == 4:
             return "rig-remote"
-        raise BookmarkFormatError
+        message = f"No parser found for filename {filename}"
+        logger.error(message)
+        raise BookmarkFormatError(message)
 
     def _import_rig_remote(self, file_path):
         """Imports the bookmarks using rig-remote format. It wraps around
         the load method.
 
         :param file_path: path o fhte file to import
-        :type file_path: string
         """
 
-        try:
-            return self.load(file_path, ",")
-        except ValueError:
-            raise BookmarkFormatError
+        return self.load(file_path, ",")
 
     def _import_gqrx(self, file_path):
         """Method for importing gqrx bookmarks.
 
         :param file_path: path of the file to be loaded
-        :type file_path: string
         """
 
-        self.io.csv_load(file_path, ";")
+        self._io.csv_load(file_path, ";")
 
         count = 0
         bookmarks = []
-        for row in self.io.row_list:
+        for row in self._io.row_list:
             count += 1
             if count < self._GQRX_FIRST_BOOKMARK + 1:
                 continue
-            try:
-                bookmark = self._bookmark_factory(
-                    input_frequency=row[0].strip(),
-                    modulation=self._modulation_modes[row[2].strip().upper()].value,
-                    description=row[1].strip(),
-                )
-                self.add_bookmark(bookmark)
-                bookmarks.append(bookmark)
-            except IndexError:
-                pass
+            bookmark = self._bookmark_factory(
+                input_frequency=row[0].strip(),
+                modulation=self._modulation_modes[row[2].strip().upper()].value,
+                description="gqrx_import",
+            )
+            self.add_bookmark(bookmark)
+            bookmarks.append(bookmark)
         return bookmarks
 
     def delete_bookmark(self, bookmark: Bookmark) -> bool:
@@ -199,7 +207,7 @@ class BookmarksManager:
         return True
 
     def add_bookmark(self, bookmark: Bookmark) -> bool:
-        if not bookmark in self.bookmarks:
+        if bookmark not in self.bookmarks:
             self.bookmarks.append(bookmark)
             return True
         logger.info("bookmark %s added", bookmark)
@@ -210,14 +218,11 @@ class BookmarksManager:
         it wraps around the save method used when "save on exit" is selected.
         """
 
-        try:
-            self.save(
-                bookmarks_file=filename,
-                bookmarks=self.bookmarks,
-                delimiter=",",
-            )
-        except ValueError:
-            raise BookmarkFormatError
+        self.save(
+            bookmarks_file=filename,
+            bookmarks=self.bookmarks,
+            delimiter=",",
+        )
 
     def export_gqrx(self, filename: str):
         """Wrapper method for exporting using rig remote csv format.
@@ -225,16 +230,15 @@ class BookmarksManager:
         and around a function that provides the format/data conversion.
         """
 
-        self.io.row_list = self._GQRX_BOOKMARK_HEADER
+        self._io.row_list = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
-    def _save_gqrx(self, filename):
+    def _save_gqrx(self, filename: str):
         """Private method for saving the bookmarks file in csv compatible
         with gqrx bookmark format. It wraps around csv_save method of disk_io
         module.
 
         :param filename: filename to be saved
-        :type filename: string
         """
 
         for bookmark in self.bookmarks:
@@ -245,9 +249,9 @@ class BookmarksManager:
                 "",
                 "Untagged",
             ]
-            self.io.row_list.append(gqrx_bookmark)
+            self._io.row_list.append(gqrx_bookmark)
 
-        self.io.row_list.reverse()
+        self._io.row_list.reverse()
 
-        logger.info("saving %i bookmarks", len(self.io.row_list))
-        self.io.csv_save(filename, ";")
+        logger.info("saving %i bookmarks", len(self._io.row_list))
+        self._io.csv_save(filename, ";")

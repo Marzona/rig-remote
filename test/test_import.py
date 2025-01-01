@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 constants_module = [
     ("BM"),
     ("BOOKMARKS_FILE"),

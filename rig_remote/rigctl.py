@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -8,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -100,7 +98,8 @@ class RigCtl:
     ]
     _ALLOWED_VFO_COMMANDS = [
         "VFOA",
-        "VFOB" "VFOC",
+        "VFOB",
+        "VFOC",
         "currVFO",
         "VFO",
         "MEM",
@@ -194,14 +193,9 @@ class RigCtl:
         the mode.
 
         """
-        if (
-            not isinstance(mode, str)
-            or mode.upper() not in self.SUPPORTED_MODULATION_MODES
-        ):
+        if not isinstance(mode, str):
             logger.error(
-                "Frequency modulation must be a string in %s, got %s",
-                [mode.value for mode in self.SUPPORTED_MODULATION_MODES],
-                mode,
+                "Expected unicode string while setting modulation mode, got %s", mode
             )
             raise ValueError
         self._send_message(request=f"M {mode}")
@@ -215,6 +209,11 @@ class RigCtl:
         # newer versions replies with something like u'WFM_ST\n160000'
         output_message = self._send_message(request="m")
         output = output_message
+        if not isinstance(output, str):
+            logger.error(
+                "Expected unicode string while getting radio frequency, got %s", output
+            )
+            raise ValueError
         if "\n" in output_message:
             output = output_message.split("\n")[0]
 
@@ -280,7 +279,7 @@ class RigCtl:
 
         return output
 
-    def set_rit(self, rit: str) -> str:
+    def set_rit(self, rit: int) -> str:
         """Wrapper around _request. It configures the command for getting
         RIT.
 
@@ -404,7 +403,7 @@ class RigCtl:
             )
             raise ValueError
 
-        return self._send_message("U {func}")
+        return self._send_message(f"U {func}")
 
     def get_func(self) -> str:
         """Wrapper around _request. It configures the command for getting
@@ -431,7 +430,7 @@ class RigCtl:
                 parm,
             )
             raise ValueError
-        return self._send_message("P {parm}")
+        return self._send_message(f"P {parm}")
 
     def get_parm(self) -> str:
         """Wrapper around _request. It configures the command for getting
@@ -446,7 +445,7 @@ class RigCtl:
 
         return output
 
-    def set_antenna(self, antenna: str) -> str:
+    def set_antenna(self, antenna: int) -> str:
         """Wrapper around _request. It configures the command for setting
         an antenna.
 
@@ -456,7 +455,7 @@ class RigCtl:
             logger.error("antenna value must be an int, got %s", antenna)
             raise ValueError
 
-        return self._send_message("Y {antenna}")
+        return self._send_message(f"Y {antenna}")
 
     def get_antenna(self) -> str:
         """Wrapper around _request. It configures the command for getting
@@ -464,12 +463,10 @@ class RigCtl:
 
         """
 
-        output = self._send_message("f")
+        output = self._send_message("y")
         if not isinstance(output, int):
             logger.error("Expected integer while getting radio antenna, got %s", output)
             raise ValueError
-
-        return self._send_message("y")
 
     def rig_reset(self, reset_signal: str) -> str:
         """Wrapper around _request. It configures the command for resetting
@@ -482,4 +479,4 @@ class RigCtl:
             logger.error("Reset_signal must be one of %s", self._RESET_CMD_DICT.keys())
             raise ValueError
 
-        return self._send_message("* {reset_signal}")
+        return self._send_message(f"* {self._RESET_CMD_DICT[reset_signal]}")

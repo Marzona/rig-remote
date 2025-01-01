@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -7,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -15,12 +14,6 @@ License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
-
-TAS - Tim Sweeney - mainetim@gmail.com
-
-2016/03/21 - TAS - Validate config file entries on read.
-2016/05/30 - TAS - Config path now established in main module. Stripped out old file support.
-
 """
 
 import configparser
@@ -36,7 +29,6 @@ from rig_remote.constants import (
     CONFIG_SECTIONS,
 )
 from rig_remote.disk_io import IO
-from rig_remote.exceptions import NonRetriableError
 from rig_remote.models.rig_endpoint import RigEndpoint
 
 logger = logging.getLogger(__name__)
@@ -86,12 +78,10 @@ class AppConfig:
         the default one.
 
         :param config_file: config file passed as input argument
-        :type config_file: string
-
         :returns:none
         """
 
-        self.io = IO()
+        self._io = IO()
         self.rig_endpoints = []
         self.config_file = config_file
         if not self.config_file:
@@ -108,21 +98,15 @@ class AppConfig:
         """
 
         if os.path.isfile(self.config_file):
-            logger.info("Using config file:{}".format(self.config_file))
+            logger.info("Using config file:%s", self.config_file)
             config = configparser.RawConfigParser()
             try:
                 config.read(self.config_file)
             except configparser.MissingSectionHeaderError:
-                logger.errorshutdown("Missing Sections in the config file.")
+                logger.error("Missing Sections in the config file.")
                 logger.error(self._UPGRADE_MESSAGE)
                 sys.exit(1)
-            except configparser.Error:
-                logger.exception("Error while loading" "{}".format(self.config_file))
 
-            if not config.sections:
-                logger.info("Config file needs to be upgraded.")
-                logger.info("Please execute the config-updater.")
-                raise NonRetriableError
             for section in config.sections():
                 for item in config.items(section):
                     self.config[item[0]] = item[1]
@@ -135,7 +119,7 @@ class AppConfig:
             RigEndpoint(
                 hostname=self.config["hostname{}".format(instance_number)],
                 port=int(self.config["port{}".format(instance_number)]),
-                rig_number=instance_number,
+                number=instance_number,
             )
             for instance_number in (1, 2)
         ]
@@ -150,17 +134,13 @@ class AppConfig:
 
         """
 
-        self.io.row_list = []
+        self._io.row_list = []
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
             logger.info(
-                "Error while trying to create config " "path as {}".format(
-                    self.config_file
-                )
+                "Error while trying to create config path as %s", self.config_file
             )
-        except OSError:
-            logger.info("The config directory already exists.")
         config = configparser.RawConfigParser()
         for section in CONFIG_SECTIONS:
             config.add_section(section)

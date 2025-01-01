@@ -1,12 +1,25 @@
-#!/usr/bin/env python
+"""
+Remote application that interacts with rigs using rigctl protocol.
 
-from dataclasses import dataclass
+Please refer to:
+http://gqrx.dk/
+http://gqrx.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+
+Author: Simone Marzona
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
+"""
+
 import logging
-
+from enum import StrEnum
 
 logger = logging.getLogger(__name__)
-
-from enum import StrEnum
 
 
 class ModulationModes(StrEnum):
@@ -24,14 +37,14 @@ class ModulationModes(StrEnum):
     FM = "FM"
     WFM = "WFM"
     PKTLSB = "PKTLSB"
-    # "PKTU"=
-    # "SB"=
-    # "PKTFM"=
-    # "ECSSUSB"=
-    # "ECSSLSB"=
-    # "WFM_ST"=
-    # "FAX"=
-    # "SAM"=
-    # "SAL"=
-    # "SAH"=
-    # "DSB"=
+    PKTU = "PKTU"
+    SB = "SB"
+    PKTFM = "PKTFM"
+    ECSSUSB = "ECSSUSB"
+    ECSSLSB = "ECSSLSB"
+    WFM_ST = "WFM_ST"
+    FAX = "FAX"
+    SAM = "SAM"
+    SAL = "SAL"
+    SAH = "SAH"
+    DSB = "DSB"

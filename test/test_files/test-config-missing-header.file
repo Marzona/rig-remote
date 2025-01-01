@@ -1,0 +1,20 @@
+passes = 1
+aggr_scan = false
+auto_bookmark = false
+range_min = 24,000
+range_max = 1800,000
+interval = 1
+delay = 5
+record = false
+sgn_level = -30
+wait = false
+
+log_filename = none
+save_exit = false
+always_on_top = false
+log = false
+bookmark_filename = ./test/test-bookmarks.csv
+hostname1 = 127.0.0.1
+hostname2 = 127.0.0.1
+port1 = 7356
+port2 = 7357

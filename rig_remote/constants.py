@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -7,7 +6,7 @@ http://rig.dk/
 http://rig.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License

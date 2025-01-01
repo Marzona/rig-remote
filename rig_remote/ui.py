@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-
 """
 Remote application that interacts with rigs using rigctl protocol.
 Please refer to:
 http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 License: MIT License
 Copyright (c) 2014 Rafael Marmelo
@@ -14,58 +12,6 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
-
-2016/02/16 - TAS - Added code to support continuous bookmark scanning.
-                   Temporarily disabled freq activity logging and notification.
-                   Scan call now a separate thread.
-                   Added a "stop" button.
-2016/02/18 - TAS - Changed code from "monitor mode" fixed looping to
-                   choice of variable or infinite looping.
-                   Added a "pass count" field in config display.
-                   Only done in bookmark scanning, still need to rework
-                   frequency scanning to match. Also need to implement
-                   changes in delay code (to allow for wait on signal).
-2016/02/19 - TAS - Added frequency scan "Stop" button.
-2016/02/20 - TAS - Added "wait" checkbox. See scanning.py for notes.
-2016/02/22 - TAS - Removed "stop" button and use a "toggle" function for
-                   start/stop of scanning. Add "lock" button to UI as
-                   placeholder, but haven't implemented lockout yet.
-2016/02/23 - TAS - Added lockout field to treeview and coded toggle for it.
-2016/02/24 - TAS - Added lockout highlight code. Changed how bookmarks
-                   are passed to scan thread. Added support for logging
-                   scanning activity to a file.
-2016/03/11 - TAS - Changed program parameter storage to a dict, to make
-                   validity checking and thread updating easier. Added
-                   a queue to pass updated parameters to scanning thread.
-                   Added bindings to parameter widgets to check type
-                   validity of numeric parameters, and force updates onto
-                   queue. Added Checkbutton class to streamline handling.
-                   TODO: Change initial thread parameter passing to
-                   a dict also, and then flesh out skeleton update code
-                   in scanning thread. Update config code to add new
-                   checkboxes.
-2016/03/13 - TAS - Blank parameter fields now default to DEFAULT_CONFIG values.
-                   (Github issue #21)
-2016/03/15 - TAS - Added more scanning option validation. Changed scan
-                   initialization to pass
-                   most params in a dict.
-2016/03/19 - TAS - Added validation of the config file when it is applied.
-2016/03/20 - TAS - Added some validation of user frequency input, and of the
-                   bookmark file when it
-                   is loaded.
-2016/03/21 - TAS - Added new checkbutton config data to config file handling
-                   methods.
-2016/04/12 - TAS - Added back auto-bookmarking option on frequency scan.
-                   Bookmarks are processed once the
-                   scan thread has completed. Only one bookmark per frequency.
-                   (If logging enabled, all occurences are logged.)
-2016/04/24 - TAS - Changed communications between main and scan threads to use
-                   STMessenger class, to
-                   enable thread-safe notification of scan thread termination
-                   (Issue #30).
-2016/05/02 - TAS - Refactor is_valid_hostname(), and the methods that call it,
-                   to properly handle bad input.
-2016/05/30 - TAS - Stripped out old path support.
 """
 
 import logging
@@ -98,6 +44,8 @@ from rig_remote.utility import (
 from rig_remote.stmessenger import STMessenger
 
 logger = logging.getLogger(__name__)
+
+# pragma: no cover
 
 
 class RigRemote(ttk.Frame):
@@ -183,7 +131,6 @@ class RigRemote(ttk.Frame):
         """Method for inserting bookmark data already loaded.
 
         :param bookmarks: list of bookmark objects
-        :type bookmarks: dict
         """
 
         logger.info("adding %i bookmarks", len(bookmarks))
@@ -192,7 +139,7 @@ class RigRemote(ttk.Frame):
                 "",
                 tk.END,
                 values=[
-                    entry.channel.frequency,
+                    entry.channel.frequency_as_string,
                     entry.channel.modulation,
                     entry.description,
                     entry.lockout,
@@ -927,7 +874,6 @@ class RigRemote(ttk.Frame):
         """Applies the config to the UI.
 
         :param silent: suppress messagebox
-        :type silent: boolean
         :raises : none
         :returns : none
         """
@@ -1007,8 +953,8 @@ class RigRemote(ttk.Frame):
             return
 
         if action.lower() not in self._SUPPORTED_SYNC_ACTIONS:
-            logger.error("Provided action:{}".format(action))
-            logger.error("Supported " "actions:{}".format(self._SUPPORTED_SYNC_ACTIONS))
+            logger.error("Provided action:%s", action)
+            logger.error("Supported " "actions:%s", self._SUPPORTED_SYNC_ACTIONS)
             raise UnsupportedSyncConfigError
 
         if action.lower() == "stop" and self.sync_thread is not None:
@@ -1101,9 +1047,7 @@ class RigRemote(ttk.Frame):
         """Process event for port number entry
 
         :param event_value: new port number
-        :type event_value: str
         :param silent: suppress messagebox
-        :type silent: boolean
         :return:
         """
         try:
@@ -1122,9 +1066,7 @@ class RigRemote(ttk.Frame):
         """Process event for hostname entry
 
         :param event_value: new hostname
-        :type event_value: str
         :param silent: suppress messagebox
-        :type silent: boolean
         :return:
         """
 
@@ -1144,7 +1086,6 @@ class RigRemote(ttk.Frame):
 
         :param event: event dict generated by widget handler
         :param silent: suppress messagebox
-        :type silent: boolean
 
         """
 
@@ -1247,7 +1188,6 @@ class RigRemote(ttk.Frame):
         """Take the event_list generated by caller and push it on the queue.
 
         :param event_list: name of param to update, value of param
-        :type event_list: list
 
         """
         if self.scan_thread is not None:
@@ -1286,10 +1226,8 @@ class RigRemote(ttk.Frame):
         """
         logger.info("scan action %s with scan mode %s.", action, scan_mode)
         if action.lower() not in self._SUPPORTED_SCANNING_ACTIONS:
-            logger.error("Provided action: {}".format(action))
-            logger.error(
-                "Supported " "actions: {}".format(self._SUPPORTED_SCANNING_ACTIONS)
-            )
+            logger.error("Provided action: %s", action)
+            logger.error("Supported " "actions: %s", self._SUPPORTED_SCANNING_ACTIONS)
             raise UnsupportedScanningConfigError
 
         if self.sync_thread:
@@ -1321,9 +1259,7 @@ class RigRemote(ttk.Frame):
 
         if action.lower() == "stop" and self.scan_thread is None:
             # we already stopped scanning, another stop is ignored
-            logger.info(
-                "Ignoring scan stop command as there is already an ongping scan"
-            )
+            logger.info("Ignoring scan stop command as there is no ongoing scan")
             return
 
         if action.lower() == "start" and self.scan_thread is None:
@@ -1371,10 +1307,8 @@ class RigRemote(ttk.Frame):
         """Provides a little formatting from the new bookmark list.
 
         :param nbl: new bookmark list
-        :type nbl: list
         :raises : none
         :returns message: message to be printed in an info messagebox.
-        :type message: string
         """
 
         message = []
@@ -1393,7 +1327,7 @@ class RigRemote(ttk.Frame):
         """
 
         if source not in (1, 2):
-            logger.error("The rig number {} is not supported".format(source))
+            logger.error("The rig number %s is not supported", source)
             raise NotImplementedError
 
         frequency = "txt_frequency{}".format(source)
@@ -1408,9 +1342,6 @@ class RigRemote(ttk.Frame):
         """Fill in the data, calls uses cb_add() and calls clear_form.
 
         :param nbl: list of new frequencies to bookmark
-        :type nbl: list
-
-
         """
         self._clear_form(1)
         for nb in nbl:
@@ -1445,19 +1376,17 @@ class RigRemote(ttk.Frame):
         """Get current rig frequency and mode.
 
         :param silent: suppress messagebox
-        :type silent: boolean
-
-
         """
+
         # clear fields
-        self._clear_form(rig_target.target.rig_number)
+        self._clear_form(rig_target.target.number)
         try:
             frequency = rig_target.get_frequency()
             mode = rig_target.get_mode()
             # update fields
-            txt_frequency = "txt_frequency{}".format(rig_target.target.rig_number)
+            txt_frequency = "txt_frequency{}".format(rig_target.target.number)
             self.params[txt_frequency].insert(0, frequency)
-            cbb_mode = "cbb_mode{}".format(rig_target.target.rig_number)
+            cbb_mode = "cbb_mode{}".format(rig_target.target.number)
             self.params[cbb_mode].insert(0, mode)
         except Exception as err:
             if not silent:
@@ -1478,15 +1407,13 @@ class RigRemote(ttk.Frame):
         """Set the rig frequency and mode.
 
         :param event: not used?
-        :type event:
         :param rig_target: rig we are referring to (hostname and port)
         :param silent: suppress messagebox
-        :type silent: boolean
 
 
         """
-        txt_frequency = "txt_frequency{}".format(rig_target.target.rig_number)
-        cbb_mode = "cbb_mode{}".format(rig_target.target.rig_number)
+        txt_frequency = "txt_frequency{}".format(rig_target.target.number)
+        cbb_mode = "cbb_mode{}".format(rig_target.target.number)
         frequency = self.params[txt_frequency].get().replace(",", "")
         mode = str(self.params[cbb_mode].get())
         try:
@@ -1517,9 +1444,6 @@ class RigRemote(ttk.Frame):
         of currently selected Treeview entry.
 
         :param event: not used?
-        :type event:
-
-
         """
 
         self.selected_bookmark = self.tree.focus()
@@ -1535,7 +1459,7 @@ class RigRemote(ttk.Frame):
 
     def build_control_source(self, number, silent=False):
         if number not in (1, 2):
-            logger.error("The rig number {} is not supported".format(number))
+            logger.error("The rig number %i is not supported", number)
             raise NotImplementedError
 
         control_source = {}
@@ -1653,7 +1577,7 @@ class RigRemote(ttk.Frame):
     def _get_bookmark_from_item(self, item) -> Bookmark:
         values = self.tree.item(item).get("values")
         return bookmark_factory(
-            input_frequency=values[0],
+            input_frequency=values[0].replace(",", ""),
             modulation=values[1],
             description=values[2],
             lockout=str(values[3]),

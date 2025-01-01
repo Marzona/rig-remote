@@ -1,3 +1,21 @@
+"""
+Remote application that interacts with rigs using rigctl protocol.
+
+Please refer to:
+http://gqrx.dk/
+http://gqrx.dk/doc/remote-control
+http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
+
+
+Author: Simone Marzona
+
+License: MIT License
+
+Copyright (c) 2014 Rafael Marmelo
+Copyright (c) 2015 Simone Marzona
+Copyright (c) 2016 Tim Sweeney
+"""
+
 from dataclasses import dataclass
 
 from uuid import uuid4
@@ -11,13 +29,20 @@ logger = logging.getLogger(__name__)
 class RigEndpoint:
     hostname: str
     port: int
-    rig_number: int
+    number: int
     id: str = str(uuid4())
     name: str = ""
 
     def __post_init__(self):
         self._is_valid_port(port=self.port)
         self._is_valid_hostname(hostname=self.hostname)
+        self._is_valid_number()
+
+    def _is_valid_number(self):
+        self.number = int(self.number)
+        if self.number <= 0:
+            logger.error("rig number must be >0, got %i", self.number)
+            raise ValueError
 
     @staticmethod
     def _is_valid_port(port: int):
@@ -27,28 +52,21 @@ class RigEndpoint:
         :raises: ValueError if the string can't be converted to integer and
         if the converted ingeger is lesser than 2014 (privileged port)
         """
-
-        try:
-            int(port)
-        except ValueError:
-            logger.error("Incorrect data: port number must be int.")
-            raise
-        if int(port) <= 1024:
-            logger.error("Privileged port used: %i", port)
-            raise ValueError
+        port = int(port)
+        if port <= 1024:
+            message = f"Privileged port used: {port}"
+            logger.error(message)
+            raise ValueError(message)
 
     @staticmethod
     def _is_valid_hostname(hostname: str):
         """Checks if hostname is truly a valid FQDN, or IP address.
 
         :param hostname: hostname to validate.
-        :type hostname: str
         :raises: ValueError if hostname is empty string
         :raises: Exception based on result of gethostbyname() call
         """
 
-        if hostname == "":
-            raise ValueError
         try:
             _ = gethostbyname(hostname)
         except gaierror as e:
@@ -56,12 +74,8 @@ class RigEndpoint:
             raise ValueError
 
     def set_port(self, port: int):
-        try:
-            self._is_valid_port(port=port)
-            self.port = port
-        except ValueError:
-            logger.error("invalid port provided %s", str(port))
-            raise
+        self._is_valid_port(port=port)
+        self.port = port
 
     def set_hostname(self, hostname: str):
         try:

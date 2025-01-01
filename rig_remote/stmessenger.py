@@ -6,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -17,9 +17,6 @@ Copyright (c) 2106 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
-2016/04/24 - TAS - STMessenger class created to facilitate specific
-                    comm needs between scan and
-                   main threads, using QueueComms class.
 """
 
 from rig_remote.queue_comms import QueueComms
@@ -29,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 class STMessenger:
-    def __init__(self, queuecomms:QueueComms):
+    def __init__(self, queuecomms: QueueComms):
         self.mqueue = queuecomms
 
-    def send_event_update(self, event_list:tuple):
+    def send_event_update(self, event_list: tuple):
         """Send an event update to the scanning thread.
 
         :param event_list: tuple of event name and state
@@ -43,10 +40,10 @@ class STMessenger:
         if isinstance(event_list, tuple) and len(event_list) == 2:
             self.mqueue.send_to_child(event_list)
         else:
-            logger.error("Event list: {}".format(event_list))
+            logger.error("Event list: %s", event_list)
             raise ValueError("Bad event update attempt.")
 
-    def update_queued(self)->bool:
+    def update_queued(self) -> bool:
         """Check is there is an event update waiting to be processed.
 
         :returns: True if event waiting
@@ -65,7 +62,7 @@ class STMessenger:
             event_list = self.mqueue.get_from_child()
         except Exception:
             logger.error("Exception while accessing a child queue.")
-
+        logger.info("retrieved event %s", event_list)
         return event_list
 
     def notify_end_of_scan(self):
@@ -73,7 +70,7 @@ class STMessenger:
 
         self.mqueue.signal_parent(1)
 
-    def check_end_of_scan(self)->bool:
+    def check_end_of_scan(self) -> bool:
         """Check to see if the scanning thread as notified us of its
         termination.
 
@@ -85,5 +82,5 @@ class STMessenger:
     def notify_end_of_sync(self):
         self.mqueue.signal_parent(1)
 
-    def check_end_of_sync(self)->bool:
+    def check_end_of_sync(self) -> bool:
         return self.mqueue.get_from_parent() == 1

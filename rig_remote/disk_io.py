@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -8,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -18,20 +16,15 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
-
-2016/02/24 - TAS - Added log file class to handle logging scanning
-                   activity to a file.
-2016/05/30 - TAS - Clean up some log formatting issues.
-
 """
 
-from typing import Tuple
 import csv
 import logging
 import os.path
 from rig_remote.exceptions import InvalidPathError
-from rig_remote.constants import BM
 import datetime
+
+from rig_remote.models.bookmark import Bookmark
 
 logger = logging.getLogger(__name__)
 
@@ -47,52 +40,35 @@ class IO:
         """Helper function that checks if the path is valid.
 
         :param csv_file: path
-        :type csv_file: string
         :raises InvalidPathError: if the path is invalid
         :returns:none
         """
 
         if not os.path.exists(csv_file):
-            logger.info("Invalid path provided:{}".format(csv_file))
+            logger.info("Invalid path provided:%s", csv_file)
             raise InvalidPathError
 
     def csv_load(self, csv_file: str, delimiter: str):
         """Read the frequency bookmarks file and populate the tree.
 
         :param csv_file: path of the file to be written
-        :type csv_file: string
         :param delimiter: delimiter char
-        :type delimiter: string
         :raises: csv.Error if the data to be written as csv isn't valid
 
         """
-
         self._path_check(csv_file)
-        try:
-            with open(csv_file, "r") as data_file:
-                self.row_list = []
-                reader = csv.reader(data_file, delimiter=delimiter)
-                for line in reader:
-                    self.row_list.append(line)
-
-        except csv.Error:
-            logger.exception(
-                "The file  provided({})"
-                " is not a file with values "
-                "separated by {}.".format(csv_file, delimiter)
-            )
-
-        except (IOError, OSError):
-            logger.exception(
-                "Error while trying to read the file: " "{}".format(csv_file)
-            )
+        logger.info("reading csv file %s with delimiter %s.", csv_file, delimiter)
+        with open(csv_file, "r") as data_file:
+            self.row_list = []
+            reader = csv.reader(data_file, delimiter=delimiter)
+            for line in reader:
+                self.row_list.append(line)
         logger.info("loaded %i rows from csv %s", len(self.row_list), csv_file)
 
     def csv_save(self, csv_file: str, delimiter: str):
         """Save current frequencies to disk.
 
         :param delimiter: delimiter char used in the csv
-        :type delimiter: string
         :raises: IOError, OSError
         """
         count = 0
@@ -103,7 +79,9 @@ class IO:
                     count += 1
                     writer.writerow(self.row_list.pop())
         except (IOError, OSError):
-            logger.error("Error while trying to write the file: " "{}".format(csv_file))
+            logger.error("Error while trying to write the file: %a", csv_file)
+            self.row_list = []
+            self.test = "test"
         logger.info("saved %i rows", count)
 
 
@@ -122,7 +100,6 @@ class LogFile:
         """Opens a log file.
 
         :param name: log file name, defaults to None
-        :type name: string
         """
         if name is not None:
             self.log_filename = name
@@ -130,36 +107,25 @@ class LogFile:
             os.makedirs(os.path.dirname(self.log_filename))
         except IOError:
             logger.info(
-                "Error while trying to create log file " "path as {}".format(
-                    self.log_filename
-                )
+                "Error while trying to create log file path as %s", self.log_filename
             )
-        except OSError:
-            logger.info("The log directory already exists.")
         try:
             self.log_file = open(self.log_filename, "a")
         except (IOError, OSError):
-            logger.error(
-                "Error while trying to open log file: " "{}".format(self.log_filename)
-            )
+            logger.error("Error while trying to open log file: %s", self.log_filename)
 
-    def write(self, record_type: str, record: Tuple, signal: list):
+    def write(self, record_type: str, record: Bookmark, signal: list):
         """Writes a message to the log file.
 
         :param record_type: type of the record to write
-        :type record_type: string
         :param record: data to write
-        :type record: tuple
         :param signal: signal level
-        :type signal: list
         :raises IOError or OSError for any issue that happens while writing.
         """
 
         if record_type not in ["B", "F"]:
             logger.error(
-                "Record type not supported, must be 'B' or 'F'" "got {}".format(
-                    record_type
-                )
+                "Record type not supported, must be 'B' or 'F'" "got %s", record_type
             )
             raise TypeError
 
@@ -168,9 +134,9 @@ class LogFile:
                 "B "
                 + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
                 + " "
-                + record[BM.freq].replace(",", "")
+                + record.channel.frequency
                 + " "
-                + record[BM.mode]
+                + record.channel.modulation
                 + " "
                 + str(signal)
                 + "\n"
@@ -180,9 +146,9 @@ class LogFile:
                 "F "
                 + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
                 + " "
-                + str(record["freq"])
+                + str(record.channel.frequency)
                 + " "
-                + record["mode"]
+                + record.channel.modulation
                 + " "
                 + str(signal)
                 + "\n"
@@ -194,15 +160,15 @@ class LogFile:
             raise
         except (IOError, OSError):
             logger.exception(
-                "Error while trying to write log file: " "{}".format(self.log_filename)
+                "Error while trying to write log file: %s", self.log_filename
             )
         except (TypeError, IndexError):
             logger.exception(
                 "At least one of the parameter isn't of the "
-                "expected type:"
-                "record_type {},"
-                "record {},"
-                "signal {}".format(type(record_type), type(record), type(signal))
+                "expected type: record_type %s, record %s, signal %s",
+                type(record_type),
+                type(record),
+                type(signal),
             )
             raise
 
@@ -217,7 +183,5 @@ class LogFile:
                 self.log_file.close()
             except (IOError, OSError):
                 logger.error(
-                    "Error while trying to close log file: " "{}".format(
-                        self.log_filename
-                    )
+                    "Error while trying to close log file: %s", self.log_filename
                 )
