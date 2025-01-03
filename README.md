@@ -21,6 +21,12 @@ Feel free to create issues for bugs, feature request or to provide us suggestion
 
 Do you want to work on this software? YAY! You're more than welcome! In the wiki there is the link to the [mailing list](https://github.com/Marzona/rig-remote/wiki), subscribe and ping, there is a lot of work for everybody!
 
+News and updates
+----------------
+* migrate the codebasse to python3.x, introdoce some refactoring
+* review compatibility and uspport for newer operating systems
+* introduce a new UI based on qt, phase-out current tk based UI
+
 Notes for the users of previous versions
 ---------------------------------------
 
