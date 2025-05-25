@@ -14,17 +14,19 @@ License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 """
+from unittest.mock import Mock, create_autospec
 
 import pytest
+
+from rig_remote.disk_io import LogFile
 from rig_remote.models.bookmark import Bookmark
+from rig_remote.models.channel import Channel
+from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.queue_comms import QueueComms
 from rig_remote.rigctl import RigCtl
-from rig_remote.scanning import ScanningTask
 from rig_remote.scanning import Scanning
+from rig_remote.scanning import ScanningTask
 from rig_remote.stmessenger import STMessenger
-from rig_remote.models.rig_endpoint import RigEndpoint
-from rig_remote.models.channel import Channel
-from unittest.mock import Mock, create_autospec
 
 
 @pytest.fixture
@@ -141,6 +143,301 @@ def test_scanning_scan_bookmarks_lockout(scanning):
     scanning._rigctl.get_level.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "scanning_task",
+    [
+        ScanningTask(  # bookmarks scan
+            frequency_modulation="FM",
+            scan_mode="bookmarks",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            record=False,
+            auto_bookmark=False,
+            log=False,
+            bookmarks=[
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+            ],
+        ),
+        ScanningTask(  # frequency scan
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=False,
+        ),
+        ScanningTask(  # bookmarks scan and log
+            frequency_modulation="FM",
+            scan_mode="bookmarks",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            record=False,
+            auto_bookmark=False,
+            log=True,
+            bookmarks=[
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+            ],
+        ),
+        ScanningTask(  # frequency scan and log
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        ),
+    ],
+)
+def test_scanning_scan(scanning, scanning_task):
+    scanning._bookmarks = Mock()
+    scanning._frequency = Mock()
+    scanning._log_close = Mock()
+
+    scanning.scan(task=scanning_task)
+    if scanning_task.scan_mode.lower() == "bookmarks":
+        scanning._bookmarks.assert_called_once()
+        scanning._frequency.assert_not_called()
+    if scanning_task.scan_mode.lower() == "frequency":
+        scanning._bookmarks.assert_not_called()
+        scanning._frequency.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "scanning_task",
+    [
+        ScanningTask(  # bookmarks scan and log and IOError
+            frequency_modulation="FM",
+            scan_mode="bookmarks",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            record=False,
+            auto_bookmark=False,
+            log=True,
+            bookmarks=[
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+                Bookmark(
+                    channel=Channel(input_frequency="1", modulation="FM"),
+                    description="description1",
+                    lockout="",
+                ),
+            ],
+        ),
+        ScanningTask(  # frequency scan and log and IOError
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=1,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        ),
+    ],
+)
+def test_scanning_scan_io_error(scanning, scanning_task):
+    scanning._bookmarks = Mock()
+    scanning._frequency = Mock()
+    scanning._log_close = Mock()
+    mock_log = create_autospec(LogFile)
+    mock_log.open = Mock(side_effect=IOError("Test IOError"))
+    scanning._log = mock_log
+    with pytest.raises(IOError):
+        scanning.scan(task=scanning_task)
+    scanning._bookmarks.assert_not_called()
+    scanning._frequency.assert_not_called()
+    scanning._log_close.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "exception_type, exception_raise, scanning_task",
+    [
+
+        (ValueError, ValueError("Test ValueError"), ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+        (OSError, OSError("OSrror"),ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+        (TimeoutError, TimeoutError("TimeoutError"),ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+
+    ]
+)
+def test_scanning_scan_frequency_exceptions(scanning,exception_type, exception_raise,scanning_task):
+    scanning._rigctl = create_autospec(RigCtl)
+    scanning._rigctl.get_level.return_value = 2500
+    scanning._rigctl.set_frequency.side_effect =exception_type
+    scanning.scan(task=scanning_task)
+    assert scanning._scan_active is False
+
+
+@pytest.mark.parametrize(
+    "exception_type, exception_raise, scanning_task",
+    [
+
+        (ValueError, ValueError("Test ValueError"), ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+        (OSError, OSError("OSrror"),ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+        (TimeoutError, TimeoutError("TimeoutError"),ScanningTask(
+            frequency_modulation="FM",
+            scan_mode="frequency",
+            new_bookmark_list=[],
+            range_min=1,
+            range_max=1000,
+            interval=1,
+            delay=1,
+            passes=2,
+            sgn_level=200,
+            wait=False,
+            bookmarks=[],
+            record=False,
+            auto_bookmark=False,
+            log=True,
+        )),
+
+    ]
+)
+def test_scanning_scan_mode_exceptions(scanning,exception_type, exception_raise,scanning_task):
+    scanning._rigctl = create_autospec(RigCtl)
+    scanning._rigctl.get_level.return_value = 2500
+    scanning._rigctl.set_mode.side_effect =exception_type
+    scanning.scan(task=scanning_task)
+    assert scanning._scan_active is False
+
+
+
+
 def test_scanning_scan_bookmarks_no_wait(scanning):
     bookmarks_scanning_task = ScanningTask(
         frequency_modulation="FM",
@@ -177,7 +474,6 @@ def test_scanning_scan_bookmarks_no_wait(scanning):
     assert scanning._rigctl.set_frequency.call_count == len(
         bookmarks_scanning_task.bookmarks
     )
-    # import pdb; pdb.set_trace()
     assert scanning._rigctl.set_mode.call_count == len(
         bookmarks_scanning_task.bookmarks
     )
@@ -235,6 +531,77 @@ def test_scanning_scan_bookmarks_wait(scanning):
     assert scanning._rigctl.start_recording.call_count == len(
         bookmarks_scanning_task.bookmarks
     )
+
+
+
+@pytest.mark.parametrize(
+    "exception_type, exception_raise, scanning_task",
+    [
+
+        (OSError, OSError("OSrror"),ScanningTask(
+        frequency_modulation="FM",
+        scan_mode="bookmarks",
+        new_bookmark_list=[],
+        range_min=1,
+        range_max=1000,
+        interval=1,
+        delay=1,
+        passes=1,
+        sgn_level=250,
+        wait=True,
+        record=True,
+        auto_bookmark=False,
+        log=True,
+        bookmarks=[
+            Bookmark(
+                channel=Channel(input_frequency="1", modulation="FM"),
+                description="description1",
+                lockout="",
+            ),
+            Bookmark(
+                channel=Channel(input_frequency="1", modulation="FM"),
+                description="description1",
+                lockout="",
+            ),
+        ],
+    )),
+        (TimeoutError, TimeoutError("TimeoutError"),ScanningTask(
+        frequency_modulation="FM",
+        scan_mode="bookmarks",
+        new_bookmark_list=[],
+        range_min=1,
+        range_max=1000,
+        interval=1,
+        delay=1,
+        passes=1,
+        sgn_level=250,
+        wait=True,
+        record=True,
+        auto_bookmark=False,
+        log=True,
+        bookmarks=[
+            Bookmark(
+                channel=Channel(input_frequency="1", modulation="FM"),
+                description="description1",
+                lockout="",
+            ),
+            Bookmark(
+                channel=Channel(input_frequency="1", modulation="FM"),
+                description="description1",
+                lockout="",
+            ),
+        ],
+    )),
+
+    ]
+)
+def test_scanning_scan_bookmark_exceptions(scanning,exception_type, exception_raise,scanning_task):
+    scanning._rigctl = create_autospec(RigCtl)
+    scanning._rigctl.get_level.return_value = 2500
+    scanning._rigctl.set_frequency.side_effect =exception_type
+
+    scanning.scan(task=scanning_task)
+    assert scanning._scan_active is False
 
 
 def test_scanning_scan_frequency_wait(scanning):

@@ -139,14 +139,14 @@ class RigCtl:
             rig_socket.sendall(bytearray(request.encode()))
             response = rig_socket.recv(1024)
             rig_socket.close()
-        except socket.timeout:
+        except TimeoutError:
             logger.error(
                 "Time out while connecting to %s %s",
                 self.target.hostname,
                 self.target.port,
             )
             raise
-        except socket.error:
+        except OSError:
             logger.exception(
                 "Connection refused on %s %s",
                 self.target.hostname,

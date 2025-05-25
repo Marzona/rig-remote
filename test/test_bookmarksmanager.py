@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pytest
 
 from rig_remote.disk_io import IO
@@ -94,7 +97,7 @@ def test_bookmarkmanager_load(delimiter):
 
 def test_bookmarkmanager_load_non_existent_file():
     bookmarks_manager = BookmarksManager()
-    non_existent_file = "./test/test_files/nonexistent_file.csv"
+    non_existent_file = os.path.join(Path(__file__).parent,"test_files/nonexistent_file.csv")
     loaded = bookmarks_manager.load(bookmark_file=non_existent_file)
     assert loaded == []
 
@@ -102,9 +105,9 @@ def test_bookmarkmanager_load_non_existent_file():
 @pytest.mark.parametrize(
     "filename, delimiter, expected",
     [
-        ("./test/test_files/test-rig_remote-bookmarks.csv", ",", 0),
-        ("./test/test_files/test-rig_remote-bookmarks-duplicates.csv", ",", 0),
-        ("./test/test_files/test-rig_remote-bookmarks-skipped.csv", ",", 4),
+        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks.csv"), ",", 0),
+        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-duplicates.csv"), ",", 0),
+        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-skipped.csv"), ",", 4),
     ],
 )
 def test_bookmarkmanager_load2(filename, delimiter, expected):
@@ -122,8 +125,8 @@ def test_bookmarkmanager_load2(filename, delimiter, expected):
 @pytest.mark.parametrize(
     "filename, count",
     [
-        ("./test/test_files/test-rig_remote-bookmarks.csv", 0),
-        ("./test/test_files/test-rig_remote-bookmarks-duplicates.csv", 0),
+        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks.csv"), 0),
+        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-duplicates.csv"), 0),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
@@ -143,8 +146,8 @@ def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
 @pytest.mark.parametrize(
     "filename",
     [
-        "./test/test_files/test-rig_remote-bookmarks-broken.csv",
-        "./test/test_files/test-rig_remote-bookmarks-unsupported.csv",
+        os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-broken.csv"),
+        os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-unsupported.csv"),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote_unsupported(filename):
@@ -250,8 +253,8 @@ def test_bookmarkmanager_import_bookmarks_no_file():
 @pytest.mark.parametrize(
     "filename, count",
     [
-        ("./test/test_files/test-gqrx-bookmarks.csv", 0),
-        ("./test/test_files/test-gqrx-bookmarks-duplicates.csv", 2),
+        (os.path.join(Path(__file__).parent,"test_files/test-gqrx-bookmarks.csv"), 0),
+        (os.path.join(Path(__file__).parent,"test_files/test-gqrx-bookmarks-duplicates.csv"), 2),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_gqrx(filename, count):

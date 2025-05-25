@@ -1,10 +1,12 @@
 astroid==3.3.6
 configparser==7.1.0
 coverage==7.6.9
+DateTime==5.5
 dill==0.3.9
 execnet==2.1.1
 iniconfig==2.0.0
 isort==5.13.2
+logging==0.4.9.6
 mccabe==0.7.0
 mock==5.1.0
 mypy==1.13.0
@@ -16,6 +18,10 @@ pylint==3.3.2
 pytest==8.3.4
 pytest-cov==6.0.0
 pytest-xdist==3.6.1
+pytz==2025.2
+-e git+https://github.com/Marzona/rig-remote.git@e51d454b82d9c2b2a8fd81df82623f7c52ff9bca#egg=rig_remote
 ruff==0.8.4
+setuptools==80.8.0
 tomlkit==0.13.2
 typing_extensions==4.12.2
+zope.interface==7.2

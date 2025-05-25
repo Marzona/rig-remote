@@ -15,7 +15,7 @@ log_filename = none
 save_exit = false
 always_on_top = false
 log = false
-bookmark_filename = ./test/test-bookmarks.csv
+bookmark_filename = ./test/test_files/test-bookmarks.csv
 [Rig URI]
 hostname1 = 127.0.0.1
 hostname2 = 127.0.0.1

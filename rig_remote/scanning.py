@@ -20,7 +20,6 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 import logging
 
-import socket
 import time
 from rig_remote.bookmarksmanager import bookmark_factory
 from rig_remote.models.channel import Channel
@@ -82,7 +81,6 @@ class Scanning:
         """check the queue regularly during 'sleep'
 
         :param task: current scanning task
-
         """
 
         length = task.delay
@@ -121,14 +119,14 @@ class Scanning:
         """helper function called inside _frequency().
         This is for reducing the code inside the while true loops
         """
-
+        # import pdb; pdb.set_trace()
         logger.info("Tuning to %i", channel.frequency)
         try:
             self._rigctl.set_frequency(channel.frequency)
         except ValueError:
             logger.error("Bad frequency parameter passed.")
             raise
-        except (socket.error, socket.timeout):
+        except (OSError, TimeoutError):
             logger.error("Communications Error!")
             self.scan_active = False
             raise
@@ -139,7 +137,7 @@ class Scanning:
         except ValueError:
             logger.error("Bad modulation parameter passed.")
             raise
-        except (socket.error, socket.timeout):
+        except (OSError, TimeoutError):
             logger.error("Communications Error!")
             self.scan_active = False
             raise
@@ -172,7 +170,7 @@ class Scanning:
                     continue
                 try:
                     self._channel_tune(bookmark.channel)
-                except (socket.error, socket.timeout):
+                except (OSError, TimeoutError):
                     logger.error(
                         "unable to tune bookmark %s exiting scanning loop.", bookmark.id
                     )
@@ -247,7 +245,7 @@ class Scanning:
                             modulation=task.frequency_modulation, input_frequency=freq
                         )
                     )
-                except (socket.error, socket.timeout):
+                except (OSError, TimeoutError, ValueError):
                     logger.error(
                         "error tuning frequency %s and mode %s",
                         freq,

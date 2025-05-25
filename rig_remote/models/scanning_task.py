@@ -81,7 +81,8 @@ class ScanningTask:
 
     def _check_scan_mode(self):
         if self.scan_mode.lower() not in self._SUPPORTED_SCANNING_MODES:
-            message = f"Unsupported scanning mode provided {self.scan_mode}, supported modes are {self._SUPPORTED_SCANNING_MODES}"
+            message = (f"Unsupported scanning mode provided {self.scan_mode}, "
+                       f"supported modes are {self._SUPPORTED_SCANNING_MODES}")
             logger.error(message)
             raise ValueError(message)
         self.scan_mode = self.scan_mode

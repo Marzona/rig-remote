@@ -94,7 +94,7 @@ class LogFile:
         """
 
         self.log_filename = None
-        self.log_file = None
+        self.log_file_handler = None
 
     def open(self, name: str = None):
         """Opens a log file.
@@ -110,7 +110,7 @@ class LogFile:
                 "Error while trying to create log file path as %s", self.log_filename
             )
         try:
-            self.log_file = open(self.log_filename, "a")
+            self.log_file_handler = open(self.log_filename, "a")
         except (IOError, OSError):
             logger.error("Error while trying to open log file: %s", self.log_filename)
 
@@ -154,14 +154,16 @@ class LogFile:
                 + "\n"
             )
         try:
-            self.log_file.write(lstr)
+            self.log_file_handler.write(lstr)
         except AttributeError:
+
             logger.exception("No log file provided, but log feature selected.")
             raise
         except (IOError, OSError):
             logger.exception(
                 "Error while trying to write log file: %s", self.log_filename
             )
+            raise
         except (TypeError, IndexError):
             logger.exception(
                 "At least one of the parameter isn't of the "
@@ -178,9 +180,9 @@ class LogFile:
         :raises IOError OSError: if there are issues while closing the log file
         """
 
-        if self.log_file is not None:
+        if self.log_file_handler is not None:
             try:
-                self.log_file.close()
+                self.log_file_handler.close()
             except (IOError, OSError):
                 logger.error(
                     "Error while trying to close log file: %s", self.log_filename

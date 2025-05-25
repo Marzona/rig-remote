@@ -22,20 +22,20 @@ def test_stmessenger_good_event_update():
 
 def test_stmessenger_end_of_scan1():
     stm = STMessenger(queuecomms=QueueComms())
-    assert stm.check_end_of_scan() == False
+    assert not stm.check_end_of_scan()
 
 
 def test_stmessenger_end_of_scan2():
     stm = STMessenger(queuecomms=QueueComms())
     stm.notify_end_of_scan()
-    assert stm.check_end_of_scan() == True
+    assert stm.check_end_of_scan()
 
 
 def test_stmessenger_empty_get_event_update():
     stm = STMessenger(queuecomms=QueueComms())
     stm.mqueue.get_from_child = MagicMock()
     stm.mqueue.get_from_child.return_value = None
-    assert stm.get_event_update() == None
+    assert stm.get_event_update() is None
 
 
 def test_stmessenger_error_get_event_update():
@@ -66,12 +66,12 @@ def test_stmessenger_update_queued():
         "test_event2",
     )
     stm.send_event_update(event_list=event_list)
-    assert stm.mqueue.queued_for_child() == True
-    assert stm.update_queued() == True
+    assert stm.mqueue.queued_for_child()
+    assert stm.update_queued()
 
 
 def test_stmessenger_notify_end_of_sync():
     stm = STMessenger(queuecomms=QueueComms())
-    assert stm.check_end_of_sync() == False
+    assert not stm.check_end_of_sync()
     stm.notify_end_of_sync()
-    assert stm.check_end_of_sync() == True
+    assert stm.check_end_of_sync()

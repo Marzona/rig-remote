@@ -1,131 +1,58 @@
-#
-#
-# import pytest
-# from rig_remote.utility import (
-#     this_file_exists,
-#     is_valid_port,
-#     is_valid_hostname,
-#     process_path,
-#     frequency_pp_parse,
-#     store_conf,
-#     build_rig_uri,
-#     dbfs_to_sgn,
-#     center_window,
-# )
-# from rig_remote.ui import RigRemote
-# import tkinter as tk
-# from mock import MagicMock
-# from rig_remote.app_config import AppConfig
-#
-# testdata = [
-#     ("aggr_scan", "false"),
-#     ("auto_bookmark", "false"),
-#     ("hostname1", ""),
-#     ("passes", ""),
-#     ("aggr_scan", "false"),
-#     ("log", "false"),
-#     ("record", "false"),
-#     ("range_max", ""),
-#     ("log_filename", "none"),
-#     ("interval", ""),
-#     ("hostname2", ""),
-#     ("range_min", ""),
-#     ("delay", ""),
-#     ("bookmark_filename", "./test/test-bookmarks.csv"),
-#     ("sgn_level", ""),
-#     ("save_exit", "false"),
-#     ("always_on_top", "false"),
-#     ("auto_bookmark", "false"),
-#     ("wait", "false"),
-#     ("port2", ""),
-#     ("port1", ""),
-# ]
-#
-#
-# def test_this_file_exist():
-#     assert None == this_file_exists("/nonexisting")
-#
-#
-# def test_is_valid_port_1():
-#     with pytest.raises(ValueError):
-#         is_valid_port("test")
-#
-#
-# def test_is_valid_port_2():
-#     with pytest.raises(ValueError):
-#         is_valid_port(1000)
-#
-#
-# def test_is_valid_hostname():
-#     with pytest.raises(ValueError):
-#         is_valid_hostname("")
-#
-#
-# def test_process_path_1():
-#     path = "/tmp/p"
-#     assert path == process_path(path)
-#
-#
-# def test_process_path_2():
-#     path = "~/test/p"
-#     processed_path = process_path(path)
-#     assert ("home" in processed_path) == True
-#
-#
-# def test_frequency_pp_parse1():
-#     freq = 2
-#     with pytest.raises(ValueError):
-#         frequency_pp_parse(freq)
-#
-#
-# def test_frequency_pp_parse2():
-#     freq = "2,4"
-#     pfreq = frequency_pp_parse(freq)
-#     assert "," not in pfreq
-#
-#
-# def test_build_rig_uri():
-#     with pytest.raises(NotImplementedError):
-#         build_rig_uri(3, "test")
-#
-#
-# @pytest.mark.parametrize("key, value", testdata)
-# def test_store_conf(key, value):
-#     root = tk.Tk()
-#     ac = AppConfig("./test/test-config.file")
-#     ac.read_conf()
-#     rr = RigRemote(root, ac)
-#     rr.ac.write_conf = MagicMock()
-#     out = store_conf(rr)
-#     assert out.config[key] == value
-#     rr.root.destroy()
-#
-#
-# def test_khertz_to_hertz():
-#     assert dbfs_to_sgn(10) == 100
-#
-#
-# def test_error_khertz_to_hertz():
-#     with pytest.raises(ValueError):
-#         dbfs_to_sgn("test")
-#
-#
-# def test_dbfs_to_sgn():
-#     assert dbfs_to_sgn(10) == 100
-#
-#
-# def test_error_dbfs_to_sgn():
-#     with pytest.raises(ValueError):
-#         dbfs_to_sgn("test")
-#
-#
-# def test_center_window():
-#     root = tk.Tk()
-#     ac = AppConfig("./test/test-config.file")
-#     ac.read_conf()
-#     rr = RigRemote(root, ac)
-#     rr.ac.write_conf = MagicMock()
-#     panel = tk.Toplevel(rr)
-#     center_window(panel)
-#     assert panel.geometry() == "1x1+533+284"
-#     rr.root.destroy()
+import pytest
+from unittest.mock import MagicMock
+from rig_remote.utility import (
+    khertz_to_hertz,
+    shutdown,
+    center_window
+)
+
+def test_utility_khertz_to_hertz():
+    """Test frequency conversion from kHz to Hz."""
+    assert khertz_to_hertz("1000") == 1000000
+    assert khertz_to_hertz(1000) == 1000000
+
+    with pytest.raises(ValueError):
+        khertz_to_hertz("invalid")
+
+def test_utility_shutdown_with_save():
+    """Test shutdown function when save on exit is enabled."""
+    window = MagicMock()
+    window.ckb_save_exit.get_str_val.return_value = "true"
+    window._io = MagicMock()
+    window.bookmarks_file = "test.csv"
+
+    shutdown(window)
+
+    window._io.save.assert_called_once_with("test.csv")
+    window.master.destroy.assert_called_once()
+
+def test_utility_shutdown_without_save():
+    """Test shutdown function when save on exit is disabled."""
+    window = MagicMock()
+    window.ckb_save_exit.get_str_val.return_value = "false"
+
+    shutdown(window)
+
+    assert not hasattr(window, '_io') or not window._io.save.called
+    window.master.destroy.assert_called_once()
+
+
+def test_utility_center_window_custom_size():
+    """Test window centering calculation with custom size."""
+    window = MagicMock()
+    window.winfo_screenwidth.return_value = 1920
+    window.winfo_screenheight.return_value = 1080
+
+    center_window(window, width=800, height=600)
+
+    window.geometry.assert_called_once_with("800x600+560+240")
+
+def test_utility_center_window_default_size():
+    """Test window centering calculation with default size."""
+    window = MagicMock()
+    window.winfo_screenwidth.return_value = 1920
+    window.winfo_screenheight.return_value = 1080
+
+    center_window(window)
+
+    window.geometry.assert_called_once_with("300x200+810+440")

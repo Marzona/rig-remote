@@ -13,7 +13,6 @@ Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 """
-
 import logging
 from rig_remote.constants import (
     BM,
@@ -123,6 +122,26 @@ class RigRemote(ttk.Frame):
         self._insert_bookmarks(bookmarks=bookmark_list)
         [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
 
+    def _export_bookmarks(self):
+        """Export bookmarks to a file."""
+        filename = filedialog.asksaveasfilename(
+            initialdir="~/",
+            title="Select bookmark file",
+            initialfile="bookmarks-export.csv",
+            filetypes=(("csv", "*.csv"), ("all files", "*.*")),
+        )
+        if filename:
+            try:
+                self.bookmarks.export_rig_remote(filename=filename)
+                messagebox.showinfo("Success", f"Bookmarks exported to {filename}.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export bookmarks.\n{e}")
+
+    def _show_about_popup(self):
+        """Display the About popup."""
+        from tkinter import messagebox
+        messagebox.showinfo("About", "Rig Remote Application\nVersion 1.0")
+
     def _load_bookmarks(self):
         self.bookmarks_file = self.ac.config["bookmark_filename"]
         self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
@@ -203,6 +222,18 @@ class RigRemote(ttk.Frame):
 
     def _export_rig_remote(self):
         self.bookmarks.export_rig_remote(filename=self._export_panel())
+
+    def _toggle_lockout(self, item):
+        """Toggle the lockout status of a bookmark."""
+        current_lockout = self.tree.set(item, "Lockout")
+        new_lockout = "1" if current_lockout == "0" else "0"
+        self.tree.set(item, "Lockout", new_lockout)
+        self.bookmarks.update_lockout(item, new_lockout)
+
+    def _handle_import_error(self, filename):
+        """Handle errors during bookmark import."""
+        from tkinter import messagebox
+        messagebox.showerror("Error", f"Failed to import bookmarks from {filename}.")
 
     def build_ac(self, ac):
         """Build and initialize the GUI widgets.
@@ -877,7 +908,6 @@ class RigRemote(ttk.Frame):
         :raises : none
         :returns : none
         """
-
         eflag = False
 
         self.params["txt_hostname1"].insert(0, self.ac.rig_endpoints[0].hostname)

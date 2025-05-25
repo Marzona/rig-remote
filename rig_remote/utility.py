@@ -62,7 +62,7 @@ def store_conf(window):
     window.ac.config["save_exit"] = window.ckb_save_exit.get_str_val()
     window.ac.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].get_str_val()
     window.ac.config["bookmark_filename"] = window.bookmarks_file
-    window.ac.config["log_filename"] = window.log_file
+    window.ac.config["log_filename"] = window.log_file_handler
     window.ac.write_conf()
     return window.ac
 

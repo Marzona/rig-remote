@@ -127,6 +127,19 @@ def test_rigctl_set_commands_socket_mock():
         mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
         mock_socket().close.assert_called_once()
 
+def test_rigctl_set_commands_socket_mock_exception():
+    hostname = "localhost"
+    port = 8080
+    number = 1
+    rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
+    rigctl = RigCtl(target=rig_endpoint)
+    with patch("socket.socket") as mock_socket:
+        mock_socket.return_value.sendall.side_effect = TimeoutError("Socket timeout")
+        with pytest.raises(TimeoutError):
+            rigctl.set_frequency(frequency=1.1)
+        assert mock_socket.call_count == 1
+        mock_socket().connect.assert_called_once_with(("localhost", 8080))
+        mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
 
 @pytest.mark.parametrize(
     "command, message, msg_type",
@@ -249,3 +262,55 @@ def test_rigctl_get_mode_old_gqrx_versions():
     rigctl._send_message = create_autospec(rigctl._send_message)
     rigctl._send_message.return_value = "FM\n"
     assert rigctl.get_mode() == "FM"
+
+def test_rigctl_send_message_connection_error():
+    """Test connection error handling in _send_message."""
+    hostname = "localhost"
+    port = 8080
+    number = 1
+    rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
+    rigctl = RigCtl(target=rig_endpoint)
+
+    with patch("socket.socket") as mock_socket:
+        mock_socket.return_value.connect.side_effect = ConnectionRefusedError()
+        with pytest.raises(ConnectionRefusedError):
+            rigctl._send_message("test")
+
+
+def test_rigctl_send_message_socket_error():
+    """Test socket error handling in _send_message."""
+    hostname = "localhost"
+    port = 8080
+    number = 1
+    rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
+    rigctl = RigCtl(target=rig_endpoint)
+
+    with patch("socket.socket") as mock_socket:
+        mock_socket.return_value.sendall.side_effect = OSError()
+        with pytest.raises(OSError):
+            rigctl._send_message("test")
+
+
+def test_rigctl_send_message_receive_error():
+    """Test receive error handling in _send_message."""
+    hostname = "localhost"
+    port = 8080
+    number = 1
+    rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
+    rigctl = RigCtl(target=rig_endpoint)
+
+    with patch("socket.socket") as mock_socket:
+        mock_socket.return_value.recv.side_effect = OSError()
+        with pytest.raises(OSError):
+            rigctl._send_message("test")
+
+
+
+@pytest.fixture
+def mock_socket():
+    with patch('socket.socket') as mock:
+        socket_instance = mock.return_value
+        socket_instance.send.return_value = None
+        socket_instance.recv.return_value = b"OK\n"
+        socket_instance.connect.return_value = None
+        yield socket_instance

@@ -96,7 +96,6 @@ class AppConfig:
         valid and moves on to the next one.
 
         """
-
         if os.path.isfile(self.config_file):
             logger.info("Using config file:%s", self.config_file)
             config = configparser.RawConfigParser()
