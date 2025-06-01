@@ -136,7 +136,6 @@ if __name__ == "__main__":
 
     args = input_arguments()
     logger = log_configuration(args.verbose)
-
     if args.alternate_prefix:
         prefix = args.alternate_prefix
         dir_prefix = os.path.expanduser(prefix)

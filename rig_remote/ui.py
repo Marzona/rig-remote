@@ -44,10 +44,8 @@ from rig_remote.stmessenger import STMessenger
 
 logger = logging.getLogger(__name__)
 
-# pragma: no cover
 
-
-class RigRemote(ttk.Frame):
+class RigRemote(ttk.Frame): # pragma: no cover
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
 
@@ -78,36 +76,41 @@ class RigRemote(ttk.Frame):
         self.btn_tune1 = None
         self.btn_load1 = None
         self.rig_config_menu = None
-        ttk.Frame.__init__(self, root)
         self.tree = None
         self.rigctl_one = None
         self.rigctl_two = None
-
-        self.root = root
-        self.params = {}
-        self.params_last_content = {}
-        self.alt_files = {}
-        self.log_file = ac.config["log_filename"]
-        self.ac = ac
-        self._configure_rigs()
-        self.build_ac(ac)
-        self.params["cbb_mode1"].current(0)
-        self.focus_force()
-        self.update()
-        self.bookmarks = BookmarksManager()
+        self.scanq = None
+        self.synq = None
         self.scan_thread = None
         self.sync_thread = None
         self.scan_mode = None
         self.scanning = None
         self.selected_bookmark = None
-        self.scanq = STMessenger(queuecomms=QueueComms())
-        self.syncq = STMessenger(queuecomms=QueueComms())
-        self.new_bookmark_list = []
+        self.root = root
+        self.params = {}
+        self.params_last_content = {}
+        self.alt_files = {}
+        self.log_file = ac.config["log_filename"]
+        ttk.Frame.__init__(self, root)
+        self.ac = ac
+        self._configure_rigs()
+        self._build_ac(ac)
+        self.params["cbb_mode1"].current(0)
+        self.focus_force()
+        self.update()
+        self._init_queues()
         self.bind_all("<1>", lambda event: self.focus_set(event))
         # bookmarks loading on start
+        self.new_bookmark_list = []
+        self.bookmarks = BookmarksManager()
         self._load_bookmarks()
-
         self.buildmenu(root)
+
+    def _init_queues(self):
+        logger.info("initializiing queues")
+        self.scanq = STMessenger(queuecomms=QueueComms())
+        self.syncq = STMessenger(queuecomms=QueueComms())
+        logger.info("initializiing queues done")
 
     def _import_bookmarks(self):
         filename = filedialog.askopenfilename(
@@ -143,8 +146,10 @@ class RigRemote(ttk.Frame):
         messagebox.showinfo("About", "Rig Remote Application\nVersion 1.0")
 
     def _load_bookmarks(self):
+        logger.info("loading bookmarks")
         self.bookmarks_file = self.ac.config["bookmark_filename"]
         self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
+        logger.info("loading bookmarks done")
 
     def _insert_bookmarks(self, bookmarks: list, silent=False):
         """Method for inserting bookmark data already loaded.
@@ -186,7 +191,7 @@ class RigRemote(ttk.Frame):
 
     def buildmenu(self, root):
         """method for building the menu of the main window"""
-
+        logger.info("Building menus")
         menubar = tk.Menu(root)
         appmenu = tk.Menu(menubar, tearoff=0)
         appmenu.add_command(label="About", command=self.pop_up_about)
@@ -204,6 +209,7 @@ class RigRemote(ttk.Frame):
         root.config(menu=menubar)
         menubar.add_cascade(label="Rig Remote", menu=appmenu)
         menubar.add_cascade(label="Bookmarks", menu=bookmarksmenu)
+        logger.info("Building menus done")
 
     @staticmethod
     def _export_panel():
@@ -235,13 +241,13 @@ class RigRemote(ttk.Frame):
         from tkinter import messagebox
         messagebox.showerror("Error", f"Failed to import bookmarks from {filename}.")
 
-    def build_ac(self, ac):
+    def _build_ac(self, ac):
         """Build and initialize the GUI widgets.
         :param: ac
 
 
         """
-
+        logger.info("building and configuring ui widgets")
         self.master.title("Rig Remote")
         self.master.minsize(800, 244)
         self.pack(fill=tk.BOTH, expand=1, padx=5, pady=5)
@@ -889,6 +895,8 @@ class RigRemote(ttk.Frame):
         # horizontal separator
         ttk.Frame(self.control_menu).grid(row=24, column=0, columnspan=3, pady=5)
 
+        logger.info("building and configuring ui widgets done")
+
     def focus_set(self, event):
         """Give focus to screen object in click event. Used to
         force <FocusOut> callbacks.
@@ -897,9 +905,15 @@ class RigRemote(ttk.Frame):
         if not isinstance(event.widget, str):
             event.widget.focus_set()
 
-    def _configure_rigs(self):
-        self.rigctl_one = RigCtl(self.ac.rig_endpoints[0])
-        self.rigctl_two = RigCtl(self.ac.rig_endpoints[1])
+    def _configure_rigs(self) -> None:
+        if not self.rigctl_one:
+            logger.info("rig configuration: rig 1")
+            self.rigctl_one = RigCtl(self.ac.rig_endpoints[0])
+            logger.info("rig configuration rig 1 done")
+        if not self.rigctl_two:
+            logger.info("rig configuration: rig 2")
+            self.rigctl_two = RigCtl(self.ac.rig_endpoints[1])
+            logger.info("rig configuration rig 2 done")
 
     def apply_config(self, silent=False):
         """Applies the config to the UI.
