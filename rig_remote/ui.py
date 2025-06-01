@@ -63,8 +63,6 @@ class RigRemote(ttk.Frame): # pragma: no cover
     GitHub: https://github.com/Marzona/rig-remote
 
     Project wiki: https://github.com/Marzona/rig-remote/wiki
-
-    GoogleGroups: https://groups.google.com/forum/#!forum/rig-remote
     """
 
     def __init__(self, root, ac):
