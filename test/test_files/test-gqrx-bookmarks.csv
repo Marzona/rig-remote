@@ -1,0 +1,6 @@
+# Tag name          ;  color
+*new*               ; #c0c0c0
+Untagged            ; #c0c0c0
+
+# Frequency ; Name                     ; Modulation          ;  Bandwidth; Tags
+   180000000; test                     ; USB                 ;       3900; Untagged

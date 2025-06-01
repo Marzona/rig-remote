@@ -1,4 +1,3 @@
-[Scanning]
 passes = 1
 aggr_scan = false
 auto_bookmark = false
@@ -10,17 +9,12 @@ record = false
 sgn_level = -30
 wait = false
 
-[Main]
 log_filename = none
 save_exit = false
 always_on_top = false
 log = false
 bookmark_filename = ./test/test-bookmarks.csv
-[Rig URI]
 hostname1 = 127.0.0.1
 hostname2 = 127.0.0.1
 port1 = 7356
 port2 = 7357
-
-[Monitor]
-

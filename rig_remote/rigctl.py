@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -8,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -18,76 +16,152 @@ Copyright (c) 2015 Simone Marzona
 """
 
 import logging
-import telnetlib
 import socket
-from rig_remote.constants import (
-#                                 DEFAULT_CONFIG,
-                                 ALLOWED_VFO_COMMANDS,
-                                 ALLOWED_SPLIT_MODES,
-                                 ALLOWED_PARM_COMMANDS,
-                                 ALLOWED_FUNC_COMMANDS,
-                                 RESET_CMD_DICT,
-                                 ALLOWED_RIGCTL_MODES,
-                                 RIG_TIMEOUT,
-                                 )
+from logging import Logger
+from rig_remote.models.rig_endpoint import RigEndpoint
+from rig_remote.models.modulation_modes import ModulationModes
 
-# logging configuration
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
-# classes definition
-class RigCtl(object):
-    """Basic rigctl client implementation."""
+class RigCtl:
+    SUPPORTED_MODULATION_MODES = ModulationModes
+    _RESET_CMD_DICT = {
+        "NONE": 0,
+        "SOFTWARE_RESET": 1,
+        "VFO_RESET": 2,
+        "MEMORY_CLEAR_RESET": 4,
+        "MASTER_RESET": 8,
+    }
+    _ALLOWED_FUNC_COMMANDS = [
+        "FAGC",
+        "NB",
+        "COMP",
+        "VOX",
+        "TONE",
+        "TSQL",
+        "SBKIN",
+        "FBKIN",
+        "ANF",
+        "NR",
+        "AIP",
+        "APF",
+        "MON",
+        "MN",
+        "RF",
+        "ARO",
+        "LOCK",
+        "MUTE",
+        "VSC",
+        "REV",
+        "SQL",
+        "ABM",
+        "BC",
+        "MBC",
+        "AFC",
+        "SATMODE",
+        "SCOPE",
+        "RESUME",
+        "TBURST",
+        "TUNER",
+    ]
+    _ALLOWED_PARM_COMMANDS = [
+        "ANN",
+        "APO",
+        "BACKLIGHT",
+        "BEEP",
+        "TIME",
+        "BAT",
+        "KEYLIGHT",
+    ]
+    _ALLOWED_SPLIT_MODES = [
+        "AM",
+        "FM",
+        "CW",
+        "CWR",
+        "USB",
+        "LSB",
+        "RTTY",
+        "RTTYR",
+        "WFM",
+        "AMS",
+        "PKTLSB",
+        "PKTUSB",
+        "PKTFM",
+        "ECSSUSB",
+        "ECSSLSB",
+        "FAX",
+        "SAM",
+        "SAL",
+        "SAH",
+        "DSB",
+    ]
+    _ALLOWED_VFO_COMMANDS = [
+        "VFOA",
+        "VFOB",
+        "VFOC",
+        "currVFO",
+        "VFO",
+        "MEM",
+        "Main",
+        "Sub",
+        "TX",
+        "RX",
+    ]
 
-    def __init__(self, target):
-        """implements the rig.
-
+    def __init__(self, target: RigEndpoint):
+        """Basic rigctl client implementation.
 
         :param target: rig uri data
-        :type target: dict created from build_rig_uri
         :raises TypeError: if the target is not a dict of 3 keys
         """
 
-        if not isinstance(target, dict) or not len(target.keys()) == 3:
-            logger.error("target is not of type dict "
-                         "but {}".format(type(target)))
-            raise TypeError
         self.target = target
 
-    def _request(self, request, target=None):
-        """Main method implementing the rigctl protocol. It's  wrapped by the
-        more specific methods that offer the specific functions.
+    def _send_message(self, request: str) -> str:
+        """sends messages through the socket
 
-        :param request: string to send through the telnet connection
-        :type request: string
-        :raises: none
-        :returns response: response data
-        :response type: string
+        :param request: message to be sent to the rig endpoint
+        :return: response from the rig endpoint
         """
+        rig_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        if not target:
-            target = self.target
+        logger.info(
+            "sending : %s to target %s, %i",
+            request,
+            self.target.hostname,
+            self.target.port,
+        )
+        request = f"{request}\n"
 
         try:
-            con = telnetlib.Telnet(target["hostname"],
-                                   target["port"],
-                                   RIG_TIMEOUT)
-        except socket.timeout:
-
-            logger.error("Time out while connecting to {}:{}".format(target["hostname"],
-                                                                     ["port"]))
+            rig_socket.connect((self.target.hostname, self.target.port))
+            rig_socket.sendall(bytearray(request.encode()))
+            response = rig_socket.recv(1024)
+            rig_socket.close()
+        except TimeoutError:
+            logger.error(
+                "Time out while connecting to %s %s",
+                self.target.hostname,
+                self.target.port,
+            )
             raise
-        except socket.error:
-            logger.exception("Connection refused on {}:{}".format(["hostname"],
-                                                                  ["port"]))
+        except OSError:
+            logger.exception(
+                "Connection refused on %s %s",
+                self.target.hostname,
+                self.target.port,
+            )
             raise
+        logger.info(
+            "received %s from target %s %s",
+            response,
+            self.target.hostname,
+            self.target.port,
+        )
+        return str(response.decode())
 
-        con.write(('%s\n' % request).encode('ascii'))
-        response = con.read_some().decode('ascii').strip()
-        con.write('c\n'.encode('ascii'))
-        return response
-
-    def set_frequency(self, frequency, target=None):
+    def set_frequency(self, frequency: float):
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -96,308 +170,313 @@ class RigCtl(object):
         try:
             float(frequency)
         except ValueError:
-            logger.error("Frequency value must be a float, "
-                         "got {}".format(frequency))
+            logger.error("Frequency value must be a float, got %s", frequency)
             raise
-        return self._request('F %s' % frequency, target)
+        self._send_message(request=f"F {frequency}")
 
-    def get_frequency(self, target=None):
+    def get_frequency(self) -> float:
         """Wrapper around _request. It configures the command for getting
         a frequency.
 
         """
-        output = self._request('f')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio "
-                         "frequency, got {}".format(output))
+        output = self._send_message("f")
+        if not isinstance(output, str):
+            logger.error(
+                "Expected unicode string while getting radio frequency, got %s", output
+            )
             raise ValueError
 
-        return self._request('f', target)
+        return float(output)
 
-    def set_mode(self, mode, target=None):
+    def set_mode(self, mode: str):
         """Wrapper around _request. It configures the command for setting
         the mode.
 
         """
-        if not isinstance(mode, str) or mode not in ALLOWED_RIGCTL_MODES:
-
-            logger.error("Frequency mode must be a string in {}, "\
-                        "got {}".format(ALLOWED_RIGCTL_MODES, mode))
+        if not isinstance(mode, str):
+            logger.error(
+                "Expected unicode string while setting modulation mode, got %s", mode
+            )
             raise ValueError
-        return self._request('M %s' % mode, target)
+        self._send_message(request=f"M {mode}")
 
-    def get_mode(self, target=None):
+    def get_mode(self) -> str:
         """Wrapper around _request. It configures the command for getting
         the mode.
 
         """
         # older versions of gqrx replies with only the mode (u'WFM_ST' as an example)
-        # newer versions replie with something like u'WFM_ST\n160000'
-        if "\n" in self._request('m'):
-            output = self._request('m').split("\n")[0]
-        else:
-            output = self._request('m')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio mode, "
-                         "got {}".format(output))
+        # newer versions replies with something like u'WFM_ST\n160000'
+        output_message = self._send_message(request="m")
+        output = output_message
+        if not isinstance(output, str):
+            logger.error(
+                "Expected unicode string while getting radio frequency, got %s", output
+            )
             raise ValueError
+        if "\n" in output_message:
+            output = output_message.split("\n")[0]
+
         return output
 
-    def start_recording(self):
+    def start_recording(self) -> str:
         """Wrapper around _request. It configures the command for starting
         the recording.
 
         """
 
-        return self._request('AOS')
+        return self._send_message(request="AOS")
 
-    def stop_recording(self):
+    def stop_recording(self) -> str:
         """Wrapper around _request. It configures the command for stopping
         the recording.
 
         """
 
-        return self._request('LOS')
+        return self._send_message(request="LOS")
 
-    def get_level(self):
+    def get_level(self) -> float:
         """Wrapper around _request. It configures the command for getting
         the signal level.
 
         """
 
-        output = self._request('l')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting radio "
-                         "signal level, got {}".format(output))
+        output = self._send_message(request="l")
+        if not isinstance(output, str):
+            logger.error(
+                "Expected unicode string while getting radio signal level, got %s",
+                output,
+            )
             raise ValueError
 
-        return output
+        return float(output.strip())
 
-    def set_vfo(self, vfo):
+    def set_vfo(self, vfo: str) -> str:
         """Wrapper around _request. It configures the command for setting
         VFO.
 
         """
 
-        if vfo not in ALLOWED_VFO_COMMANDS:
-            logger.error("VFO value must be a string inclueded in {}, "
-                         "got {}".format(ALLOWED_VFO_COMMANDS, vfo))
+        if vfo not in self._ALLOWED_VFO_COMMANDS:
+            logger.error(
+                "VFO value must be a string included in %s, got %s",
+                self._ALLOWED_VFO_COMMANDS,
+                vfo,
+            )
             raise ValueError
+        return self._send_message(f"V {vfo}")
 
-        return self._request('V %s' % vfo)
-
-    def get_vfo(self):
+    def get_vfo(self) -> str:
         """Wrapper around _request. It configures the command for getting
         VFO.
 
         """
 
-        output = self._request('v')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting VFO, "
-                         "got {}".format(output))
+        output = self._send_message("v")
+        if not isinstance(output, str):
+            logger.error("Expected unicode string while getting VFO, got %s", output)
             raise ValueError
 
         return output
 
-    def set_rit(self, rit):
+    def set_rit(self, rit: int) -> str:
         """Wrapper around _request. It configures the command for getting
         RIT.
 
         """
 
         if not isinstance(rit, int):
-            logger.error("RIT value must be an int, "
-                         "got {}".format(type(rit)))
+            logger.error("RIT value must be an int, got %s", type(rit))
             raise ValueError
 
-        return self._request('J %s' % rit)
+        return self._send_message(f"J {rit}")
 
-    def get_rit(self):
+    def get_rit(self) -> str:
         """Wrapper around _request. It configures the command for getting
         RIT.
 
         """
 
-        output = self._request('j')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting RIT, "
-                         "got {}".format(type(output)))
+        output = self._send_message("j")
+        if not isinstance(output, str):
+            logger.error("Expected unicode string while getting RIT, got %s", output)
             raise ValueError
 
         return output
 
-    def set_xit(self, xit):
+    def set_xit(self, xit: str) -> str:
         """Wrapper around _request. It configures the command for getting
         XIT.
 
         """
 
-        if not isinstance(xit, basestring):
-            logger.error("XIT value must be a string, "
-                         "got {}".format(type(xit)))
+        if not isinstance(xit, str):
+            logger.error("XIT value must be a string, got %s", type(xit))
             raise ValueError
 
-        return self._request('J %s' % xit)
+        return self._send_message(f"J {xit}")
 
-    def get_xit(self):
+    def get_xit(self) -> str:
         """Wrapper around _request. It configures the command for getting
         XIT.
 
         """
 
-        output = self._request('j')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting XIT, "
-                         "got {}".format(type(output)))
+        output = self._send_message("j")
+        if not isinstance(output, str):
+            logger.error(
+                "Expected unicode string while getting XIT, got %s", type(output)
+            )
             raise ValueError
 
         return output
 
-    def set_split_freq(self, split_freq):
+    def set_split_freq(self, split_freq: int) -> str:
         """Wrapper around _request. It configures the command for setting
         split frequency.
 
         """
 
         if not isinstance(split_freq, int):
-            logger.error("XIT value must be an integer, "
-                         "got {}".format(type(split_freq)))
+            logger.error("XIT value must be an integer, got %s", type(split_freq))
             raise ValueError
+        return self._send_message(f"I {split_freq}")
 
-        return self._request('I %s' % split_freq)
-
-    def get_split_freq(self):
+    def get_split_freq(self) -> int:
         """Wrapper around _request. It configures the command for getting
         XIT.
 
         """
 
-        output = self._request('i')
+        output = self._send_message("i")
         if not isinstance(output, int):
-            logger.error("Expected int while getting split_frequency, "
-                         "got {}".format(type(output)))
+            logger.error(
+                "Expected int while getting split_frequency, got %s", type(output)
+            )
             raise ValueError
 
         return output
 
-    def set_split_mode(self, split_mode):
+    def set_split_mode(self, split_mode: str) -> str:
         """Wrapper around _request. It configures the command for setting
         slit frequency.
 
         """
 
-        if split_mode not in ALLOWED_SPLIT_MODES:
-            logger.error("split_mode value must be a string in {}, "
-                         "got {}".format(ALLOWED_SPLIT_MODES,
-                                         type(split_mode)))
+        if split_mode not in self._ALLOWED_SPLIT_MODES:
+            logger.error(
+                "split_mode value must be a string in %s, got %s",
+                self._ALLOWED_SPLIT_MODES,
+                type(split_mode),
+            )
             raise ValueError
 
-        return self._request('X %s' % split_mode)
+        return self._send_message(f"X {split_mode}")
 
-    def get_split_mode(self):
+    def get_split_mode(self) -> str:
         """Wrapper around _request. It configures the command for getting
         the split mode.
 
         """
 
-        output = self._request('x')
+        output = self._send_message("x")
         if not isinstance(output, str):
-            logger.error("Expected string while getting split_frequency_mode, "
-                         "got {}".format(type(output)))
+            logger.error(
+                "Expected string while getting split_frequency_mode, got %s",
+                type(output),
+            )
             raise ValueError
 
         return output
 
-    def set_func(self, func):
+    def set_func(self, func: str) -> str:
         """Wrapper around _request. It configures the command for getting
         func.
 
         """
 
-        if func not in ALLOWED_FUNC_COMMANDS:
-            logger.error("func value must be a string inclueded in {}, "
-                         "got {}".format(ALLOWED_FUNC_COMMANDS, func))
+        if func not in self._ALLOWED_FUNC_COMMANDS:
+            logger.error(
+                "func value must be a string inclueded in %s, got %s",
+                self._ALLOWED_FUNC_COMMANDS,
+                func,
+            )
             raise ValueError
 
-        return self._request('U %s' % func)
+        return self._send_message(f"U {func}")
 
-    def get_func(self):
+    def get_func(self) -> str:
         """Wrapper around _request. It configures the command for getting
         func.
 
         """
 
-        output = self._request('u')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting func, "
-                         "got {}".format(output))
+        output = self._send_message("u")
+        if not isinstance(output, str):
+            logger.error("Expected unicode string while getting func, got %s", output)
             raise ValueError
         return output
 
-    def set_parm(self, parm):
+    def set_parm(self, parm: str) -> str:
         """Wrapper around _request. It configures the command for getting
         parm.
 
         """
 
-        if parm not in ALLOWED_PARM_COMMANDS:
-            logger.error("parm value must be a string inclueded in {}, "
-                         "got {}".format(ALLOWED_PARM_COMMANDS, parm))
+        if parm not in self._ALLOWED_PARM_COMMANDS:
+            logger.error(
+                "parm value must be a string included in %s, got %s ",
+                self._ALLOWED_PARM_COMMANDS,
+                parm,
+            )
             raise ValueError
-        return self._request('P %s' % parm)
+        return self._send_message(f"P {parm}")
 
-    def get_parm(self):
+    def get_parm(self) -> str:
         """Wrapper around _request. It configures the command for getting
         parm.
 
         """
 
-        output = self._request('p')
-        if not isinstance(output, basestring):
-            logger.error("Expected unicode string while getting parm, "
-                         "got {}".format(output))
+        output = self._send_message("p")
+        if not isinstance(output, str):
+            logger.error("Expected unicode string while getting parm, got %s", output)
             raise ValueError
 
         return output
 
-    def set_antenna(self, antenna):
+    def set_antenna(self, antenna: int) -> str:
         """Wrapper around _request. It configures the command for setting
         an antenna.
 
         """
 
         if not isinstance(antenna, int):
-            logger.error("antenna value must be an int, "
-                         "got {}".format(antenna))
+            logger.error("antenna value must be an int, got %s", antenna)
             raise ValueError
 
-        return self._request('Y %s' % antenna)
+        return self._send_message(f"Y {antenna}")
 
-    def get_antenna(self):
+    def get_antenna(self) -> str:
         """Wrapper around _request. It configures the command for getting
         the antenna in use.
 
         """
 
-        output = self._request('f')
+        output = self._send_message("y")
         if not isinstance(output, int):
-            logger.error("Expected integer while getting radio antenna, "
-                         "got {}".format(output))
+            logger.error("Expected integer while getting radio antenna, got %s", output)
             raise ValueError
 
-        return self._request('y')
-
-    def rig_reset(self, reset_signal):
+    def rig_reset(self, reset_signal: str) -> str:
         """Wrapper around _request. It configures the command for resetting
         the rig with various levels 0  =  None,  1 = Software reset,
         2 = VFO reset, 4 = Memory Clear reset, 8 = Master reset.
 
         """
 
-        if reset_signal not in RESET_CMD_DICT.keys():
-            logger.error("Reset_signal must be one of "
-                         "{}.".format(RESET_CMD_DICT.keys()))
+        if reset_signal not in self._RESET_CMD_DICT:
+            logger.error("Reset_signal must be one of %s", self._RESET_CMD_DICT.keys())
             raise ValueError
 
-        return self._request('* %s' % reset_signal)
+        return self._send_message(f"* {self._RESET_CMD_DICT[reset_signal]}")

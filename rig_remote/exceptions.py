@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -7,7 +6,7 @@ http://gqrx.dk/
 http://gqrx.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-Author: Rafael Marmelo
+
 Author: Simone Marzona
 
 License: MIT License
@@ -17,30 +16,25 @@ Copyright (c) 2015 Simone Marzona
 """
 
 
-# custom exception definition
-# non retriable custom exceptions
-class NonRetriableError (Exception):
+class NonRetriableError(Exception):
     pass
 
 
-class InvalidPathError (NonRetriableError):
-    pass
-
-
-class InvalidScanModeError (NonRetriableError):
+class InvalidPathError(NonRetriableError):
     pass
 
 
 class UnsupportedScanningConfigError(NonRetriableError):
     pass
 
+
 class UnsupportedSyncConfigError(NonRetriableError):
     pass
 
-# retriable custom exceptions
 
-class RetriableError (Exception):
+class RetriableError(Exception):
     pass
 
-class FormatError (RetriableError):
+
+class BookmarkFormatError(RetriableError):
     pass

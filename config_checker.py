@@ -19,18 +19,15 @@ Copyright (c) 2015 Simone Marzona
 """
 
 
-# import modules
 import os
 import csv
 import shutil
-import ConfigParser
+import configparser
 import platform
 import argparse
 import logging
 import pprint
-from os.path import expanduser
 from rig_remote.constants import (
-                                  DEFAULT_CONFIG,
                                   RIG_URI_CONFIG,
                                   MONITOR_CONFIG,
                                   SCANNING_CONFIG,
@@ -39,7 +36,6 @@ from rig_remote.constants import (
                                   )
 # helper functions
 
-# logging configuration
 logger = logging.getLogger(__name__)
 
 def input_arguments():
@@ -114,7 +110,7 @@ def dump_info():
 
 def update_config(config):
     config_file = os.path.join(config, "rig-remote.conf")
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     for section in CONFIG_SECTIONS:
         config.add_section(section)
     with open(config_file, "r") as cf:

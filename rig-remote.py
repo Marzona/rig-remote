@@ -18,20 +18,14 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-# import modules
 import argparse
 import logging
 import os
 import time
 import textwrap
-import Tkinter as tk
+import tkinter as tk
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
-from rig_remote.constants import DEFAULT_BOOKMARK_FILENAME
-from rig_remote.constants import DEFAULT_CONFIG_FILENAME
-from rig_remote.constants import DEFAULT_LOG_FILENAME
-from rig_remote.constants import DEFAULT_PREFIX
-from rig_remote.utility import process_path
 
 # helper functions
 def input_arguments():
@@ -119,11 +113,29 @@ def log_configuration(verbose):
 
     return logging.getLogger(__name__)
 
+
+def process_path(path):
+    """Handle tilde expansion in a path.
+
+    :param path: path to expand
+    :type path: string
+    """
+
+    working_path, working_name = os.path.split(path)
+    if working_path:
+        working_path = os.path.expanduser(working_path)
+    return os.path.join(working_path, working_name)
+
+
 # entry point
 if __name__ == "__main__":
+    DEFAULT_PREFIX = os.path.expanduser("~/.rig-remote")
+    DEFAULT_CONFIG_FILENAME = "rig-remote.conf"
+    DEFAULT_LOG_FILENAME = "rig-remote-log.txt"
+    DEFAULT_BOOKMARK_FILENAME = "rig-remote-bookmarks.csv"
+
     args = input_arguments()
     logger = log_configuration(args.verbose)
-
     if args.alternate_prefix:
         prefix = args.alternate_prefix
         dir_prefix = os.path.expanduser(prefix)
@@ -136,27 +148,27 @@ if __name__ == "__main__":
         config_file = os.path.join(dir_prefix, DEFAULT_CONFIG_FILENAME)
 
     root = tk.Tk()
-    ac = AppConfig(config_file)
+    app_config = AppConfig(config_file=config_file)
     # set bookmarks and log filename in this order:
     #   use command line alternate path
     #   use path from config file
     #   use default path
-    ac.read_conf()
+    app_config.read_conf()
 
-    if args.alternate_bookmark_file != None:
+    if args.alternate_bookmark_file is not None:
         bookmarks = args.alternate_bookmark_file
-        ac.config['bookmark_filename'] = process_path(bookmarks)
-    elif ac.config["bookmark_filename"] == None:
-        ac.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
+        app_config.config['bookmark_filename'] = process_path(bookmarks)
+    elif app_config.config["bookmark_filename"] is None:
+        app_config.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
     # set activity log filename
-    if args.alternate_log_file != None:
+    if args.alternate_log_file is not None:
         log = args.alternate_log_file
-        ac.config['log_filename'] = process_path(log)
+        app_config.config['log_filename'] = process_path(log)
     else:
-        ac.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
-    app = RigRemote(root, ac)
+        app_config.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
+    app = RigRemote(root, app_config)
 
-    app.apply_config(ac)
+    app.apply_config()
     app.mainloop()
-    if app.scan_thread != None :
+    if app.scan_thread is not None :
         app.scanning.terminate()
