@@ -33,5 +33,55 @@ exclude = [
 line-length = 120
 # indent-width = 4
 
-# Assume Python 3.9
-target-version = "py39"
+# Assume Python 3.13
+target-version = "py313"
+
+[project]
+name = "rig-remote"
+version = "3.0"
+authors = [
+  { name="Simone Marzona", email="marzona@knoway.info" },
+]
+
+dependencies = [
+        "setuptools==80.8.0",
+        "argparse",
+        "datetime==5.5",
+        "logging==0.4.9.6",
+        "astroid==3.3.6",
+        "configparser==7.1.0",
+        "coverage==7.6.9",
+        "dill==0.3.9",
+        "execnet==2.1.1",
+        "iniconfig==2.0.0",
+        "isort==5.13.2",
+        "mccabe==0.7.0",
+        "mock==5.1.0",
+        "mypy==1.13.0",
+        "mypy-extensions==1.0.0",
+        "packaging==24.2",
+        "platformdirs==4.3.6",
+        "pluggy==1.5.0",
+        "pylint==3.3.2",
+        "pytest==8.3.4",
+        "pytest-cov==6.0.0",
+        "pytest-xdist==3.6.1",
+        "pytz==2025.2",
+        "ruff==0.8.4",
+        "tomlkit==0.13.2",
+        "typing-extensions==4.12.2",
+        "zope-interface==7.2",
+]
+description = "A tool for remotely control a radio transceiver using RigCtl protocol over TCP/IP. Rig Remote provides frequency scanning and monitoring, frequency bookmarks."
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/Marzona/rig-remote"
+Issues = "https://github.com/Marzona/rig-remote/issues"

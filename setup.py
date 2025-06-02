@@ -37,8 +37,8 @@ if sys.argv[-1] == 'tag':
 
 setup(
     name = "rig-remote",
-    download_url = ["https://github.com/Marzona/rig-remote/releases"],
-    version = "2.0",
+    download_url = "https://github.com/Marzona/rig-remote/releases",
+    version = "3.0",
     description = "Remote control a radio transceiver through RigCtl.",
     author="Simone Marzona",
     author_email="marzona@knoway.info",
@@ -67,7 +67,6 @@ setup(
         "argparse",
         "logging",
         "datetime",
-        "logging",
     ],
     zip_safe = False)
 

@@ -94,3 +94,4 @@ rig-remote-venv
 .py~
 .py.save
 .coveragerc
+uv.lock

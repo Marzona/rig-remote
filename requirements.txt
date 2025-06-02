@@ -19,7 +19,6 @@ pytest==8.3.4
 pytest-cov==6.0.0
 pytest-xdist==3.6.1
 pytz==2025.2
--e git+https://github.com/Marzona/rig-remote.git@e51d454b82d9c2b2a8fd81df82623f7c52ff9bca#egg=rig_remote
 ruff==0.8.4
 setuptools==80.8.0
 tomlkit==0.13.2
