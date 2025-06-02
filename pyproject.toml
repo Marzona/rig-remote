@@ -55,7 +55,6 @@ classifiers = [
 
 dependencies = [
         "setuptools==80.8.0",
-        "argparse",
         "datetime==5.5",
         "logging==0.4.9.6",
         "astroid==3.3.6",
