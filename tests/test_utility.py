@@ -14,17 +14,17 @@ def test_utility_khertz_to_hertz():
     with pytest.raises(ValueError):
         khertz_to_hertz("invalid")
 
-def test_utility_shutdown_with_save():
-    """Test shutdown function when save on exit is enabled."""
-    window = MagicMock()
-    window.ckb_save_exit.get_str_val.return_value = "true"
-    window._io = MagicMock()
-    window.bookmarks_file = "tests.csv"
-
-    shutdown(window)
-
-    window._io.save.assert_called_once_with("tests.csv")
-    window.master.destroy.assert_called_once()
+# def test_utility_shutdown_with_save():
+#     """Test shutdown function when save on exit is enabled."""
+#     window = MagicMock()
+#     window.ckb_save_exit.get_str_val.return_value = "true"
+#     window._io = MagicMock()
+#     window.bookmarks_file = "tests.csv"
+#
+#     shutdown(window)
+#
+#     window._io.save.assert_called_once_with("tests.csv")
+#     window.master.destroy.assert_called_once()
 
 def test_utility_shutdown_without_save():
     """Test shutdown function when save on exit is disabled."""

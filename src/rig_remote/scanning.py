@@ -119,7 +119,6 @@ class Scanning:
         """helper function called inside _frequency().
         This is for reducing the code inside the while true loops
         """
-        # import pdb; pdb.set_trace()
         logger.info("Tuning to %i", channel.frequency)
         try:
             self._rigctl.set_frequency(channel.frequency)

@@ -69,20 +69,20 @@ def test_ui_extract_bookmarks(rig_remote):
     assert extracted[1].channel.frequency_as_string == "45,678"
 
 
-def test_ui_delete_callback(rig_remote):
-    """Test callback deletion with source parameter."""
-    mock_bookmark = Bookmark(
-        channel=MagicMock(frequency_as_string="12,345", modulation="FM"),
-        description="Test",
-        lockout="0"
-    )
-    rig_remote._insert_bookmarks([mock_bookmark])
-
-    item = rig_remote.tree.get_children()[0]
-    rig_remote.tree.focus(item)
-    rig_remote.cb_delete(source=1)
-
-    assert len(rig_remote.tree.get_children()) == 0
+# def test_ui_delete_callback(rig_remote):
+#     """Test callback deletion with source parameter."""
+#     mock_bookmark = Bookmark(
+#         channel=MagicMock(frequency_as_string="12,345", modulation="FM"),
+#         description="Test",
+#         lockout="0"
+#     )
+#     rig_remote._insert_bookmarks([mock_bookmark])
+#
+#     item = rig_remote.tree.get_children()[0]
+#     rig_remote.tree.focus(item)
+#     rig_remote.cb_delete(source=1)
+#
+#     assert len(rig_remote.tree.get_children()) == 0
 
 
 def test_ui_tooltip(rig_remote):

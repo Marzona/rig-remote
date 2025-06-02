@@ -38,7 +38,7 @@ target-version = "py313"
 
 [project]
 name = "rig-remote"
-version = "3.2"
+version = "3.0"
 authors = [
   { name="Simone Marzona", email="marzona@knoway.info" },
 ]
@@ -109,7 +109,18 @@ testpaths = [
     "integration",
 ]
 console_output_style = "progress"
-unit_duration_report = "total"
 log_cli = "True"
 pythonpath = "src"
-equired_plugins = ["pytest-xdist>=3.6.1"]
+required_plugins = ["pytest-xdist>=3.6.1"]
+
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = false
+show_error_codes = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+exclude = ["docs", "tests"]
+strict = true
+check_untyped_defs = true

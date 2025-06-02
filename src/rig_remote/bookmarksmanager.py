@@ -80,21 +80,19 @@ class BookmarksManager:
         ],
     ]
 
-    def save(self, bookmarks_file: str, bookmarks: list, delimiter: str = ","):
+    def save(self, bookmarks_file: str, delimiter: str = ","):
         """Bookmarks handling. Saves the bookmarks as a csv file.
 
         :param bookmarks_file: filename to load, with full path
         :param delimiter: delimiter to use for creating the csv file,
-
         defaults to ','
         :raises : none
         :returns : none
         """
+        self._io.rows = []
 
-        self._io.row_list = []
-
-        for bookmark in bookmarks:
-            self._io.row_list.append(
+        for bookmark in self.bookmarks:
+            self._io.rows.append(
                 [
                     bookmark.channel.frequency,
                     bookmark.channel.modulation,
@@ -122,7 +120,7 @@ class BookmarksManager:
             return []
         skipped_count = 0
 
-        for entry in self._io.row_list:
+        for entry in self._io.rows:
             if len(entry) != self._BOOKMARK_ENTRY_FIELDS:
                 logger.info(
                     "skipping line %s as invalid, not enough fields, expecting 4", entry
@@ -147,7 +145,7 @@ class BookmarksManager:
         """
         if not filename:
             logger.info("no filename provided, nothing to import.")
-            return
+            return None
         return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
 
     def _detect_format(self, filename: str):
@@ -185,7 +183,7 @@ class BookmarksManager:
 
         count = 0
         bookmarks = []
-        for row in self._io.row_list:
+        for row in self._io.rows:
             count += 1
             if count < self._GQRX_FIRST_BOOKMARK + 1:
                 continue
@@ -220,7 +218,6 @@ class BookmarksManager:
 
         self.save(
             bookmarks_file=filename,
-            bookmarks=self.bookmarks,
             delimiter=",",
         )
 
@@ -230,7 +227,7 @@ class BookmarksManager:
         and around a function that provides the format/data conversion.
         """
 
-        self._io.row_list = self._GQRX_BOOKMARK_HEADER
+        self._io.rows = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
     def _save_gqrx(self, filename: str):
@@ -249,9 +246,9 @@ class BookmarksManager:
                 "",
                 "Untagged",
             ]
-            self._io.row_list.append(gqrx_bookmark)
+            self._io.rows.append(gqrx_bookmark)
 
-        self._io.row_list.reverse()
+        self._io.rows.reverse()
 
-        logger.info("saving %i bookmarks", len(self._io.row_list))
+        logger.info("saving %i bookmarks", len(self._io.rows))
         self._io.csv_save(filename, ";")

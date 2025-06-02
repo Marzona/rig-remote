@@ -30,41 +30,11 @@ def shutdown(window):
     :param window: object that represent the UI
     :returns: none
     """
-
-    if window.ckb_save_exit.get_str_val() == "true":
-        window._io.save(window.bookmarks_file)
-        store_conf(window)
-
+    if window.ckb_save_exit.get_str_val():
+        window.bookmarks.save(bookmarks_file=window.bookmarks_file)
+        window.ac.store_conf(window=window)
     window.master.destroy()
 
-
-def store_conf(window):
-    """populates the ac object reading the info from the UI.
-
-    :param window: object used to hold the app configuration.
-    :returns window.ac: window instance with ac obj updated.
-    """
-
-    window.ac.config["hostname1"] = window.params["txt_hostname1"].get()
-    window.ac.config["port1"] = window.params["txt_port1"].get()
-    window.ac.config["hostname2"] = window.params["txt_hostname2"].get()
-    window.ac.config["port2"] = window.params["txt_port2"].get()
-    window.ac.config["interval"] = window.params["txt_interval"].get()
-    window.ac.config["delay"] = window.params["txt_delay"].get()
-    window.ac.config["passes"] = window.params["txt_passes"].get()
-    window.ac.config["sgn_level"] = window.params["txt_sgn_level"].get()
-    window.ac.config["range_min"] = window.params["txt_range_min"].get()
-    window.ac.config["range_max"] = window.params["txt_range_max"].get()
-    window.ac.config["wait"] = window.params["ckb_wait"].get_str_val()
-    window.ac.config["record"] = window.params["ckb_record"].get_str_val()
-    window.ac.config["log"] = window.params["ckb_log"].get_str_val()
-    window.ac.config["always_on_top"] = window.ckb_top.get_str_val()
-    window.ac.config["save_exit"] = window.ckb_save_exit.get_str_val()
-    window.ac.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].get_str_val()
-    window.ac.config["bookmark_filename"] = window.bookmarks_file
-    window.ac.config["log_filename"] = window.log_file_handler
-    window.ac.write_conf()
-    return window.ac
 
 
 def center_window(window, width=300, height=200):

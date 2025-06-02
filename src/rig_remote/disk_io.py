@@ -33,7 +33,7 @@ class IO:
     """IO wrapper class"""
 
     def __init__(self):
-        self.row_list = []
+        self.rows=[]
 
     @staticmethod
     def _path_check(csv_file: str):
@@ -59,29 +59,30 @@ class IO:
         self._path_check(csv_file)
         logger.info("reading csv file %s with delimiter %s.", csv_file, delimiter)
         with open(csv_file, "r") as data_file:
-            self.row_list = []
+            self.rows = []
             reader = csv.reader(data_file, delimiter=delimiter)
             for line in reader:
-                self.row_list.append(line)
-        logger.info("loaded %i rows from csv %s", len(self.row_list), csv_file)
+                self.rows.append(line)
+        logger.info("loaded %i rows from csv %s", len(self.rows), csv_file)
 
     def csv_save(self, csv_file: str, delimiter: str):
         """Save current frequencies to disk.
 
         :param delimiter: delimiter char used in the csv
+        :param csv_file: path of the file to be written
         :raises: IOError, OSError
         """
         count = 0
+
         try:
             with open(csv_file, "w") as data_file:
                 writer = csv.writer(data_file, delimiter=delimiter)
-                while self.row_list:
+                for entry in self.rows:
                     count += 1
-                    writer.writerow(self.row_list.pop())
+                    writer.writerow(entry)
         except (IOError, OSError):
             logger.error("Error while trying to write the file: %a", csv_file)
-            self.row_list = []
-            self.test = "test"
+        self.rows = []
         logger.info("saved %i rows", count)
 
 

@@ -515,7 +515,7 @@ def test_scanning_scan_bookmarks_wait(scanning):
     )
     scanning._rigctl = create_autospec(RigCtl)
     scanning._rigctl.get_level.return_value = (
-        250  # TODO mettere una lista di valori di ritorno per coprire 171
+        250
     )
     assert scanning._scan_active is True
     scanning._bookmarks(task=bookmarks_scanning_task)

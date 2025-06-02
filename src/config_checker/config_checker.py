@@ -18,7 +18,6 @@ License: MIT License
 Copyright (c) 2015 Simone Marzona
 """
 
-
 import os
 import csv
 import shutil
@@ -28,15 +27,17 @@ import argparse
 import logging
 import pprint
 from rig_remote.constants import (
-                                  RIG_URI_CONFIG,
-                                  MONITOR_CONFIG,
-                                  SCANNING_CONFIG,
-                                  MAIN_CONFIG,
-                                  CONFIG_SECTIONS,
-                                  )
+    RIG_URI_CONFIG,
+    MONITOR_CONFIG,
+    SCANNING_CONFIG,
+    MAIN_CONFIG,
+    CONFIG_SECTIONS,
+)
+
 # helper functions
 
 logger = logging.getLogger(__name__)
+
 
 def input_arguments():
     """Argument parser.
@@ -45,7 +46,7 @@ def input_arguments():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Utility to check the configuration files and to update"\
+            "Utility to check the configuration files and to update" \
             " them to the last version."),
         epilog="""Please refer to:
         https://github.com/Marzona/rig-remote/wiki
@@ -59,33 +60,32 @@ def input_arguments():
 
         Copyright (c) 2017 Simone Marzona""")
 
-    parser.add_argument("--check_config",
-                        "-cc",
-                        type=str,
-                        required=False,
-                        dest="check_config",
-                        help="Path of the config folder we want to "\
-                             "check.",
-                        )
-    parser.add_argument("--dump",
-                        "-d",
-                        required=False,
-                        dest="dump",
-                        action="store_true",
-                        help="Dump some useful info for debugging.",
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--check_config",
+                       "-cc",
+                       type=str,
+                       dest="check_config",
+                       help="Path of the config folder we want to " \
+                            "check, example ~/.rig-remote/",
                        )
-    parser.add_argument("--update_config",
-                        "-uc",
-                        required=False,
-                        type=str,
-                        dest="update_config",
-                        help="Path of the folder we want to update."\
-                             "The config file will be overwritten "\
-                             "and a .back file will be created too."
+    group.add_argument("--dump",
+                       "-d",
+                       dest="dump",
+                       action="store_true",
+                       help="Dump some useful info for debugging.",
                        )
-
+    group.add_argument("--update_config",
+                       "-uc",
+                       type=str,
+                       dest="update_config",
+                       help="Path of the folder we want to update." \
+                            "The config file will be overwritten " \
+                            "and a .back file will be created too. " \
+                            "Example ~/.rig-remote/"
+                       )
 
     return parser.parse_args()
+
 
 def dump_info():
     """Dumps some info regarding the environment we are running in.
@@ -104,10 +104,11 @@ def dump_info():
     print("\n   ")
     print("Platform architecture: {}".format(platform.architecture()))
     print("\n   ")
-    print("Linux distrubition name: {}".format(platform.dist()))
+    print("Linux distrubition name: {}".format(platform.freedesktop_os_release()))
     print("\n   ")
     print("System/OS name: {}".format(platform.system()))
 
+#TODO: update config non funziona,ne la copia ne l'update
 def update_config(config):
     config_file = os.path.join(config, "rig-remote.conf")
     config = configparser.RawConfigParser()
@@ -130,8 +131,8 @@ def update_config(config):
     with open(config_file, "wb") as cf:
         config.write(cf)
 
-def check_config(config):
 
+def check_config(config):
     config_file = os.path.join(config, "rig-remote.conf")
 
     with open(config_file, "r") as cf:
@@ -142,10 +143,10 @@ def check_config(config):
             row = row.rstrip("\n")
             if "bookmark_filename" in row:
                 bookmark_file = row.split("=")[1].rstrip("'").strip()
-            if any (["[" in row,
-                     "#" in row,
-                     "\n" == row,
-                     "" == row]):
+            if any(["[" in row,
+                    "#" in row,
+                    "\n" == row,
+                    "" == row]):
                 continue
             count += 1
             if len(row.split("=")) == 2:
@@ -153,32 +154,31 @@ def check_config(config):
             else:
                 print("Error in config file, line: {}".format(row))
         if count < 19:
-            print("The configuration file seems to be "\
-                           "missing some keyword")
+            print("The configuration file seems to be " \
+                  "missing some keyword")
         print("\n   ")
         print("Config dump:")
         pprint.pprint(config_data)
         print("\n   ")
-        print ("Bookmarks info:")
+        print("Bookmarks info:")
         if bookmark_file:
             with open(bookmark_file, "r") as bf:
                 row_list = []
                 reader = csv.reader(bf, delimiter=",")
                 for line in reader:
-                    if len(line)!=4:
+                    if len(line) != 4:
                         print("Bookmark line malformed: {}".format(line))
                     row_list.append(line)
             print("\n   ")
             pprint.pprint(row_list)
 
 
-
 # entry point
 def cli():
     args = input_arguments()
     if not any([args.check_config, args.dump, args.update_config]):
-        print("At least one option is required, try "\
-                    "config_checker --help")
+        print("At least one option is required, try " \
+              "config_checker --help")
 
     if args.dump:
         dump_info()

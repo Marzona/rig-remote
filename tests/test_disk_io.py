@@ -32,7 +32,7 @@ def mock_bookmark():
 def test_disk_io_csv_load_happy_path(io):
     filename = os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks.csv")
     io.csv_load(csv_file=filename, delimiter=",")
-    assert len(io.row_list) == 25
+    assert len(io.rows) == 25
 
 
 @pytest.mark.parametrize("filename", [
@@ -41,36 +41,36 @@ def test_disk_io_csv_load_happy_path(io):
 def test_disk_io_csv_load_non_existing_file(io, filename):
     with pytest.raises(InvalidPathError):
         io.csv_load(csv_file=filename, delimiter=",")
-    assert len(io.row_list) == 0
+    assert len(io.rows) == 0
 
 
 def test_disk_io_csv_load_permission_error(io):
     with patch('builtins.open', side_effect=PermissionError):
         with pytest.raises(InvalidPathError):
             io.csv_load("tests.csv", ",")
-    assert len(io.row_list) == 0
+    assert len(io.rows) == 0
 
 
 def test_disk_io_csv_load_encoding_error(io):
     with patch('builtins.open', side_effect=UnicodeDecodeError('utf-8', b'', 0, 1, 'invalid')):
         with pytest.raises(InvalidPathError):
             io.csv_load("tests.csv", ",")
-    assert len(io.row_list) == 0
+    assert len(io.rows) == 0
 
 
 def test_disk_io_csv_save_success(io, tmp_path):
     file_path = tmp_path / "test_file.csv"
-    io.row_list.append(["118600000", "AM", "Dublin airport Tower", "O"])
+    io.rows.append(["118600000", "AM", "Dublin airport Tower", "O"])
     io.csv_save(str(file_path), ",")
-    io.row_list = []
+    io.rows = []
     io.csv_load(csv_file=str(file_path), delimiter=",")
-    assert io.row_list == [["118600000", "AM", "Dublin airport Tower", "O"]]
+    assert io.rows == [["118600000", "AM", "Dublin airport Tower", "O"]]
 
 
 def test_disk_io_csv_save_mock(io):
     with patch("builtins.open", new_callable=mock_open) as mock_file:
         with patch("csv.writer") as mock_writer:
-            io.row_list.append(["118600000,AM,Dublin airport Tower,O"])
+            io.rows.append(["118600000,AM,Dublin airport Tower,O"])
             io.csv_save("test_file.csv", ",")
             assert mock_writer.call_args[1] == {"delimiter": ","}
             mock_writer.assert_called_once()
@@ -80,9 +80,10 @@ def test_disk_io_csv_save_mock(io):
 def test_disk_io_csv_save_error_handling(io):
     with patch("builtins.open", new_callable=mock_open):
         with patch("csv.writer", side_effect=IOError()):
-            io.row_list.append(["118600000,AM,Dublin airport Tower,O"])
+            io.rows.append(["118600000,AM,Dublin airport Tower,O"])
             io.csv_save("test_file.csv", ",")
-            assert io.row_list == []
+
+            assert io.rows == []
 
 
 def test_disk_io_path_check_invalid(io):

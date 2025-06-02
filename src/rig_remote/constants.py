@@ -38,7 +38,7 @@ SCANNING_CONFIG = [
     "passes",
 ]
 MAIN_CONFIG = ["always_on_top", "save_exit", "bookmark_filename", "log", "log_filename"]
-MONITOR_CONFIG = ["monitor_mode_loops"]
+MONITOR_CONFIG = ["monitor_mode_loops"] # TODO : seems unused
 RIG_URI_CONFIG = ["port1", "hostname1", "port2", "hostname2"]
 CONFIG_SECTIONS = [
     "Scanning",
