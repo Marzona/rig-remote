@@ -31,16 +31,26 @@ exclude = [
 
 # Same as Black.
 line-length = 120
-# indent-width = 4
+indent-width = 4
 
 # Assume Python 3.13
 target-version = "py313"
 
 [project]
 name = "rig-remote"
-version = "3.0"
+version = "3.2"
 authors = [
   { name="Simone Marzona", email="marzona@knoway.info" },
+]
+maintainers = [
+   { name="Simone Marzona", email="marzona@knoway.info" }
+]
+keywords = ['rigctl', 'ham', 'radio', 'bookmarks', 'scanner']
+classifiers = [
+    "Programming Language :: Python",
+    "Topic :: Communications",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
 ]
 
 dependencies = [
@@ -75,13 +85,32 @@ dependencies = [
 description = "A tool for remotely control a radio transceiver using RigCtl protocol over TCP/IP. Rig Remote provides frequency scanning and monitoring, frequency bookmarks."
 readme = "README.md"
 requires-python = ">=3.13"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
 [project.urls]
 Homepage = "https://github.com/Marzona/rig-remote"
 Issues = "https://github.com/Marzona/rig-remote/issues"
+
+[project.scripts]
+config_checker = "config_checker.config_checker:cli"
+[project.gui-scripts]
+rig_remote = "rig_remote.rig_remote:cli"
+[project.entry-points."rig_remote"]
+rig_remote = "rig_remote.rig_remote:cli"
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+    "integration",
+]
+console_output_style = "progress"
+unit_duration_report = "total"
+log_cli = "True"
+pythonpath = "src"
+equired_plugins = ["pytest-xdist>=3.6.1"]

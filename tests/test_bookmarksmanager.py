@@ -72,10 +72,10 @@ def test_bookmarkmanager_save(delimiter):
         )
     ]
     bookmarks_manager.save(
-        bookmarks_file="test", bookmarks=bookmarks_list, delimiter=delimiter
+        bookmarks_file="tests", bookmarks=bookmarks_list, delimiter=delimiter
     )
 
-    bookmarks_manager._io.csv_save.assert_called_once_with("test", delimiter)
+    bookmarks_manager._io.csv_save.assert_called_once_with("tests", delimiter)
 
 
 @pytest.mark.parametrize(
@@ -90,9 +90,9 @@ def test_bookmarkmanager_load(delimiter):
     io = IO()
     io.csv_load = Mock(return_value=None)
     bookmarks_manager = BookmarksManager(io=io)
-    bookmarks_manager.load(bookmark_file="test", delimiter=delimiter)
+    bookmarks_manager.load(bookmark_file="tests", delimiter=delimiter)
 
-    bookmarks_manager._io.csv_load.assert_called_once_with("test", delimiter)
+    bookmarks_manager._io.csv_load.assert_called_once_with("tests", delimiter)
 
 
 def test_bookmarkmanager_load_non_existent_file():
@@ -204,13 +204,13 @@ def test_bookmarkmanager_add_bookmark():
 
 
 def test_bookmarkmanager_export_rig_remote(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_rig_remote(filename="test")
-    bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("test", ",")
+    bookmark_manager_with_bookmarks.export_rig_remote(filename="tests")
+    bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ",")
 
 
 def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_gqrx(filename="test")
-    bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("test", ";")
+    bookmark_manager_with_bookmarks.export_gqrx(filename="tests")
+    bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ";")
 
     assert len(bookmark_manager_with_bookmarks._io.row_list) == 7
     assert bookmark_manager_with_bookmarks._io.row_list[0] == [

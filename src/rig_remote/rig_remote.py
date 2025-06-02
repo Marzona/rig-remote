@@ -128,7 +128,7 @@ def process_path(path):
 
 
 # entry point
-if __name__ == "__main__":
+def cli():
     DEFAULT_PREFIX = os.path.expanduser("~/.rig-remote")
     DEFAULT_CONFIG_FILENAME = "rig-remote.conf"
     DEFAULT_LOG_FILENAME = "rig-remote-log.txt"
@@ -170,5 +170,5 @@ if __name__ == "__main__":
 
     app.apply_config()
     app.mainloop()
-    if app.scan_thread is not None :
+    if app.scan_thread is not None:
         app.scanning.terminate()

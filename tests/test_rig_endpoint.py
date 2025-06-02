@@ -93,7 +93,7 @@ def test_rig_endpoint_set_port_error(test_port):
 @pytest.mark.parametrize(
     "test_hostname",
     [
-        "test",
+        "tests",
         "192.168.1.10.1",
         "192.168.1.300",
     ],

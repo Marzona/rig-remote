@@ -206,17 +206,17 @@ def test_rigctl_get_commands_error(command, message, msg_type):
 @pytest.mark.parametrize(
     "command, parameter, message, msg_type",
     [
-        ("set_frequency", "test", "f", "int"),
+        ("set_frequency", "tests", "f", "int"),
         ("set_mode", 22, "m", "int"),
         ("set_vfo", 22, "v", "int"),
-        ("set_rit", "test", "j", "int"),
+        ("set_rit", "tests", "j", "int"),
         ("set_xit", 22, "J", "int"),
-        ("set_split_freq", "test", "i", "str"),
-        ("set_split_mode", "test", "x", "int"),
-        ("set_func", "test", "u", "int"),
-        ("set_parm", "test", "p", "int"),
-        ("set_antenna", "test", "y", "str"),
-        ("rig_reset", "test", "*", "str"),
+        ("set_split_freq", "tests", "i", "str"),
+        ("set_split_mode", "tests", "x", "int"),
+        ("set_func", "tests", "u", "int"),
+        ("set_parm", "tests", "p", "int"),
+        ("set_antenna", "tests", "y", "str"),
+        ("rig_reset", "tests", "*", "str"),
     ],
 )
 def test_rigctl_set_commands_error(command, parameter, message, msg_type):
@@ -274,7 +274,7 @@ def test_rigctl_send_message_connection_error():
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.connect.side_effect = ConnectionRefusedError()
         with pytest.raises(ConnectionRefusedError):
-            rigctl._send_message("test")
+            rigctl._send_message("tests")
 
 
 def test_rigctl_send_message_socket_error():
@@ -288,7 +288,7 @@ def test_rigctl_send_message_socket_error():
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.sendall.side_effect = OSError()
         with pytest.raises(OSError):
-            rigctl._send_message("test")
+            rigctl._send_message("tests")
 
 
 def test_rigctl_send_message_receive_error():
@@ -302,7 +302,7 @@ def test_rigctl_send_message_receive_error():
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.recv.side_effect = OSError()
         with pytest.raises(OSError):
-            rigctl._send_message("test")
+            rigctl._send_message("tests")
 
 
 

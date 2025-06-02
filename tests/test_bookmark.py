@@ -65,7 +65,7 @@ def test_bookmark_init_error(channel1, description1, lockout1):
         ),
         (
             Channel(input_frequency="1", modulation="AM"),
-            "test",
+            "tests",
             "L",
             Channel(input_frequency="1", modulation="AM"),
             "test_description",

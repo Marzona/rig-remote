@@ -38,7 +38,7 @@ def test_app_config_write_conf_permission_error():
     """Test writing configuration with permission error."""
     config_file = os.path.join(Path(__file__).parent, "test_files/test-write-config.conf")
     ac = AppConfig(config_file=config_file)
-    ac.config = {'test': 'value'}
+    ac.config = {'tests': 'value'}
 
     with patch('builtins.open', side_effect=PermissionError), \
          pytest.raises(PermissionError):
@@ -48,7 +48,7 @@ def test_app_config_write_conf_os_error():
     """Test writing configuration with IO error."""
     config_file = os.path.join(Path(__file__).parent, "test_files/test-write-config.conf")
     ac = AppConfig(config_file=config_file)
-    ac.config = {'test': 'value'}
+    ac.config = {'tests': 'value'}
 
     with patch('builtins.open', side_effect=OSError), \
          pytest.raises(OSError):
@@ -57,11 +57,11 @@ def test_app_config_write_conf_os_error():
 
 def test_app_config_write_confzzz(tmp_path):
     """Test writing configuration to file."""
-    # Setup test config file path
-    config_file = os.path.join(tmp_path, "test-config.conf")
+    # Setup tests config file path
+    config_file = os.path.join(tmp_path, "tests-config.conf")
     ac = AppConfig(config_file=str(config_file))
 
-    # Set test configuration values
+    # Set tests configuration values
     ac.config = {
         "hostname1": "192.168.1.1",
         "port1": "7356",
@@ -80,7 +80,7 @@ def test_app_config_write_confzzz(tmp_path):
         "save_exit": "true",
         "aggr_scan": "true",
         "auto_bookmark": "true",
-        "log_filename": "test.log",
+        "log_filename": "tests.log",
         "bookmark_filename": "bookmarks.csv",
         "monitor_mode_loops": "true"
     }

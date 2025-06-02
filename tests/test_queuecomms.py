@@ -6,7 +6,7 @@ from queue import Full
 
 def test_queuecomms_queued_for_parent():
     qc = QueueComms()
-    qc.parent_queue.put("test")
+    qc.parent_queue.put("tests")
     assert qc.queued_for_parent()
     qc.parent_queue.get()
     assert not (qc.queued_for_parent())
@@ -14,7 +14,7 @@ def test_queuecomms_queued_for_parent():
 
 def test_queuecomms_queued_for_child():
     qc = QueueComms()
-    qc.child_queue.put("test")
+    qc.child_queue.put("tests")
     assert qc.queued_for_child()
     qc.child_queue.get()
     assert not (qc.queued_for_child())

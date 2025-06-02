@@ -3,7 +3,7 @@ from rig_remote.stmessenger import STMessenger
 from mock import MagicMock
 from rig_remote.queue_comms import QueueComms
 
-fake_event_list = [("test"), ([1, 2, 3])]
+fake_event_list = [("tests"), ([1, 2, 3])]
 
 
 @pytest.mark.parametrize("fake_event", fake_event_list)

@@ -43,7 +43,19 @@ setup(
     author="Simone Marzona",
     author_email="marzona@knoway.info",
     url = "https://github.com/Marzona/rig-remote/",
-    packages = ["rig_remote"],
+    package_dir = {"": "src"},
+    packages = [
+        "rig_remote",
+        "rig_remote.models",
+        "config_checker"
+    ],
+    entry_points={
+        "console_scripts": [
+            "rig_remote = rig_remote:main",
+            "config_checker = config_checker:main",
+        ]
+    },
+
     long_description = """
         Rig-Remote is a tool for remotely control 
         a radio transceiver using RigCtl protocol over TCP/IP. 
@@ -58,9 +70,7 @@ setup(
     ],
     keywords = "rigctl, ham, radio, bookmarks, scanner",
     license = "MIT",
-    scripts = ['rig-remote.py'],
     setup_requires = ["pytest-runner",],
-    tests_require = ["pytest",],
     include_package_data = True,
     install_requires = [
         "setuptools",

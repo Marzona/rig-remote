@@ -47,14 +47,14 @@ def test_disk_io_csv_load_non_existing_file(io, filename):
 def test_disk_io_csv_load_permission_error(io):
     with patch('builtins.open', side_effect=PermissionError):
         with pytest.raises(InvalidPathError):
-            io.csv_load("test.csv", ",")
+            io.csv_load("tests.csv", ",")
     assert len(io.row_list) == 0
 
 
 def test_disk_io_csv_load_encoding_error(io):
     with patch('builtins.open', side_effect=UnicodeDecodeError('utf-8', b'', 0, 1, 'invalid')):
         with pytest.raises(InvalidPathError):
-            io.csv_load("test.csv", ",")
+            io.csv_load("tests.csv", ",")
     assert len(io.row_list) == 0
 
 
@@ -96,14 +96,14 @@ def test_disk_io_write_without_open(log_file):
 
 
 def test_disk_io_write_invalid_type(log_file, tmp_path):
-    log_path = tmp_path / "test.log"
+    log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))
     with pytest.raises(TypeError):
         log_file.write(record_type="X", record=MagicMock(), signal=[1, 2])
 
 
 def test_disk_io_write_with_signal(log_file, tmp_path, mock_bookmark):
-    log_path = tmp_path / "test.log"
+    log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))
     log_file.write(record_type="F", record=mock_bookmark, signal=["-50", "-60"])
     log_file.close()
@@ -118,7 +118,7 @@ def test_disk_io_write_with_signal(log_file, tmp_path, mock_bookmark):
 
 
 def test_disk_io_write_bookmark(log_file, tmp_path, mock_bookmark):
-    log_path = tmp_path / "test.log"
+    log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))
     log_file.write(record_type="B", record=mock_bookmark, signal=None)
     log_file.close()
@@ -143,7 +143,7 @@ def test_disk_io_write_bookmark(log_file, tmp_path, mock_bookmark):
                          ]
                          )
 def test_disk_io_write_bookmark_exception(log_file, tmp_path, mock_bookmark, exception_type, mock_type):
-    log_path = os.path.join(tmp_path, "test.log")
+    log_path = os.path.join(tmp_path, "tests.log")
     log_file.open(log_path)
     log_file.log_file_handler.write = mock_type
     with pytest.raises(exception_type):
@@ -152,19 +152,19 @@ def test_disk_io_write_bookmark_exception(log_file, tmp_path, mock_bookmark, exc
 
 def test_disk_io_close_log_file(log_file):
     with patch('builtins.open', mock_open()) as mock_file:
-        log_file.open("test.log")
+        log_file.open("tests.log")
         log_file.close()
         mock_file().close.assert_called_once()
 
 
 def test_disk_io_open_makedirs_error(log_file):
     with patch('os.makedirs', side_effect=IOError("Failed to create directory")):
-        log_file.open("/nonexistent/path/test.log")
+        log_file.open("/nonexistent/path/tests.log")
         # Test passes if no exception is raised, as error is logged but not raised
 
 
 def test_disk_io_close_error(log_file, tmp_path):
-    log_path = tmp_path / "test.log"
+    log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))
 
     # Mock the file close to raise an error

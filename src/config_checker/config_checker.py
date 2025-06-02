@@ -174,7 +174,7 @@ def check_config(config):
 
 
 # entry point
-if __name__ == "__main__":
+def cli():
     args = input_arguments()
     if not any([args.check_config, args.dump, args.update_config]):
         print("At least one option is required, try "\

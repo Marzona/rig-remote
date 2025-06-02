@@ -634,8 +634,8 @@ def test_scanning_scan_frequency_wait(scanning):
     )
     scanning._scan_queue.send_event_update(
         event_list=(
-            "test",
-            "test",
+            "tests",
+            "tests",
         )
     )
     scanning._rigctl = create_autospec(RigCtl)
