@@ -8,10 +8,10 @@ from rig_remote.utility import (
 
 def test_utility_khertz_to_hertz():
     """Test frequency conversion from kHz to Hz."""
-    assert khertz_to_hertz("1000") == 1000000
+    assert khertz_to_hertz(1000) == 1000000
     assert khertz_to_hertz(1000) == 1000000
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         khertz_to_hertz("invalid")
 
 def test_utility_shutdown_without_save():

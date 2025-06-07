@@ -19,6 +19,8 @@ Copyright (c) 2016 Tim Sweeney
 import logging
 from typing import List
 
+from rig_remote.models.bookmark import Bookmark
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +39,7 @@ class ScanningTask:
         self,
         frequency_modulation: str,
         scan_mode: str,
-        new_bookmark_list: List,
+        new_bookmark_list: List[Bookmark],
         range_min: int,
         range_max: int,
         interval: int,
@@ -48,7 +50,7 @@ class ScanningTask:
         record: bool,
         auto_bookmark: bool,
         log: bool,
-        bookmarks: List,
+        bookmarks: List[Bookmark],
     ):
         """We do some checks to see if we are good to go with the scan.
 
@@ -75,11 +77,11 @@ class ScanningTask:
         self.scan_mode = scan_mode
         self._post_init()
 
-    def _post_init(self):
+    def _post_init(self)->None:
         self._check_scan_mode()
         self._check_passes()
 
-    def _check_scan_mode(self):
+    def _check_scan_mode(self)->None:
         if self.scan_mode.lower() not in self._SUPPORTED_SCANNING_MODES:
             message = (f"Unsupported scanning mode provided {self.scan_mode}, "
                        f"supported modes are {self._SUPPORTED_SCANNING_MODES}")
@@ -90,7 +92,7 @@ class ScanningTask:
             self._check_interval()
             self._check_range()
 
-    def _check_interval(self):
+    def _check_interval(self)->None:
         """Checks for a sane interval. We don't want to search for signals
         with bandwidth lower than self._MIN_INTERVAL, if there is such a low intervalInvalidScanModeError
         we overwrite and log an error.
@@ -104,13 +106,13 @@ class ScanningTask:
             )
             self.interval = self._MIN_INTERVAL
 
-    def _check_range(self):
+    def _check_range(self)->None:
         if self.range_min >= self.range_max:
             message = f"range_min {self.range_min} must be lower and different from range_max :{self.range_max}"
             logger.error(message)
             raise ValueError(message)
 
-    def _check_passes(self):
+    def _check_passes(self)->None:
         if self.passes < 1:
             logger.error("scan passes must be >=1, got %i, updated to 1", self.passes)
             self.passes = 1

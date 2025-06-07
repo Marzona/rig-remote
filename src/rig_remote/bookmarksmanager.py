@@ -8,7 +8,7 @@ http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
 
 Author: Simone Marzona
-
+form
 License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
@@ -27,13 +27,12 @@ import logging
 
 from rig_remote.disk_io import IO
 
-from typing import Callable
+from typing import Union, Callable
 
 logger = logging.getLogger(__name__)
 
-
 def bookmark_factory(
-    input_frequency: int | str, modulation: str, description: str, lockout: str = ""
+    input_frequency: int, modulation: str, description: str, lockout: str = ""
 ) -> Bookmark:
     return Bookmark(
         channel=Channel(input_frequency=input_frequency, modulation=modulation),
@@ -50,13 +49,12 @@ class BookmarksManager:
     def __init__(
         self,
         io: IO = IO(),
-        bookmark_factory: Callable = bookmark_factory,
-        modulation_modes: ModulationModes = ModulationModes,
+        bookmark_factory:Callable= bookmark_factory,
     ):
         self._io = io
-        self.bookmarks = []
+        self.bookmarks: list[Bookmark] = []
         self._bookmark_factory = bookmark_factory
-        self._modulation_modes = modulation_modes
+        self._modulation_modes = ModulationModes
         self._IMPORTERS_MAP = {
             "gqrx": self._import_gqrx,
             "rig-remote": self._import_rig_remote,
@@ -80,7 +78,7 @@ class BookmarksManager:
         ],
     ]
 
-    def save(self, bookmarks_file: str, delimiter: str = ","):
+    def save(self, bookmarks_file: str, delimiter: str = ",")->None:
         """Bookmarks handling. Saves the bookmarks as a csv file.
 
         :param bookmarks_file: filename to load, with full path
@@ -94,7 +92,7 @@ class BookmarksManager:
         for bookmark in self.bookmarks:
             self._io.rows.append(
                 [
-                    bookmark.channel.frequency,
+                    str(bookmark.channel.frequency),
                     bookmark.channel.modulation,
                     bookmark.description,
                     bookmark.lockout,
@@ -103,7 +101,7 @@ class BookmarksManager:
 
         self._io.csv_save(bookmarks_file, delimiter)
 
-    def load(self, bookmark_file: str, delimiter: str = ",") -> list:
+    def load(self, bookmark_file: str, delimiter: str = ",") -> list[Bookmark]:
         """Bookmarks handling. Loads the bookmarks as
         a csv file.
 
@@ -111,7 +109,7 @@ class BookmarksManager:
         :param delimiter: delimiter to use for creating the csv file,
         defaults to ',''
         :raises : none
-        :returns : none
+        :returns : list of bookmarks loaded
         """
         try:
             self._io.csv_load(bookmark_file, delimiter)
@@ -138,7 +136,7 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename: str):
+    def import_bookmarks(self, filename: str)->Union[list[Bookmark], None]:
         """handles the import of the bookmarks. It is a
         Wrapper around the import funtions and the requester function.
 
@@ -148,7 +146,7 @@ class BookmarksManager:
             return None
         return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
 
-    def _detect_format(self, filename: str):
+    def _detect_format(self, filename: str)->str:
         """Method for detecting the bookmark type. Only two types are supported.
 
         :param filename: file path to read
@@ -164,7 +162,7 @@ class BookmarksManager:
         logger.error(message)
         raise BookmarkFormatError(message)
 
-    def _import_rig_remote(self, file_path):
+    def _import_rig_remote(self, file_path:str)->list[Bookmark]:
         """Imports the bookmarks using rig-remote format. It wraps around
         the load method.
 
@@ -173,7 +171,7 @@ class BookmarksManager:
 
         return self.load(file_path, ",")
 
-    def _import_gqrx(self, file_path):
+    def _import_gqrx(self, file_path:str)->list[Bookmark]:
         """Method for importing gqrx bookmarks.
 
         :param file_path: path of the file to be loaded
@@ -211,7 +209,7 @@ class BookmarksManager:
         logger.info("bookmark %s added", bookmark)
         return False
 
-    def export_rig_remote(self, filename: str):
+    def export_rig_remote(self, filename: str)->None:
         """Wrapper method for exporting using rig remote csv format.
         it wraps around the save method used when "save on exit" is selected.
         """
@@ -221,7 +219,7 @@ class BookmarksManager:
             delimiter=",",
         )
 
-    def export_gqrx(self, filename: str):
+    def export_gqrx(self, filename: str)->None:
         """Wrapper method for exporting using rig remote csv format.
         It wraps around the save method used when "save on exit" is selected
         and around a function that provides the format/data conversion.
@@ -230,7 +228,7 @@ class BookmarksManager:
         self._io.rows = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(filename)
 
-    def _save_gqrx(self, filename: str):
+    def _save_gqrx(self, filename: str)->None:
         """Private method for saving the bookmarks file in csv compatible
         with gqrx bookmark format. It wraps around csv_save method of disk_io
         module.

@@ -26,10 +26,13 @@ logger = logging.getLogger(__name__)
 
 
 class STMessenger:
+    END_OF_SCAN_SIGNAL=("end_of_scan", "1")
+    END_OF_SCAN_SYNC=("end_of_SYNC", "1")
+
     def __init__(self, queuecomms: QueueComms):
         self.mqueue = queuecomms
 
-    def send_event_update(self, event_list: tuple):
+    def send_event_update(self, event_list: tuple[str])->None:
         """Send an event update to the scanning thread.
 
         :param event_list: tuple of event name and state
@@ -51,13 +54,13 @@ class STMessenger:
 
         return self.mqueue.queued_for_child()
 
-    def get_event_update(self):
+    def get_event_update(self)->tuple[str,str]:
         """Get the next event waiting to be processed.
 
         :returns: event_list (may be empty)
         """
 
-        event_list = []
+        event_list:tuple[str,str] = ("","",)
         try:
             event_list = self.mqueue.get_from_child()
         except Exception:
@@ -65,22 +68,20 @@ class STMessenger:
         logger.info("retrieved event %s", event_list)
         return event_list
 
-    def notify_end_of_scan(self):
+    def notify_end_of_scan(self)->None:
         """Notify main thread that scanning thread has terminated."""
 
-        self.mqueue.signal_parent(1)
+        self.mqueue.signal_parent(self.END_OF_SCAN_SIGNAL)
 
-    def check_end_of_scan(self) -> bool:
+    def check_end_of_scan(self) ->  bool:
         """Check to see if the scanning thread as notified us of its
         termination.
 
         :returns: True if termination signal sent.
         """
+        check = self.mqueue.get_from_parent()
+        logger.error("check_end_of_scan: %s", check)
+        return check == self.END_OF_SCAN_SIGNAL
 
-        return self.mqueue.get_from_parent() == 1
-
-    def notify_end_of_sync(self):
-        self.mqueue.signal_parent(1)
-
-    def check_end_of_sync(self) -> bool:
-        return self.mqueue.get_from_parent() == 1
+    def check_end_of_sync(self) ->  bool:
+        return self.mqueue.get_from_parent() == self.END_OF_SCAN_SYNC

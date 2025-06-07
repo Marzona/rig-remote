@@ -41,7 +41,7 @@ from rig_remote.utility import (
     khertz_to_hertz,
 )
 from rig_remote.stmessenger import STMessenger
-
+from rig_remote.app_config import AppConfig
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +65,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
     Project wiki: https://github.com/Marzona/rig-remote/wiki
     """
 
-    def __init__(self, root, ac):
+    def __init__(self, root:tk.Tk, ac:AppConfig):
         self.rig_control_menu = None
         self.btn_delete1 = None
         self.btn_add1 = None
@@ -100,6 +100,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
         self.bind_all("<1>", lambda event: self.focus_set(event))
         # bookmarks loading on start
         self.new_bookmark_list = []
+        self.bookmarks_file = ""
         self.bookmarks = BookmarksManager()
         self._load_bookmarks()
         self.buildmenu(root)
@@ -145,7 +146,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
 
     def _load_bookmarks(self):
         logger.info("loading bookmarks")
-        self.bookmarks_file = self.ac.config["bookmark_filename"]
+        self.bookmarks_file:str = self.ac.config["bookmark_filename"]
         self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
         logger.info("loading bookmarks done")
 
@@ -913,7 +914,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
             self.rigctl_two = RigCtl(self.ac.rig_endpoints[1])
             logger.info("rig configuration rig 2 done")
 
-    def apply_config(self, silent=False):
+    def apply_config(self, silent=False)->None:
         """Applies the config to the UI.
 
         :param silent: suppress messagebox
@@ -1545,7 +1546,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
                 messagebox.showerror("Error", "Please add a description")
             return
         bookmark = bookmark_factory(
-            input_frequency=control_source["frequency"],
+            input_frequency=int(control_source["frequency"]),
             modulation=control_source["mode"],
             description=control_source["description"],
             lockout="0",
@@ -1616,7 +1617,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
     def _get_bookmark_from_item(self, item) -> Bookmark:
         values = self.tree.item(item).get("values")
         return bookmark_factory(
-            input_frequency=values[0].replace(",", ""),
+            input_frequency=int(values[0].replace(",", "")),
             modulation=values[1],
             description=values[2],
             lockout=str(values[3]),
@@ -1777,7 +1778,7 @@ class RCCheckbutton(ttk.Checkbutton):
     def is_checked(self):
         return self.var.get()
 
-    def get_str_val(self):
+    def get_str_val(self)->str:
         if self.is_checked():
             return "true"
         else:

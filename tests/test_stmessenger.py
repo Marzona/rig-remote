@@ -41,7 +41,7 @@ def test_stmessenger_empty_get_event_update():
 def test_stmessenger_error_get_event_update():
     stm = STMessenger(queuecomms=QueueComms())
     stm.mqueue.get_from_child = MagicMock(side_effect=Exception)
-    assert stm.get_event_update() == []
+    assert stm.get_event_update() == ('', '')
 
 
 def test_stmessenger_send_event_update():
@@ -68,10 +68,3 @@ def test_stmessenger_update_queued():
     stm.send_event_update(event_list=event_list)
     assert stm.mqueue.queued_for_child()
     assert stm.update_queued()
-
-
-def test_stmessenger_notify_end_of_sync():
-    stm = STMessenger(queuecomms=QueueComms())
-    assert not stm.check_end_of_sync()
-    stm.notify_end_of_sync()
-    assert stm.check_end_of_sync()

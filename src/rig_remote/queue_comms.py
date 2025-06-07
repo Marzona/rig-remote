@@ -21,7 +21,6 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 from queue import Queue, Empty, Full
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -37,12 +36,12 @@ class QueueComms:
 
         self._queue_init()
 
-    def _queue_init(self):
-        self.parent_queue = Queue(maxsize=self._QUEUE_MAX_SIZE)
+    def _queue_init(self)->None:
+        self.parent_queue:Queue[str] = Queue(maxsize=self._QUEUE_MAX_SIZE)
         logger.info(
             "Initialized parent queue with max size %i", self.parent_queue.maxsize
         )
-        self.child_queue = Queue(maxsize=self._QUEUE_MAX_SIZE)
+        self.child_queue:Queue[str] = Queue(maxsize=self._QUEUE_MAX_SIZE)
         logger.info(
             "Initialized child queue with max size %i", self.child_queue.maxsize
         )
@@ -52,13 +51,13 @@ class QueueComms:
 
         return self._queued_for(self.child_queue)
 
-    def queued_for_parent(self):
+    def queued_for_parent(self)-> bool:
         """wrapper on self._queued_for"""
 
         return self._queued_for(self.parent_queue)
 
     @staticmethod
-    def _queued_for(queue_name: Queue) -> bool:
+    def _queued_for(queue_name: Queue[str]) -> bool:
         """Check if item is waiting on a queue.
 
         :returns: True if item waiting
@@ -66,7 +65,7 @@ class QueueComms:
         return not queue_name.empty()
 
     @staticmethod
-    def _get_from_queue(queue: Queue) -> str:
+    def _get_from_queue(queue: Queue[str]) -> tuple[str, str]:
         """retrieve an item from the queue. Wrapped by get_from_child and
         get_from_parent.
 
@@ -75,72 +74,63 @@ class QueueComms:
         """
 
         try:
-            return queue.get(False)
+            row_item = queue.get(block=False)
+            logger.error("getting item from queue: {}".format(row_item))
+            item_split = row_item.split("'")
+            item = (item_split[1], item_split[3])
+            return item
         except Empty:
             logger.info("Queue empty while getting from %s", queue)
+            return None # type: ignore
 
-    def get_from_parent(self) -> str:
+    def get_from_parent(self) -> tuple[str, str]:
         """wrapper on _get_from_queue"""
-
         return self._get_from_queue(self.parent_queue)
 
-    def get_from_child(self) -> str:
+    def get_from_child(self) -> tuple[str, str]:
         """wrapper on _get_from_queue"""
 
         return self._get_from_queue(self.child_queue)
 
     @staticmethod
-    def _send_to_queue(queue: Queue, item: str):
-        """place an item on the queue. Wrapped by send_to_child and
-        send_to_parent.
+    def _send_to_queue(queue: Queue[str], item:tuple[str])->None:
+        """place an item on the queue. Wrapped by send_to_child.
 
         :param queue: queue to put item on.
 
         """
+        logger.error("item to send to queue:{}".format( item))
         try:
-            queue.put(item, False)
+            queue.put(item, False)  # type: ignore
         except Full:
             logger.warning("Queue %s is full.", queue)
             raise
 
-    def send_to_parent(self, item: str):
+    def send_to_child(self, item: tuple[str])->None:
         """Wrapper for _send_to_queue"""
-
-        self._send_to_queue(self.parent_queue, item)
-        logger.info("parent queue size %i", self.parent_queue.qsize())
-
-    def send_to_child(self, item: str | tuple):
-        """Wrapper for _send_to_queue"""
-
         self._send_to_queue(self.child_queue, item)
         logger.info("child queue size %i", self.child_queue.qsize())
 
     @staticmethod
-    def _signal(queue: Queue, signal_number: int):
+    def _signal(queue: Queue[str], signal: tuple[str, str])->None:
         """Place a signal number on the queue
 
-        :param signal_number: value of the signal
+        :param signal: value of the signal
         :param queue: Queue to insert signal in
 
         """
 
-        if not isinstance(signal_number, int) or not isinstance(queue, Queue):
+        if not isinstance(signal,tuple) or not isinstance(queue, Queue):
             logger.error(
                 "Value error while inserting a signal into a queue. Value type: %s ",
-                type(signal_number),
+                type(signal),
             )
             raise ValueError()
 
-        queue.put(signal_number, False)
+        queue.put(str(signal), False)
 
-    def signal_parent(self, signal_number: int):
-        """wrapped by _signal()"""
+    def signal_parent(self, signal: tuple[str, str])->None:
+        """wrapper for _signal()"""
 
-        self._signal(self.parent_queue, signal_number)
-        logger.info("parent queue size %i", self.parent_queue.qsize())
-
-    def signal_child(self, signal_number: int):
-        """wrappedby _signal()"""
-
-        self._signal(self.parent_queue, signal_number)
-        logger.info("child queue size %i", self.child_queue.qsize())
+        self._signal(self.parent_queue, signal)
+        logger.info("parent queue size %s", self.parent_queue.qsize())

@@ -161,7 +161,7 @@ class RigCtl:
         )
         return str(response.decode())
 
-    def set_frequency(self, frequency: float):
+    def set_frequency(self, frequency: float)->None:
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -188,7 +188,7 @@ class RigCtl:
 
         return float(output)
 
-    def set_mode(self, mode: str):
+    def set_mode(self, mode: str)->None:
         """Wrapper around _request. It configures the command for setting
         the mode.
 

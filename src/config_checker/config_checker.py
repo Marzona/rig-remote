@@ -29,7 +29,7 @@ from rig_remote.app_config import AppConfig
 logger = logging.getLogger(__name__)
 
 
-def input_arguments():
+def input_arguments()->argparse.Namespace:
     """Argument parser.
 
     """
@@ -66,7 +66,7 @@ def input_arguments():
     return parser.parse_args()
 
 
-def dump_info():
+def dump_info()->None:
     """Dumps some info regarding the environment we are running in.
     The intended use is to ask the user to paste this info for
     troubleshooting steps.
@@ -79,7 +79,7 @@ def dump_info():
     print("\n   ")
     print("Platform: {}".format(platform.platform()))
     print("\n   ")
-    print("OS environment: {}".format(platform.os.environ))
+    print("OS environment: {}".format(platform.system()))
     print("\n   ")
     print("Platform architecture: {}".format(platform.architecture()))
     print("\n   ")
@@ -87,7 +87,7 @@ def dump_info():
     print("\n   ")
     print("System/OS name: {}".format(platform.system()))
 
-def check_config(config):
+def check_config(config:str)->bool:
     config_file = os.path.join(config, "rig-remote.conf")
 
     with open(config_file, "r") as cf:

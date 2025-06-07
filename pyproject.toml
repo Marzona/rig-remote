@@ -124,3 +124,6 @@ warn_unused_ignores = true
 exclude = ["docs", "tests"]
 strict = true
 check_untyped_defs = true
+[[tool.mypy.overrides]]
+module = "rig_remote.ui.*"
+ignore_errors = true

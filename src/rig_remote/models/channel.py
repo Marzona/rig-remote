@@ -22,7 +22,7 @@ from uuid import uuid4
 import logging
 
 import re
-
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 class Channel:
     _MODULATIONS = [modulation.value for modulation in ModulationModes]
 
-    input_frequency: str
+    input_frequency: int
     modulation: str
-    frequency_as_string: str = None
+    frequency_as_string: Optional[str] = None
     id: str = str(uuid4())
     frequency: int = 0
 
@@ -55,16 +55,14 @@ class Channel:
 
         self._frequency_validator()
 
-    def _frequency_validator(self):
+    def _frequency_validator(self)->None:
         """Filter invalid chars and add thousands separator."""
-        if isinstance(self.input_frequency, str):
-            try:
-                self.frequency_as_string = "{:,}".format(
-                    int(re.sub("[^0-9]", "", self.input_frequency))
-                )
-            except ValueError:
-                logger.error("error converting frequency %s", self.frequency)
-                raise
+        try:
+            self.frequency_as_string = "{:,}".format(
+                int(re.sub("[^0-9]", "", str(self.input_frequency)))
+            )
+        except ValueError:
+            logger.error("error converting frequency %s", self.frequency)
+            raise
 
-            self.frequency = int(self.input_frequency)
         self.frequency = int(self.input_frequency)

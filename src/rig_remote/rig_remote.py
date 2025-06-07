@@ -24,11 +24,12 @@ import os
 import time
 import textwrap
 import tkinter as tk
+
 from rig_remote.ui import RigRemote
 from rig_remote.app_config import AppConfig
 
 # helper functions
-def input_arguments():
+def input_arguments()->argparse.Namespace:
     """Argument parser.
 
     """
@@ -89,7 +90,7 @@ def input_arguments():
 
     return parser.parse_args()
 
-def log_configuration(verbose):
+def log_configuration(verbose:bool)->logging.Logger:
     """Logger configuration: time/date formatting.
 
     """
@@ -114,11 +115,10 @@ def log_configuration(verbose):
     return logging.getLogger(__name__)
 
 
-def process_path(path):
+def process_path(path:str)->str:
     """Handle tilde expansion in a path.
 
     :param path: path to expand
-    :type path: string
     """
 
     working_path, working_name = os.path.split(path)

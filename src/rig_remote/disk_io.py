@@ -23,20 +23,19 @@ import logging
 import os.path
 from rig_remote.exceptions import InvalidPathError
 import datetime
-
 from rig_remote.models.bookmark import Bookmark
-
+from typing import TextIO
 logger = logging.getLogger(__name__)
 
 
 class IO:
     """IO wrapper class"""
 
-    def __init__(self):
-        self.rows=[]
+    def __init__(self) -> None:
+        self.rows:list[list[str]]=[]
 
     @staticmethod
-    def _path_check(csv_file: str):
+    def _path_check(csv_file: str)->None:
         """Helper function that checks if the path is valid.
 
         :param csv_file: path
@@ -48,7 +47,7 @@ class IO:
             logger.info("Invalid path provided:%s", csv_file)
             raise InvalidPathError
 
-    def csv_load(self, csv_file: str, delimiter: str):
+    def csv_load(self, csv_file: str, delimiter: str)->None:
         """Read the frequency bookmarks file and populate the tree.
 
         :param csv_file: path of the file to be written
@@ -65,7 +64,7 @@ class IO:
                 self.rows.append(line)
         logger.info("loaded %i rows from csv %s", len(self.rows), csv_file)
 
-    def csv_save(self, csv_file: str, delimiter: str):
+    def csv_save(self, csv_file: str, delimiter: str)->None:
         """Save current frequencies to disk.
 
         :param delimiter: delimiter char used in the csv
@@ -89,21 +88,20 @@ class IO:
 class LogFile:
     """Handles the tasks of logging to a file."""
 
-    def __init__(self):
+    def __init__(self)->None:
         """Defines the log file name and
         sets the fhandler self.log_file to None.
         """
 
-        self.log_filename = None
-        self.log_file_handler = None
+        self.log_filename = ""
+        self.log_file_handler:TextIO
 
-    def open(self, name: str = None):
+    def open(self, name: str)->None:
         """Opens a log file.
 
         :param name: log file name, defaults to None
         """
-        if name is not None:
-            self.log_filename = name
+        self.log_filename = name
         try:
             os.makedirs(os.path.dirname(self.log_filename))
         except IOError:
@@ -115,7 +113,7 @@ class LogFile:
         except (IOError, OSError):
             logger.error("Error while trying to open log file: %s", self.log_filename)
 
-    def write(self, record_type: str, record: Bookmark, signal: list):
+    def write(self, record_type: str, record: Bookmark, signal: list[float])->None:
         """Writes a message to the log file.
 
         :param record_type: type of the record to write
@@ -135,7 +133,7 @@ class LogFile:
                 "B "
                 + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
                 + " "
-                + record.channel.frequency
+                + str(record.channel.frequency)
                 + " "
                 + record.channel.modulation
                 + " "
@@ -175,7 +173,7 @@ class LogFile:
             )
             raise
 
-    def close(self):
+    def close(self)->None:
         """Closes the log file.
 
         :raises IOError OSError: if there are issues while closing the log file

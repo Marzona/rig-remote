@@ -15,7 +15,10 @@ Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from rig_remote.ui import RigRemote
 import configparser
 import logging
 import os
@@ -30,7 +33,6 @@ from rig_remote.constants import (
 )
 from rig_remote.disk_io import IO
 from rig_remote.models.rig_endpoint import RigEndpoint
-from rig_remote.ui import RigRemote
 
 logger = logging.getLogger(__name__)
 
@@ -83,14 +85,14 @@ class AppConfig:
         """
 
         self._io = IO()
-        self.rig_endpoints = []
+        self.rig_endpoints:list[RigEndpoint] = []
         self.config_file = config_file
         if not self.config_file:
             self.config = dict.copy(self.DEFAULT_CONFIG)
         else:
             self.config = {}
 
-    def read_conf(self):
+    def read_conf(self)->None:
         """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
         and then we re-read it. It logs an error if a line of the file is not
@@ -118,17 +120,17 @@ class AppConfig:
         # generate the rig endpoints from config
         self.rig_endpoints = [
             RigEndpoint(
-                hostname=self.config["hostname{}".format(instance_number)],
+                hostname=str(self.config["hostname{}".format(instance_number)]),
                 port=int(self.config["port{}".format(instance_number)]),
                 number=instance_number,
             )
             for instance_number in (1, 2)
         ]
-    def store_conf(self, window: RigRemote):
+    def store_conf(self, window:RigRemote)->None:
         self._get_conf(window)
         self._write_conf()
 
-    def _write_conf(self):
+    def _write_conf(self)->None:
         """Writes the configuration to file. If the default config path
         is missing it will be created. If this is not possible the config file
         will not be saved.
@@ -161,7 +163,7 @@ class AppConfig:
         with open(self.config_file, "w") as cf:
             config.write(cf)
 
-    def _get_conf(self, window: RigRemote):
+    def _get_conf(self, window:RigRemote)->None:
         """populates the ac object reading the info from the UI.
 
         :param window: object used to hold the app configuration.

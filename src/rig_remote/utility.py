@@ -12,17 +12,25 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 TAS - Tim Sweeney - mainetim@gmail.com
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from rig_remote.ui import RigRemote
 
 import logging
+
 
 logger = logging.getLogger(__name__)
 
 
-def khertz_to_hertz(value):
-    return int(value) * 1000
+def khertz_to_hertz(value:int)->int:
+    if not isinstance (value, int):
+        logger.error("khertz_to_hertz: value must be an integer, got %s", type(value))
+        raise TypeError("value must be an integer")
+    return value * 1000
 
 
-def shutdown(window):
+def shutdown(window:RigRemote)->None:
     """Here we quit. Before exiting, if save_exit checkbox is checked
     we save the configuration of the app and the bookmarks.
     We call store_conf and we destroy the main window
@@ -37,7 +45,7 @@ def shutdown(window):
 
 
 
-def center_window(window, width=300, height=200):
+def center_window(window:RigRemote, width:int=300, height:int=200)->None:
     """Centers a given window with a given size
 
     :param window: the window instance to be centered
@@ -52,4 +60,4 @@ def center_window(window, width=300, height=200):
     # calculate position x and y coordinates
     x = (screen_width / 2) - (width / 2)
     y = (screen_height / 2) - (height / 2)
-    window.geometry("%dx%d+%d+%d" % (width, height, x, y))
+    window.geometry("%dx%d+%d+%d" % (width, height, x, y)) # type: ignore

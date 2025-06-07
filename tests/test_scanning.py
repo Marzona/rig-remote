@@ -621,12 +621,12 @@ def test_scanning_scan_frequency_wait(scanning):
         log=True,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),

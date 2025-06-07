@@ -42,7 +42,7 @@ def test_bookmark_factory():
     modulation = "AM"
     description = "test_bookmark"
     bookmark = bookmark_factory(
-        input_frequency=input_frequency,
+        input_frequency=int(input_frequency),
         modulation=modulation,
         description=description,
         lockout=lockout,

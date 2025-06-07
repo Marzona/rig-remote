@@ -32,15 +32,16 @@ class Syncing:
     def __init__(self):
         self.sync_active = True
 
-    def terminate(self):
+    def terminate(self)->None:
         logger.info("Terminating sync task")
         self.sync_active = False
 
-    def sync(self, task: SyncTask, once: bool = False):
+    def sync(self, task: SyncTask, once: bool = False)->SyncTask:
         """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
 
         :param task: object that represent a scanning task
+        :param once: if True, the sync will stop after the first frequency change
         :returns: updates the scanning task object with the new activity found
         """
 

@@ -38,28 +38,27 @@ class RigEndpoint:
         self._is_valid_hostname(hostname=self.hostname)
         self._is_valid_number()
 
-    def _is_valid_number(self):
+    def _is_valid_number(self)->None:
         self.number = int(self.number)
         if self.number <= 0:
             logger.error("rig number must be >0, got %i", self.number)
             raise ValueError
 
     @staticmethod
-    def _is_valid_port(port: int):
+    def _is_valid_port(port: int)->None:
         """Checks if the provided port is a valid one.
 
         :param: port to connect to
         :raises: ValueError if the string can't be converted to integer and
         if the converted ingeger is lesser than 2014 (privileged port)
         """
-        port = int(port)
         if port <= 1024:
             message = f"Privileged port used: {port}"
             logger.error(message)
             raise ValueError(message)
 
     @staticmethod
-    def _is_valid_hostname(hostname: str):
+    def _is_valid_hostname(hostname: str)->None:
         """Checks if hostname is truly a valid FQDN, or IP address.
 
         :param hostname: hostname to validate.
@@ -73,11 +72,11 @@ class RigEndpoint:
             logger.error("Hostname error: %s", e)
             raise ValueError
 
-    def set_port(self, port: int):
+    def set_port(self, port: int)->None:
         self._is_valid_port(port=port)
         self.port = port
 
-    def set_hostname(self, hostname: str):
+    def set_hostname(self, hostname: str)->None:
         try:
             self._is_valid_hostname(hostname=hostname)
             self.hostname = hostname
