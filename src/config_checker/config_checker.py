@@ -20,21 +20,11 @@ Copyright (c) 2015 Simone Marzona
 
 import os
 import csv
-import shutil
-import configparser
 import platform
 import argparse
 import logging
 import pprint
-from rig_remote.constants import (
-    RIG_URI_CONFIG,
-    MONITOR_CONFIG,
-    SCANNING_CONFIG,
-    MAIN_CONFIG,
-    CONFIG_SECTIONS,
-)
-
-# helper functions
+from rig_remote.app_config import AppConfig
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +36,7 @@ def input_arguments():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Utility to check the configuration files and to update" \
-            " them to the last version."),
+            "Utility to check the configuration files and collect system's information"),
         epilog="""Please refer to:
         https://github.com/Marzona/rig-remote/wiki
         http://gqrx.dk/,
@@ -72,18 +61,8 @@ def input_arguments():
                        "-d",
                        dest="dump",
                        action="store_true",
-                       help="Dump some useful info for debugging.",
+                       help="Dump system info for debugging.",
                        )
-    group.add_argument("--update_config",
-                       "-uc",
-                       type=str,
-                       dest="update_config",
-                       help="Path of the folder we want to update." \
-                            "The config file will be overwritten " \
-                            "and a .back file will be created too. " \
-                            "Example ~/.rig-remote/"
-                       )
-
     return parser.parse_args()
 
 
@@ -108,30 +87,6 @@ def dump_info():
     print("\n   ")
     print("System/OS name: {}".format(platform.system()))
 
-#TODO: update config non funziona,ne la copia ne l'update
-def update_config(config):
-    config_file = os.path.join(config, "rig-remote.conf")
-    config = configparser.RawConfigParser()
-    for section in CONFIG_SECTIONS:
-        config.add_section(section)
-    with open(config_file, "r") as cf:
-        print("Using config file:{}".format(config_file))
-        for line in cf:
-            line = line.rstrip("\n")
-            if line.split("=")[0].strip() in RIG_URI_CONFIG:
-                config.set("Rig URI", line.split("=")[0], line.split("=")[1])
-            if line.split("=")[0].strip() in MONITOR_CONFIG:
-                config.set("Monitor", line.split("=")[0], line.split("=")[1])
-            if line.split("=")[0].strip() in MAIN_CONFIG:
-                config.set("Main", line.split("=")[0], line.split("=")[1])
-            if line.split("=")[0].strip() in SCANNING_CONFIG:
-                config.set("Scanning", line.split("=")[0], line.split("=")[1])
-
-    shutil.copyfile(config_file, "{}.back".format(config_file))
-    with open(config_file, "wb") as cf:
-        config.write(cf)
-
-
 def check_config(config):
     config_file = os.path.join(config, "rig-remote.conf")
 
@@ -154,7 +109,7 @@ def check_config(config):
             else:
                 print("Error in config file, line: {}".format(row))
         if count < 19:
-            print("The configuration file seems to be " \
+            print("The configuration is " \
                   "missing some keyword")
         print("\n   ")
         print("Config dump:")
@@ -172,17 +127,28 @@ def check_config(config):
             print("\n   ")
             pprint.pprint(row_list)
 
+        print("Parsing configuration file: {}".format(config_file))
+        ac=AppConfig(config_file=config_file)
+        try:
+            ac.read_conf()
+            print("Configuration file is valid.")
+            return True
+        except SystemExit as e:
+            print("Error reading configuration file: {}".format(e))
+            print("Please check the configuration file for errors.")
+            return False
+        except Exception as e:
+            print("Unexpected error: {}".format(e))
+            return False
 
 # entry point
 def cli():
     args = input_arguments()
-    if not any([args.check_config, args.dump, args.update_config]):
+    if not any([args.check_config, args.dump]):
         print("At least one option is required, try " \
               "config_checker --help")
 
     if args.dump:
         dump_info()
-    elif args.update_config:
-        update_config(args.update_config)
     elif args.check_config:
         check_config(args.check_config)
