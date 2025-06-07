@@ -135,7 +135,7 @@ def cli():
     DEFAULT_BOOKMARK_FILENAME = "rig-remote-bookmarks.csv"
 
     args = input_arguments()
-    logger = log_configuration(args.verbose)
+    _ = log_configuration(args.verbose)
     if args.alternate_prefix:
         prefix = args.alternate_prefix
         dir_prefix = os.path.expanduser(prefix)

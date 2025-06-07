@@ -989,8 +989,6 @@ class RigRemote(ttk.Frame): # pragma: no cover
 
     def _sync(self, action):
         if self.scan_thread:
-            # icycle=itertools.cycle(["Start", "Stop"])
-            # self.sync.config(text = next(icycle))
             self.sync.config(text="Start")
             return
 
@@ -1578,7 +1576,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
         self.tree.see(item)
         # save
         self.bookmarks.save(
-            bookmarks_file=self.bookmarks_file, bookmarks=self._extract_bookmarks()
+            bookmarks_file=self.bookmarks_file
         )
 
     def _extract_bookmarks(self) -> list:
@@ -1597,7 +1595,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
 
         self.cb_delete(1)
 
-    def cb_delete(self, source):
+    def cb_delete(self, source:int):
         """Delete frequency from tree.
 
         :param: none
@@ -1612,8 +1610,7 @@ class RigRemote(ttk.Frame): # pragma: no cover
         self.tree.delete(item)
         # save
         self.bookmarks.save(
-            bookmarks_file=self.bookmarks_file, bookmarks=self._extract_bookmarks()
-        )
+            bookmarks_file=self.bookmarks_file)
         self._clear_form(source)
 
     def _get_bookmark_from_item(self, item) -> Bookmark:
