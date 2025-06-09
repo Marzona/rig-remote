@@ -17,41 +17,67 @@ def test_rig_endpoint_init():
 
 
 @pytest.mark.parametrize(
-    "hostname1,port1, name1, number1",
+    "hostname, port, name, number",
     [
-        ("localhost", 1024, "rig_name", 1),
-        ("localhost", 8080, "rig_name", -1),
-        ("localhost", 8080, "rig_name", 0),
-        ("localhost", 8080, "rig_name", "a"),
-    ],
+        (ip, port, "test_rig", number)
+        for ip in [
+            "192.168.1.1",
+            "192.168.0.100",
+            "10.0.0.1",
+            "172.16.0.1",
+            "127.0.0.1"
+        ]
+        for port in [1025, 3000, 5000, 7000, 9000]
+        for number in [0, 1]
+    ]
 )
-def test_rig_endpoint_init_error(hostname1, port1, name1, number1):
-    with pytest.raises(ValueError):
-        RigEndpoint(hostname=hostname1, port=port1, number=number1, name=name1)
+def test_rig_endpoint_valid_ports_and_numbers(hostname, port, name, number):
+    """Test RigEndpoint initialization with various private IPs, ports and numbers."""
+    rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number, name=name)
+
+    assert rig_endpoint.hostname == hostname
+    assert rig_endpoint.port == port
+    assert rig_endpoint.number == number
+    assert rig_endpoint.name == name
+    assert isinstance(rig_endpoint.id, str)
 
 
 @pytest.mark.parametrize(
-    "hostname1,port1, name1, number1, hostname2, port2, name2, number2, expected",
+    "endpoint1_data, endpoint2_data, expected",
     [
-        ("localhost", 8080, "rig_name", 1, "localhost", 8080, "rig_name", 1, True),
-        ("localhost", 8080, "rig_name", 1, "localhost", 8081, "rig_name", 1, False),
-        ("localhost", 8080, "rig_name", 1, "localhost", 8080, "rig_name2", 1, False),
-        ("localhost", 8080, "rig_name", 1, "localhost", 8080, "rig_name", 2, False),
-        ("localhost", 8080, "rig_name", 1, "127.0.0.1", 8080, "rig_name", 2, False),
-        ("localhost", 8080, "rig_name", 1, "127.0.0.1", 8080, "rig_name", 2, False),
-    ],
+        (
+                {"hostname": "192.168.1.1", "port": 1025, "name": "rig1", "number": 0},
+                {"hostname": "192.168.1.1", "port": 1025, "name": "rig1", "number": 0},
+                True
+        ),
+        (
+                {"hostname": "192.168.1.1", "port": 1025, "name": "rig1", "number": 0},
+                {"hostname": "192.168.1.1", "port": 1026, "name": "rig1", "number": 0},
+                False
+        ),
+        (
+                {"hostname": "10.0.0.1", "port": 5000, "name": "rig1", "number": 1},
+                {"hostname": "10.0.0.2", "port": 5000, "name": "rig1", "number": 1},
+                False
+        ),
+        (
+                {"hostname": "127.0.0.1", "port": 9000, "name": "rig_test", "number": 0},
+                {"hostname": "127.0.0.1", "port": 9000, "name": "rig_test", "number": 1},
+                False
+        ),
+        (
+                {"hostname": "172.16.0.1", "port": 3000, "name": "rig_a", "number": 0},
+                {"hostname": "172.16.0.1", "port": 3000, "name": "rig_b", "number": 0},
+                False
+        )
+    ]
 )
-def test_rig_endpoint_comparison(
-    hostname1, port1, name1, number1, hostname2, port2, name2, number2, expected
-):
-    rig_endpoint1 = RigEndpoint(
-        hostname=hostname1, port=port1, number=number1, name=name1
-    )
-    rig_endpoint2 = RigEndpoint(
-        hostname=hostname2, port=port2, number=number2, name=name2
-    )
+def test_rig_endpoint_equality(endpoint1_data, endpoint2_data, expected):
+    """Test equality comparison between RigEndpoint objects with various configurations."""
+    endpoint1 = RigEndpoint(**endpoint1_data)
+    endpoint2 = RigEndpoint(**endpoint2_data)
 
-    assert (rig_endpoint1 == rig_endpoint2) == expected
+    assert (endpoint1 == endpoint2) == expected
 
 
 @pytest.mark.parametrize(

@@ -23,12 +23,12 @@ def bookmark_manager_with_bookmarks():
     description = "test_description"
     lockout = "L"
     bookmark1 = Bookmark(
-        channel=Channel(input_frequency="1", modulation="AM"),
+        channel=Channel(input_frequency=1, modulation="AM"),
         description=description,
         lockout=lockout,
     )
     bookmark2 = Bookmark(
-        channel=Channel(input_frequency="1", modulation="FM"),
+        channel=Channel(input_frequency=1, modulation="FM"),
         description=description,
         lockout=lockout,
     )
@@ -66,7 +66,7 @@ def test_bookmarkmanager_save(delimiter):
     lockout = "L"
     bookmarks_list = [
         Bookmark(
-            channel=Channel(input_frequency="1", modulation="AM"),
+            channel=Channel(input_frequency=1, modulation="AM"),
             description=description,
             lockout=lockout,
         )
@@ -176,12 +176,12 @@ def test_bookmarkmanager_add_bookmark():
     description = "test_description"
     lockout = "L"
     bookmark1 = Bookmark(
-        channel=Channel(input_frequency="1", modulation="AM"),
+        channel=Channel(input_frequency=1, modulation="AM"),
         description=description,
         lockout=lockout,
     )
     bookmark2 = Bookmark(
-        channel=Channel(input_frequency="1", modulation="FM"),
+        channel=Channel(input_frequency=1, modulation="FM"),
         description=description,
         lockout=lockout,
     )

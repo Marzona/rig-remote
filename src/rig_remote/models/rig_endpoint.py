@@ -40,7 +40,7 @@ class RigEndpoint:
 
     def _is_valid_number(self)->None:
         self.number = int(self.number)
-        if self.number <= 0:
+        if self.number < 0:
             logger.error("rig number must be >0, got %i", self.number)
             raise ValueError
 

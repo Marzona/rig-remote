@@ -1,4 +1,6 @@
-
+import os
+from pathlib import Path
+from rig_remote.app_config import AppConfig
 import pytest
 from unittest.mock import MagicMock, patch
 import tkinter as tk
@@ -106,3 +108,36 @@ def test_ui_rc_checkbutton(rig_remote):
     check.set_str_val("false")
     assert check.is_checked() is False
     assert check.get_str_val() == "false"
+
+
+
+
+def get_test_configs():
+    """Helper function to get all test configuration files."""
+    config_dir = os.path.join(Path(__file__).parent, "test_files/test_config_files/")
+    return [
+        os.path.join(config_dir, f)
+        for f in os.listdir(config_dir)
+        if f.endswith(('.ini', '.file')) and 'missing-header' not in f
+    ]
+
+@pytest.mark.parametrize("config_file", get_test_configs())
+def test_rig_remote_configs(config_file):
+    """Test RigRemote initialization with different config files."""
+    # Initialize AppConfig with the test file
+    ac = AppConfig(config_file=config_file)
+    ac.read_conf()
+
+    # Create and test RigRemote instance
+    root = tk.Tk()
+    rr = RigRemote(root, ac)
+    rr.bookmarks_manager = MagicMock()
+
+    # Add assertions to verify RigRemote state
+    assert rr.ac == ac
+    assert rr.tree is not None
+    assert rr.params is not None
+    assert hasattr(rr, 'bookmarks_manager')
+
+    # Cleanup
+    root.destroy()

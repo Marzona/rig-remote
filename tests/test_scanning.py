@@ -72,7 +72,7 @@ def test_scanning_scan_wrapper(scanning):
         log=False,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="L",
             )
@@ -95,7 +95,7 @@ def test_scanning_scan_wrapper(scanning):
         log=False,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="L",
             )
@@ -128,7 +128,7 @@ def test_scanning_scan_bookmarks_lockout(scanning):
         log=False,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="L",
             )
@@ -162,12 +162,12 @@ def test_scanning_scan_bookmarks_lockout(scanning):
             log=False,
             bookmarks=[
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
@@ -205,12 +205,12 @@ def test_scanning_scan_bookmarks_lockout(scanning):
             log=True,
             bookmarks=[
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
@@ -267,12 +267,12 @@ def test_scanning_scan(scanning, scanning_task):
             log=True,
             bookmarks=[
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
                 Bookmark(
-                    channel=Channel(input_frequency="1", modulation="FM"),
+                    channel=Channel(input_frequency=1, modulation="FM"),
                     description="description1",
                     lockout="",
                 ),
@@ -455,12 +455,12 @@ def test_scanning_scan_bookmarks_no_wait(scanning):
         log=True,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
@@ -502,12 +502,12 @@ def test_scanning_scan_bookmarks_wait(scanning):
         log=True,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
@@ -554,12 +554,12 @@ def test_scanning_scan_bookmarks_wait(scanning):
         log=True,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
@@ -581,12 +581,12 @@ def test_scanning_scan_bookmarks_wait(scanning):
         log=True,
         bookmarks=[
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),
             Bookmark(
-                channel=Channel(input_frequency="1", modulation="FM"),
+                channel=Channel(input_frequency=1, modulation="FM"),
                 description="description1",
                 lockout="",
             ),

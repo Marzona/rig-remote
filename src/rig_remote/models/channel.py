@@ -57,6 +57,9 @@ class Channel:
 
     def _frequency_validator(self)->None:
         """Filter invalid chars and add thousands separator."""
+        if int(self.input_frequency) < 1 or int(self.input_frequency) > 500000000:
+            message  ="invalid frequency %s", self.input_frequency
+            raise ValueError(message)
         try:
             self.frequency_as_string = "{:,}".format(
                 int(re.sub("[^0-9]", "", str(self.input_frequency)))

@@ -80,6 +80,31 @@ class ScanningTask:
     def _post_init(self)->None:
         self._check_scan_mode()
         self._check_passes()
+        self._check_range_min()
+        self._check_range_max()
+
+    def _check_range_min(self)->None:
+        """Checks for a sane range_min. We don't want to search for signals
+        with range_min lower than 0, if there is such a low range_min we overwrite and log an error.
+        """
+        if self.range_min < 0:
+            logger.error(
+                "Low range_min provided %i, overriding with 0",
+                self.range_min,
+            )
+            self.range_min = 0
+
+    def _check_range_max(self)->None:
+        """Checks for a sane range_max. We don't want to search for signals
+        with range_max lower than 0, if there is such a low range_max we overwrite and log an error.
+        """
+        if self.range_max > 500000000:
+            logger.error(
+                "Low range_max provided %i, overriding with 0",
+                self.range_max,
+            )
+            self.range_max = 500000000
+
 
     def _check_scan_mode(self)->None:
         if self.scan_mode.lower() not in self._SUPPORTED_SCANNING_MODES:
