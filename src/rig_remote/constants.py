@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Remote application that interacts with rigs using rigctl protocol.
 
@@ -6,7 +7,7 @@ http://rig.dk/
 http://rig.dk/doc/remote-control
 http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
-
+Author: Rafael Marmelo
 Author: Simone Marzona
 
 License: MIT License
@@ -38,7 +39,7 @@ SCANNING_CONFIG = [
     "passes",
 ]
 MAIN_CONFIG = ["always_on_top", "save_exit", "bookmark_filename", "log", "log_filename"]
-MONITOR_CONFIG = ["monitor_mode_loops"] # TODO : seems unused
+MONITOR_CONFIG = ["monitor_mode_loops"]
 RIG_URI_CONFIG = ["port1", "hostname1", "port2", "hostname2"]
 CONFIG_SECTIONS = [
     "Scanning",

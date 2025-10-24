@@ -21,12 +21,13 @@ Copyright (c) 2016 Tim Sweeney
 import argparse
 import logging
 import os
+import sys
 import time
 import textwrap
 import tkinter as tk
-
-from rig_remote.ui import RigRemote
+from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
+from PySide6 import QtWidgets
 
 # helper functions
 def input_arguments()->argparse.Namespace:
@@ -166,9 +167,14 @@ def cli():
         app_config.config['log_filename'] = process_path(log)
     else:
         app_config.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
-    app = RigRemote(root, app_config)
-
-    app.apply_config()
-    app.mainloop()
-    if app.scan_thread is not None:
-        app.scanning.terminate()
+    # app = RigRemote(root, app_config)
+    # app.apply_config()
+    # app.mainloop()
+    # if app.scan_thread is not None:
+    #     app.scanning.terminate(
+    app = QtWidgets.QApplication([])
+    app.setQuitOnLastWindowClosed(True)
+    window = RigRemote(ac)
+    window.resize(1024, 978)
+    window.show()
+    sys.exit(app.exec())
