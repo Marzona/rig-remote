@@ -40,7 +40,8 @@ SCANNING_CONFIG = [
 ]
 MAIN_CONFIG = ["always_on_top", "save_exit", "bookmark_filename", "log", "log_filename"]
 MONITOR_CONFIG = ["monitor_mode_loops"]
-RIG_URI_CONFIG = ["port1", "hostname1", "port2", "hostname2"]
+RIG_COUNT = 2
+RIG_URI_CONFIG = [f"{k}{r+1}" for r in range(RIG_COUNT) for k in ("port", "hostname")]
 CONFIG_SECTIONS = [
     "Scanning",
     "Main",

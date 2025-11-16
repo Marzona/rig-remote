@@ -1,18 +1,16 @@
 import logging
 import threading
-import itertools
-from typing import Optional, List
 
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+    QMainWindow, QWidget, QGridLayout,
     QLabel, QLineEdit, QPushButton, QComboBox, QCheckBox,
-    QTreeWidget, QTreeWidgetItem, QScrollArea, QGroupBox,
-    QMessageBox, QApplication, QToolTip
+    QTreeWidget, QTreeWidgetItem, QGroupBox,
+    QMessageBox, QApplication, 
 )
-from PySide6.QtCore import Qt, QTimer, Signal, QObject
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QBrush
 
-from rig_remote.constants import CBB_MODES, BM, DEFAULT_CONFIG, RIG_COUNT
+from rig_remote.constants import RIG_COUNT
 from rig_remote.exceptions import (
     UnsupportedScanningConfigError,
     UnsupportedSyncConfigError,
@@ -23,13 +21,12 @@ from rig_remote.scanning import Scanning
 from rig_remote.syncing import Syncing, SyncTask
 from rig_remote.models.scanning_task import ScanningTask
 from rig_remote.models.bookmark import Bookmark
+from rig_remote.queue_comms import QueueComms
 from rig_remote.utility import (
-    is_valid_port,
-    is_valid_hostname,
-    build_rig_uri,
     shutdown,
 )
 from rig_remote.stmessenger import STMessenger
+from rig_remote.app_config import AppConfig
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +49,9 @@ class RigRemote(QMainWindow):
     * Project wiki: https://github.com/Marzona/rig-remote/wiki
     """
 
-    def __init__(self, ac):
+    def __init__(self, app_config: AppConfig):
         super().__init__()
-        self.ac = ac
+        self.ac = app_config
         
         # Initialize attributes
         self.params = {}
@@ -66,15 +63,15 @@ class RigRemote(QMainWindow):
         self.scan_mode = None
         self.scanning = None
         self.selected_bookmark = None
-        self.scanq = STMessenger()
-        self.syncq = STMessenger()
+        self.scanq = STMessenger(queuecomms=QueueComms())
+        self.syncq = STMessenger(queuecomms=QueueComms())
         self.new_bookmark_list = []
         self.rigctl = [None] * RIG_COUNT
         
         self._build_ui()
         self._load_bookmarks()
         
-        self.apply_config(ac, silent=True)
+        self.apply_config(app_config, silent=True)
 
     def _build_ui(self):
         """Build the entire UI"""
@@ -435,7 +432,7 @@ class RigRemote(QMainWindow):
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 if reply == QMessageBox.StandardButton.Yes:
-                    event_value = DEFAULT_CONFIG.get(ekey, "")
+                    event_value = self.ac.DEFAULT_CONFIG.get(ekey, "")
                     widget.setText(event_value)
                     self.params_last_content[widget_name] = event_value
                 else:
@@ -445,7 +442,7 @@ class RigRemote(QMainWindow):
                         widget.setFocus()
                         return
             else:
-                event_value = DEFAULT_CONFIG.get(ekey, "")
+                event_value = self.ac.get(ekey, "")
                 widget.setText(event_value)
                 self.params_last_content[widget_name] = event_value
         
@@ -542,7 +539,7 @@ class RigRemote(QMainWindow):
             try:
                 is_valid_hostname(ac.config.get(hostname, ""))
             except ValueError:
-                self.params[widget_name].setText(DEFAULT_CONFIG[hostname])
+                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[hostname])
                 if not silent:
                     QMessageBox.critical(self, "Config File Error", 
                         "One (or more) of the values in the config file was invalid, and the default was used instead.")
@@ -557,14 +554,14 @@ class RigRemote(QMainWindow):
             if str.isdigit(ac.config[key].replace(",", "")):
                 self.params[ekey].setText(ac.config[key])
             else:
-                self.params[ekey].setText(DEFAULT_CONFIG[key])
+                self.params[ekey].setText(self.ac.DEFAULT_CONFIG[key])
                 eflag = True
         
         # Test integer values for signal level
         try:
             int(ac.config["sgn_level"])
         except ValueError:
-            self.params["txt_sgn_level"].setText(DEFAULT_CONFIG["sgn_level"])
+            self.params["txt_sgn_level"].setText(self.ac.DEFAULT_CONFIG["sgn_level"])
             eflag = True
         else:
             self.params["txt_sgn_level"].setText(ac.config["sgn_level"])
@@ -583,7 +580,7 @@ class RigRemote(QMainWindow):
         
         # Initialize rig control
         self.rigctl = [
-            RigCtl(build_rig_uri(i + 1, self.params))
+            RigCtl(self.ac.rig_endpoints[i])
             for i in range(RIG_COUNT)
         ]
         
@@ -628,8 +625,8 @@ class RigRemote(QMainWindow):
             try:
                 task = SyncTask(
                     self.syncq,
-                    RigCtl(build_rig_uri(2, self.params)),
-                    RigCtl(build_rig_uri(1, self.params)),
+                    RigCtl(self.ac.rig_endpoints[2]),
+                    RigCtl(self.ac.rig_endpoints[1]),
                 )
             except UnsupportedSyncConfigError:
                 QMessageBox.critical(self, "Sync error", "Hostname/port of both rigs must be specified")

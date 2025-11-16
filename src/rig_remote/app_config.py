@@ -25,6 +25,7 @@ import os
 import sys
 
 from rig_remote.constants import (
+    RIG_COUNT,
     RIG_URI_CONFIG,
     MONITOR_CONFIG,
     SCANNING_CONFIG,
@@ -120,11 +121,11 @@ class AppConfig:
         # generate the rig endpoints from config
         self.rig_endpoints = [
             RigEndpoint(
-                hostname=str(self.config["hostname{}".format(instance_number)]),
-                port=int(self.config["port{}".format(instance_number)]),
+                hostname=str(self.config[f"hostname{instance_number}"]),
+                port=int(self.config[f"port{instance_number}"]),
                 number=instance_number,
             )
-            for instance_number in (1, 2)
+            for instance_number in range(1, RIG_COUNT+1)
         ]
     def store_conf(self, window:RigRemote)->None:
         self._get_conf(window)

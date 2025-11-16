@@ -171,10 +171,13 @@ def cli():
     # app.apply_config()
     # app.mainloop()
     # if app.scan_thread is not None:
-    #     app.scanning.terminate(
+    #     app.scanning.terminate()
     app = QtWidgets.QApplication([])
     app.setQuitOnLastWindowClosed(True)
-    window = RigRemote(ac)
+    window = RigRemote(app_config)
     window.resize(1024, 978)
     window.show()
     sys.exit(app.exec())
+
+if __name__ == '__main__':
+    cli()
