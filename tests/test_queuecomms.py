@@ -1,7 +1,6 @@
 import pytest
 
 from rig_remote.queue_comms import QueueComms
-from queue import Full
 
 
 def test_queuecomms_queued_for_parent():

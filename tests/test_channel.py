@@ -1,7 +1,6 @@
 from rig_remote.models.channel import Channel
 import pytest
 from rig_remote.models.modulation_modes import ModulationModes
-from rig_remote.models.channel import Channel
 
 
 @pytest.mark.parametrize(

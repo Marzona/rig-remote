@@ -62,15 +62,6 @@ def test_bookmarkmanager_save(delimiter):
     io = IO()
     io.csv_save = Mock(return_value=None)
     bookmarks_manager = BookmarksManager(io=io)
-    description = "test_description"
-    lockout = "L"
-    bookmarks_list = [
-        Bookmark(
-            channel=Channel(input_frequency=1, modulation="AM"),
-            description=description,
-            lockout=lockout,
-        )
-    ]
     bookmarks_manager.save(
         bookmarks_file="tests", delimiter=delimiter
     )
