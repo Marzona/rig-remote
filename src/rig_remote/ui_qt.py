@@ -16,6 +16,7 @@ from rig_remote.exceptions import (
     UnsupportedSyncConfigError,
 )
 from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
+from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import Scanning
 from rig_remote.syncing import Syncing, SyncTask
@@ -27,6 +28,8 @@ from rig_remote.utility import (
 )
 from rig_remote.stmessenger import STMessenger
 from rig_remote.app_config import AppConfig
+from rig_remote.models.modulation_modes import ModulationModes
+
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +150,7 @@ class RigRemote(QMainWindow):
         grid.addWidget(QLabel("Mode:"), 1, 0)
         cbb_mode = f"cbb_mode{rig_number}"
         self.params[cbb_mode] = QComboBox()
-        self.params[cbb_mode].addItems(CBB_MODES)
+        self.params[cbb_mode].addItems(ModulationModes)
         self.params[cbb_mode].setToolTip("Mode to use for tuning the frequency.")
         grid.addWidget(self.params[cbb_mode], 1, 1, 1, 3)
         
@@ -278,7 +281,7 @@ class RigRemote(QMainWindow):
         
         grid.addWidget(QLabel("Scan mode:"), 2, 0)
         self.params["cbb_freq_modulation"] = QComboBox()
-        self.params["cbb_freq_modulation"].addItems(CBB_MODES)
+        self.params["cbb_freq_modulation"].addItems(ModulationModes)
         self.params["cbb_freq_modulation"].setToolTip("Mode to use for the frequency scan.")
         grid.addWidget(self.params["cbb_freq_modulation"], 2, 1)
         
@@ -471,27 +474,34 @@ class RigRemote(QMainWindow):
             event_list = (widget_name, event_value_int)
             self.scanq.send_event_update(event_list)
 
-    def _process_hostname_entry(self, event_value, number, silent=False):
+    def _process_hostname_entry(self, event_value:str, rig_number:int, silent=False):
         """Process hostname entry"""
         try:
-            is_valid_hostname(event_value)
-        except Exception:
+            # rig numbering start from 1
+            self.rigctl[rig_number-1].target = RigEndpoint(
+            port = int(self.params["txt_port"+str(rig_number)].text()),
+            hostname = event_value,
+            number = rig_number,
+            name = "rig_"+str(rig_number)
+            )
+        except ValueError:
             if not silent:
                 QMessageBox.critical(self, "Error", "Invalid Hostname")
             return
-        if number == 1:
-            self.rigctl[0].target["hostname"] = event_value
 
-    def _process_port_entry(self, event_value, number, silent=False):
+    def _process_port_entry(self, event_value:str, rig_number:int, silent=False):
         """Process port entry"""
         try:
-            is_valid_port(event_value)
+            self.rigctl[rig_number-1].target =  RigEndpoint(
+            port = int(event_value),
+            hostname = self.params["txt_hostname"+str(rig_number)].text(),
+            number = rig_number,
+            name = "rig_"+str(rig_number)
+            )
         except ValueError:
             if not silent:
                 QMessageBox.critical(self, "Error", "Invalid input value in port. Must be integer and greater than 1024")
             return
-        if number == 1:
-            self.rigctl[0].target["port"] = event_value
 
     def process_wait(self, state):
         """Handle wait checkbox"""
@@ -534,10 +544,14 @@ class RigRemote(QMainWindow):
         
         # Handle hostnames and ports
         for rig_number in range(1, RIG_COUNT+1):
-            hostname = f"hostname{rig_number}"
+            hostname=f"hostname{rig_number}"
             widget_name = f"txt_{hostname}"
             try:
-                is_valid_hostname(ac.config.get(hostname, ""))
+                _ = RigEndpoint(
+                    hostname=hostname,
+                    port=int(f"port{rig_number}"),
+                    number= rig_number,
+                )
             except ValueError:
                 self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[hostname])
                 if not silent:
