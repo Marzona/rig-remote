@@ -3,6 +3,7 @@ from pathlib import Path
 from rig_remote.app_config import AppConfig
 import pytest
 import configparser
+from rig_remote.constants import RIG_COUNT, CONFIG_SECTIONS
 
 def test_app_config_init():
     ac = AppConfig(config_file=os.path.join(Path(__file__).parent,"test_files/test_config_files/test-config.file"))
@@ -157,3 +158,141 @@ def test_config_file_generation(tmp_path, base_config, passes, auto_bookmark,
     assert loaded_config['Main']['save_exit'] == str(save_exit).lower()
     assert loaded_config['Main']['log'] == str(log).lower()
     assert loaded_config['Main']['always_on_top'] == str(always_on_top).lower()
+
+
+
+
+def test_appconfig_init_uses_default_when_no_config_file():
+    """__init__ sets config to DEFAULT_CONFIG when config_file is empty."""
+    ac = AppConfig(config_file="")
+    assert ac.config == AppConfig.DEFAULT_CONFIG
+
+
+def test_appconfig_read_conf_missing_section_triggers_exit(monkeypatch, tmp_path):
+    """Simulate configparser.MissingSectionHeaderError during read -> SystemExit(1)."""
+    cfg = tmp_path / "bad.ini"
+    cfg.write_text("this-is-not-a-section\nkey=value\n")
+
+    ac = AppConfig(config_file=str(cfg))
+
+    def fake_read(self, filename):
+        raise configparser.MissingSectionHeaderError(filename=str(cfg),line ="missing header", lineno=1)
+
+    monkeypatch.setattr(configparser.RawConfigParser, "read", fake_read)
+    with pytest.raises(SystemExit) as excinfo:
+        ac.read_conf()
+    assert excinfo.value.code == 1
+
+
+def test_appconfig_read_conf_no_file_uses_default_and_builds_endpoints(tmp_path):
+    """When the config file is missing, DEFAULT_CONFIG is used and rig_endpoints are built."""
+    cfg_path = tmp_path / "no-such-dir" / "missing.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+    # ensure file does not exist
+    if os.path.exists(str(cfg_path)):
+        os.remove(str(cfg_path))
+
+    ac.read_conf()
+    assert ac.config == AppConfig.DEFAULT_CONFIG
+    assert isinstance(ac.rig_endpoints, list)
+    assert len(ac.rig_endpoints) == RIG_COUNT
+    # verify endpoints have hostname and integer port
+    for ep in ac.rig_endpoints:
+        assert isinstance(ep.hostname, str)
+        assert isinstance(ep.port, int)
+
+
+def test_appconfig_write_conf_creates_file_and_sections(tmp_path):
+    """_write_conf writes a config file containing the expected sections and keys."""
+    out_dir = tmp_path / "outdir"
+    cfg_path = out_dir / "test-config.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+
+    # ensure writable string values (avoid None in DEFAULT_CONFIG for writing)
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+
+    # call internal writer and verify file was created and contains expected sections
+    ac._write_conf()
+    assert cfg_path.exists()
+    content = cfg_path.read_text()
+    # verify all expected sections are present
+    for section in CONFIG_SECTIONS:
+        assert f"[{section}]" in content
+
+
+def test_appconfig_write_conf_handles_makedirs_ioerror(tmp_path, monkeypatch):
+    """If os.makedirs raises IOError, _write_conf should continue and still write when dir exists."""
+    existing_dir = tmp_path / "existing"
+    existing_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = existing_dir / "test-config.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+
+    # ensure writable string values
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+
+    # force os.makedirs to raise IOError (simulate race/permission issue)
+    def raise_io_error(path, *args, **kwargs):
+        raise IOError("simulated makedirs failure")
+
+    monkeypatch.setattr(os, "makedirs", raise_io_error)
+
+    # Because the directory already exists, _write_conf should still be able to open and write the file
+    ac._write_conf()
+    assert cfg_path.exists()
+
+
+def test_appconfig_get_conf_populates_from_window():
+    """_get_conf pulls values from a window-like object into ac.config."""
+    class FakeWidget:
+        def __init__(self, v):
+            self._v = v
+        def get(self):
+            return self._v
+        def get_str_val(self):
+            return self._v
+
+    fake_params = {
+        "txt_hostname1": FakeWidget("host1"),
+        "txt_port1": FakeWidget("1111"),
+        "txt_hostname2": FakeWidget("host2"),
+        "txt_port2": FakeWidget("2222"),
+        "txt_interval": FakeWidget("10"),
+        "txt_delay": FakeWidget("3"),
+        "txt_passes": FakeWidget("5"),
+        "txt_sgn_level": FakeWidget("-20"),
+        "txt_range_min": FakeWidget("24000"),
+        "txt_range_max": FakeWidget("1800000"),
+        "ckb_wait": FakeWidget("false"),
+        "ckb_record": FakeWidget("true"),
+        "ckb_log": FakeWidget("false"),
+        "ckb_auto_bookmark": FakeWidget("true"),
+    }
+
+    window = type("W", (), {})()
+    window.params = fake_params
+    window.ckb_top = FakeWidget("true")
+    window.ckb_save_exit = FakeWidget("false")
+    window.bookmarks_file = "/tmp/bookmarks.csv"
+    window.log_file = "/tmp/log.txt"
+
+    ac = AppConfig(config_file="")
+    ac._get_conf(window)
+
+    assert ac.config["hostname1"] == "host1"
+    assert ac.config["port1"] == "1111"
+    assert ac.config["hostname2"] == "host2"
+    assert ac.config["port2"] == "2222"
+    assert ac.config["interval"] == "10"
+    assert ac.config["delay"] == "3"
+    assert ac.config["passes"] == "5"
+    assert ac.config["sgn_level"] == "-20"
+    assert ac.config["range_min"] == "24000"
+    assert ac.config["range_max"] == "1800000"
+    assert ac.config["wait"] == "false"
+    assert ac.config["record"] == "true"
+    assert ac.config["log"] == "false"
+    assert ac.config["always_on_top"] == "true"
+    assert ac.config["save_exit"] == "false"
+    assert ac.config["auto_bookmark"] == "true"
+    assert ac.config["bookmark_filename"] == "/tmp/bookmarks.csv"
+    assert ac.config["log_filename"] == "/tmp/log.txt"

@@ -19,10 +19,8 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 import argparse
-import logging
 import os
 import sys
-import time
 import textwrap
 from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
@@ -90,29 +88,40 @@ def input_arguments()->argparse.Namespace:
 
     return parser.parse_args()
 
-def log_configuration(verbose:bool)->logging.Logger:
-    """Logger configuration: time/date formatting.
-
+def log_configuration(verbose: bool):
     """
+    Configure logging and return the root logger with an explicit level set.
+    Ensures time.tzset is called if available and that handlers use the same level.
+    """
+    import logging
+    import time
 
-    os.environ["TZ"] = "UTC"
+    level = logging.INFO if verbose else logging.WARNING
+    logger = logging.getLogger()  # root logger
+    logger.setLevel(level)
 
-    # Windows doesn't support tzset. Ignore for now.
+    # Call tzset if available (harmless)
     try:
-        time.tzset()
-    except AttributeError:
+        if hasattr(time, "tzset"):
+            time.tzset()
+    except Exception:
         pass
 
-    if verbose:
-        logging.basicConfig(level=logging.INFO,
-                            format="%(asctime)s %(message)s",
-                            datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+    # Ensure at least one handler exists and synchronize handler levels
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
     else:
-        logging.basicConfig(level=logging.WARNING,
-                            format="%(asctime)s %(message)s",
-                            datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+        for h in logger.handlers:
+            try:
+                h.setLevel(level)
+            except Exception:
+                pass
 
-    return logging.getLogger(__name__)
+    return logger
 
 
 def process_path(path:str)->str:
@@ -147,7 +156,6 @@ def cli():
     else:
         config_file = os.path.join(dir_prefix, DEFAULT_CONFIG_FILENAME)
 
-    root = tk.Tk()
     app_config = AppConfig(config_file=config_file)
     # set bookmarks and log filename in this order:
     #   use command line alternate path
