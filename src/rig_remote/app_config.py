@@ -18,7 +18,7 @@ Copyright (c) 2016 Tim Sweeney
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from rig_remote.ui import RigRemote
+    from rig_remote.ui_qt import RigRemote
 import configparser
 import logging
 import os

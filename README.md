@@ -55,38 +55,30 @@ Feature highlights
 TODOs/desired enhancements are listed in the issues section.
 If you find any problem feel free to create an issue, the issue will be addressed as soon as possible.
 
-![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/doc/screenshots/main-window.png)
+![rig-remote-linux](https://github.com/Marzona/rig-remote/blob/master/doc/screenshots/rig_remote_ui.png)
 
 
 
 Requirements
 ------------
 
-- Gqrx 2.3 (or higher), or any other software that offers rigctl support.
+- any software with rigctl support, as an example gqrx, or a rigctld daemon instance
 
 Usage
 -----
 
 You just need to download and run ```rig-remote.py```.
 
-For instance, using Linux / Mac OS X, you may do:
-
-bash
-====
+For instance, using Linux / Mac OS X, you may clone the repo, activate the virtual environment and execute the entrypoint:
 ```
-$ git clone https://github.com/marzona/rig-remote.git
-
-$ cd rig-remote
-
-$ ./rig-remote.py
-
+rig_remote
 ```
 
 If you are using Windows you just need to double-click the
 `rig-remote.py` file (as the `.py` file type is most likely already
 bound with `python` executable). If you want to get rid of the anoying
 command-line that is always running in background you may rename
-`rig-remote.py` to `rig-remote.pyw` and Windows will use the `pythonw`
+`rig-remote.py` to `rig-remote.pyw` and Windows will use the `python`
 executable instead (which does not need the command-line).
 
 This software consists of two files and two folder:
