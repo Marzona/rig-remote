@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class QueueComms:
     _QUEUE_MAX_SIZE = 10
 
-    def __init__(self):
+    def __init__(self)-> None:
         """Queue instantiation. The queues are used for handling the
         communication between threads.
         We don't want to have unlimited queue size, 10 seems a value that

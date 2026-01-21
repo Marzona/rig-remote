@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, mock_open
 
 from config_checker.config_checker import (
     input_arguments,

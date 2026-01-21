@@ -39,7 +39,9 @@ class SyncTask:
     error: str = ""
     id: str = str(uuid4())
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SyncTask):
+            return NotImplemented
         if self.src_rig == other.src_rig and self.dst_rig == other.dst_rig:
             return True
         else:

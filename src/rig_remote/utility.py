@@ -41,4 +41,4 @@ def shutdown(window:RigRemote)->None:
     if window.ckb_save_exit.get_str_val():
         window.bookmarks.save(bookmarks_file=window.bookmarks_file)
         window.ac.store_conf(window=window)
-    window.master.destroy()
+    window.destroy()

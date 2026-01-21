@@ -295,6 +295,44 @@ def test_ui_qt_process_entry_empty_value_not_silent(rig_remote_app):
         rig_remote_app.process_entry(event, silent=False)
 
 
+def test_ui_qt_process_entry_empty_value_question_yes_sets_default(rig_remote_app):
+    """Empty value with silent=False and Yes response sets default (covers 386-388, 428)."""
+    widget_name = "txt_delay"  # maps to DEFAULT_CONFIG["delay"]
+    rig_remote_app.params[widget_name].setText("")
+    event = Mock()
+    event.widget = rig_remote_app.params[widget_name]
+    event.widget_name = widget_name
+    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):  # Yes
+        rig_remote_app.process_entry(event, silent=False)
+    assert rig_remote_app.params[widget_name].text() == rig_remote_app.ac.DEFAULT_CONFIG["delay"]
+
+
+def test_ui_qt_process_entry_empty_value_question_no_reverts_or_focus(rig_remote_app):
+    """Empty value with silent=False and No response reverts to last content or sets focus (covers 386-388)."""
+    widget_name = "txt_delay"
+    # seed last content
+    rig_remote_app.params_last_content[widget_name] = "7"
+    rig_remote_app.params[widget_name].setText("")
+    event = Mock()
+    event.widget = rig_remote_app.params[widget_name]
+    event.widget_name = widget_name
+    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=0):  # No
+        rig_remote_app.process_entry(event, silent=False)
+    assert rig_remote_app.params[widget_name].text() == "7"
+
+
+def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
+    """Hostname entry via process_entry assigns RigEndpoint (covers 438-440)."""
+    rig_remote_app.rigctl[0] = Mock()
+    rig_remote_app.params["txt_hostname1"].setText("localhost")
+    rig_remote_app.params["txt_port1"].setText("4532")
+    event = Mock()
+    event.widget = rig_remote_app.params["txt_hostname1"]
+    event.widget_name = "txt_hostname1"
+    rig_remote_app.process_entry(event, silent=True)
+    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
+    assert rig_remote_app.rigctl[0].target.port == 4532
+
 
 @pytest.mark.parametrize(
     "hostname,port,rig_number",
@@ -1233,7 +1271,7 @@ def test_ui_qt_toggle_always_on_top_multiple_toggles_negative(rig_remote_app):
         rig_remote_app.toggle_cb_top(Qt.CheckState.Unchecked.value)
 
 
-def test_ui_qt_apply_config_with_negative_range_values_negative(rig_remote_app):
+def test_ui_qt_apply_config_with_negative_range_values_negative(rig_remote_app, mock_app_config):
     """Test applying configuration with negative range values"""
     invalid_config = Mock(spec=AppConfig)
     invalid_config.config = {
@@ -1847,8 +1885,6 @@ def test_ui_qt_extract_bookmarks_retrieves_data_lines_611_613(rig_remote_app):
 
 
 
-
-
 def test_ui_qt_apply_config_sets_hostname_port_lines_617_619(rig_remote_app, mock_app_config):
     """Test apply config sets hostname and port (lines 617-619)"""
     mock_app_config.config["hostname1"] = "192.168.1.1"
@@ -2112,3 +2148,154 @@ def test_ui_qt_bookmark_delete_removes_and_saves(rig_remote_app):
             rig_remote_app.cb_delete(1)
 
     assert rig_remote_app.tree.topLevelItemCount() == 0
+
+
+def test_ui_qt_process_checkbuttons_send_event_when_scan_active(rig_remote_app):
+    rig_remote_app.scan_thread = object()
+    with patch.object(rig_remote_app.scanq, "send_event_update") as send:
+        rig_remote_app.process_wait(Qt.CheckState.Checked.value)
+        rig_remote_app.process_record(Qt.CheckState.Checked.value)
+        rig_remote_app.process_log(Qt.CheckState.Checked.value)
+        rig_remote_app.process_auto_bookmark(Qt.CheckState.Checked.value)
+        assert send.call_count == 4
+
+
+def test_ui_qt_build_control_source_invalid_frequency_branch_lines_706_709(rig_remote_app):
+    rig_remote_app.params["txt_frequency1"].setText("not_a_number")
+    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
+    rig_remote_app.params["txt_description1"].setText("desc")
+    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
+        res = rig_remote_app.build_control_source(1, silent=False)
+        assert res is None
+        assert crit.called
+
+
+def test_ui_qt_process_entry_empty_value_question_yes_sets_default(rig_remote_app):
+    widget_name = "txt_delay"
+    rig_remote_app.params[widget_name].setText("")
+    evt = Mock()
+    evt.widget = rig_remote_app.params[widget_name]
+    evt.widget_name = widget_name
+    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):
+        rig_remote_app.process_entry(evt, silent=False)
+    assert rig_remote_app.params[widget_name].text() == rig_remote_app.ac.DEFAULT_CONFIG["delay"]
+
+
+def test_ui_qt_process_entry_empty_value_question_no_reverts_or_focus(rig_remote_app):
+    widget_name = "txt_delay"
+    rig_remote_app.params_last_content[widget_name] = "7"
+    rig_remote_app.params[widget_name].setText("")
+    evt = Mock()
+    evt.widget = rig_remote_app.params[widget_name]
+    evt.widget_name = widget_name
+    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=0):
+        rig_remote_app.process_entry(evt, silent=False)
+    assert rig_remote_app.params[widget_name].text() == "7"
+
+
+def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
+    rig_remote_app.rigctl[0] = Mock()
+    rig_remote_app.params["txt_hostname1"].setText("localhost")
+    rig_remote_app.params["txt_port1"].setText("4532")
+    evt = Mock()
+    evt.widget = rig_remote_app.params["txt_hostname1"]
+    evt.widget_name = "txt_hostname1"
+    rig_remote_app.process_entry(evt, silent=True)
+    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
+    assert rig_remote_app.rigctl[0].target.port == 4532
+
+
+def test_ui_qt_process_hostname_entry_error_lines_445_446(rig_remote_app):
+    rig_remote_app.params["txt_port1"].setText("bad")
+    rig_remote_app.rigctl[0] = Mock()
+    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
+        rig_remote_app._process_hostname_entry("localhost", 1, silent=False)
+        assert crit.called
+
+
+def test_ui_qt_extract_two_bookmarks_lines_634_669(rig_remote_app):
+    bookmarks = []
+    for i in range(2):
+        bm = Mock(spec=Bookmark)
+        ch = Mock()
+        ch.frequency = 100 + i
+        ch.modulation = "FM"
+        bm.channel = ch
+        bm.description = f"d{i}"
+        bm.lockout = "O"
+        bookmarks.append(bm)
+    rig_remote_app._insert_bookmarks(bookmarks, silent=True)
+    out = rig_remote_app._extract_bookmarks()
+    assert len(out) == 2
+
+
+def test_ui_qt_build_control_source_valid_lines_673_676_again(rig_remote_app):
+    rig_remote_app.params["txt_frequency1"].setText("123456")
+    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
+    rig_remote_app.params["txt_description1"].setText("d")
+    res = rig_remote_app.build_control_source(1, silent=True)
+    assert res == {"frequency": "123456", "mode": "FM", "description": "d"}
+
+
+def test_ui_qt_get_bookmark_from_item_lines_717_724_again(rig_remote_app):
+    item = QTreeWidgetItem()
+    item.setText(0, "100")
+    item.setText(1, "FM")
+    item.setText(2, "d")
+    item.setData(0, Qt.ItemDataRole.UserRole, "O")
+    bm = rig_remote_app._get_bookmark_from_item(item)
+    assert isinstance(bm, Bookmark)
+
+
+def test_ui_qt_cb_get_frequency_lines_728_730_again(rig_remote_app):
+    rig_remote_app.rigctl[0] = Mock()
+    rig_remote_app.rigctl[0].get_frequency.return_value = "111"
+    rig_remote_app.rigctl[0].get_mode.return_value = "AM"
+    rig_remote_app.cb_get_frequency({"rig_number": 1}, silent=True)
+    assert rig_remote_app.params["txt_frequency1"].text() == "111"
+
+
+def test_ui_qt_cb_set_frequency_success_lines_734_789_again(rig_remote_app):
+    rig_remote_app.rigctl[0] = Mock()
+    rig_remote_app.params["txt_frequency1"].setText("222")
+    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
+    rig_remote_app.cb_set_frequency({"rig_number": 1}, None, silent=True)
+    rig_remote_app.rigctl[0].set_frequency.assert_called_once_with("222")
+    rig_remote_app.rigctl[0].set_mode.assert_called_once_with("FM")
+
+
+def test_ui_qt_cb_autofill_form_lines_809_813_again(rig_remote_app):
+    item = QTreeWidgetItem()
+    item.setText(0, "333")
+    item.setText(1, "USB")
+    item.setText(2, "t")
+    rig_remote_app.tree.addTopLevelItem(item)
+    rig_remote_app.tree.setCurrentItem(item)
+    rig_remote_app.cb_autofill_form(1, None)
+    assert rig_remote_app.params["txt_frequency1"].text() == "333"
+
+
+def test_ui_qt_frequency_toggle_no_mode_lines_864_865_again(rig_remote_app):
+    rig_remote_app.params["cbb_freq_modulation"].setCurrentIndex(-1)
+    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
+        rig_remote_app.frequency_toggle()
+        assert crit.called
+
+
+def test_ui_qt_cb_delete_lines_889_891_again(rig_remote_app):
+    item = QTreeWidgetItem()
+    item.setText(0, "555")
+    item.setText(1, "FM")
+    item.setText(2, "t")
+    item.setData(0, Qt.ItemDataRole.UserRole, "O")
+    rig_remote_app.tree.addTopLevelItem(item)
+    rig_remote_app.tree.setCurrentItem(item)
+    with patch.object(rig_remote_app.bookmarks, "delete_bookmark") as db, patch.object(rig_remote_app.bookmarks, "save") as sv:
+        rig_remote_app.cb_delete(1)
+        db.assert_called_once()
+        sv.assert_called_once()
+
+
+def test_ui_qt_cb_delete_no_selection_lines_903_907_again(rig_remote_app):
+    rig_remote_app.tree.clearSelection()
+    rig_remote_app.cb_delete(1)

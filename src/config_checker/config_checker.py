@@ -143,7 +143,7 @@ def check_config(config:str)->bool:
             return False
 
 # entry point
-def cli():
+def cli()->None:
     args = input_arguments()
     if not any([args.check_config, args.dump]):
         print("At least one option is required, try " \

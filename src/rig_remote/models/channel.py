@@ -37,13 +37,12 @@ class Channel:
     id: str = str(uuid4())
     frequency: int = 0
 
-    def __eq__(self, other):
-        if self.frequency == other.frequency and self.modulation == other.modulation:
-            return True
-        else:
-            return False
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Channel):
+            return NotImplemented
+        return self.frequency == other.frequency and self.modulation == other.modulation
 
-    def __post_init__(self):
+    def __post_init__(self)-> None:
         if self.modulation.upper() not in self._MODULATIONS:
             message = (
                 "Provided modulation %s is not supported, supported modulations are %s",

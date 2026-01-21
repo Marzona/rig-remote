@@ -50,7 +50,7 @@ class BookmarksManager:
         self,
         io: IO = IO(),
         bookmark_factory:Callable= bookmark_factory,
-    ):
+    )->None:
         self._io = io
         self.bookmarks: list[Bookmark] = []
         self._bookmark_factory = bookmark_factory

@@ -22,6 +22,8 @@ import argparse
 import os
 import sys
 import textwrap
+from logging import Logger
+
 from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
 from PySide6 import QtWidgets
@@ -88,7 +90,7 @@ def input_arguments()->argparse.Namespace:
 
     return parser.parse_args()
 
-def log_configuration(verbose: bool):
+def log_configuration(verbose: bool)->Logger:
     """
     Configure logging and return the root logger with an explicit level set.
     Ensures time.tzset is called if available and that handlers use the same level.
@@ -137,14 +139,14 @@ def process_path(path:str)->str:
 
 
 # entry point
-def cli():
+def cli()->None:
     DEFAULT_PREFIX = os.path.expanduser("~/.rig-remote")
     DEFAULT_CONFIG_FILENAME = "rig-remote.conf"
     DEFAULT_LOG_FILENAME = "rig-remote-log.txt"
     DEFAULT_BOOKMARK_FILENAME = "rig-remote-bookmarks.csv"
 
     args = input_arguments()
-    _ = log_configuration(args.verbose)
+    log_configuration(args.verbose)
     if args.alternate_prefix:
         prefix = args.alternate_prefix
         dir_prefix = os.path.expanduser(prefix)
