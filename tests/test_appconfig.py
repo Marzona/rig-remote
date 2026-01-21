@@ -296,3 +296,34 @@ def test_appconfig_get_conf_populates_from_window():
     assert ac.config["auto_bookmark"] == "true"
     assert ac.config["bookmark_filename"] == "/tmp/bookmarks.csv"
     assert ac.config["log_filename"] == "/tmp/log.txt"
+
+def test_appconfig_read_conf_with_empty_config_file(tmp_path):
+    """When config file exists but is empty (no sections), DEFAULT_CONFIG is used."""
+    cfg_path = tmp_path / "empty.ini"
+    cfg_path.write_text("")  # Empty file with no sections
+
+    ac = AppConfig(config_file=str(cfg_path))
+    ac.read_conf()
+
+    # Should fall back to DEFAULT_CONFIG when no sections are found
+    assert ac.config == AppConfig.DEFAULT_CONFIG
+    assert isinstance(ac.rig_endpoints, list)
+    assert len(ac.rig_endpoints) == RIG_COUNT
+
+
+def test_appconfig_write_conf_includes_aggr_scan(tmp_path):
+    """_write_conf correctly writes the aggr_scan key to the Scanning section."""
+    cfg_path = tmp_path / "test-config.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+
+    # Set up config with aggr_scan
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+    ac.config["aggr_scan"] = "true"
+
+    ac._write_conf()
+    assert cfg_path.exists()
+
+    # Read back and verify aggr_scan is in Scanning section
+    loaded_config = configparser.ConfigParser()
+    loaded_config.read(cfg_path)
+    assert loaded_config["Scanning"]["aggr_scan"] == "true"

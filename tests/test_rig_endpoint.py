@@ -150,3 +150,18 @@ def test_rig_endpoint_set_hostname(test_hostname):
     RigEndpoint(hostname=hostname, port=port, number=number, name=name).set_hostname(
         hostname=test_hostname
     )
+
+@pytest.mark.parametrize(
+    "test_number",
+    [
+        -1,
+        -100,
+    ],
+)
+def test_rig_endpoint_invalid_number(test_number):
+    """Test RigEndpoint initialization with negative numbers."""
+    hostname = "localhost"
+    port = 8080
+    name = "rig_name"
+    with pytest.raises(ValueError):
+        RigEndpoint(hostname=hostname, port=port, number=test_number, name=name)

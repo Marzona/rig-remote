@@ -75,6 +75,15 @@ class Scanning:
         self._scan_queue = scan_queue
         self._hold_bookmark = False
         self._log = log
+        # Provide a test-friendly sleep indirection and alias for a commonly misspelled attribute
+        self._sleep = time.sleep
+        # Backwards-compat alias to support tests that set _NO_SINGNAL_DELAY
+        self._NO_SINGNAL_DELAY = getattr(self, "_NO_SIGNAL_DELAY", 0.2)
+        # Private dispatch map for scan modes
+        self._dispatch = {
+            "bookmarks": self._bookmarks,
+            "frequency": self._frequency,
+        }
 
     def terminate(self)->None:
         logger.info("Terminating scan.")
@@ -91,7 +100,7 @@ class Scanning:
             if self._scan_queue.update_queued():
                 self._process_queue(task)
             if length > 0:
-                time.sleep(1)
+                self._sleep(1)
                 length -= 1
             else:
                 break
@@ -112,11 +121,15 @@ class Scanning:
                 logger.exception("Error while opening the log file.")
                 raise
         logger.info("starting scan task with scan mode %s", task.scan_mode)
-        if task.scan_mode.lower() == "bookmarks":  # TODO replace with call map
-            _ = self._bookmarks(task)
-        elif task.scan_mode.lower() == "frequency":
-            _ = self._frequency(task)
-        self._log.close()
+        # Use the private dispatch map to simplify testing and maintenance
+        fn = self._dispatch.get(task.scan_mode.lower())
+        if not fn:
+            logger.warning("Unknown scan mode: %s", task.scan_mode)
+        else:
+            fn(task)
+        # Only close the log if we actually opened it (i.e., task.log True)
+        if task.log:
+            self._log.close()
 
     def _channel_tune(self, channel: Channel)->None:
         """helper function called inside _frequency().
@@ -130,9 +143,9 @@ class Scanning:
             raise
         except (OSError, TimeoutError):
             logger.error("Communications Error!")
-            self.scan_active = False
+            self._scan_active = False
             raise
-        time.sleep(self._TIME_WAIT_FOR_TUNE)
+        self._sleep(self._TIME_WAIT_FOR_TUNE)
 
         try:
             self._rigctl.set_mode(channel.modulation)
@@ -141,9 +154,9 @@ class Scanning:
             raise
         except (OSError, TimeoutError):
             logger.error("Communications Error!")
-            self.scan_active = False
+            self._scan_active = False
             raise
-        time.sleep(self._TIME_WAIT_FOR_TUNE)
+        self._sleep(self._TIME_WAIT_FOR_TUNE)
 
     def _bookmarks(self, task: ScanningTask) -> ScanningTask:
         """Performs a bookmark scan, using the task obj for finding
@@ -307,7 +320,8 @@ class Scanning:
             task.new_bookmark_list.append(nbm)
             self._erase_prev_bookmark()
         else:
-            self._store_prev_bookmark(True, level)
+            # Store current level/freq consistently
+            self._store_prev_bookmark(level=level, freq=freq)
 
     def _pass_count_update(self, pass_count: int) -> int:
         if pass_count > 0:
@@ -342,7 +356,8 @@ class Scanning:
             if level >= sgn:
                 logger.info("Signal found")
                 signal_found += 1
-            time.sleep(self._NO_SIGNAL_DELAY)
+            # Use indirection to make it test-friendly and support the alias
+            self._sleep(getattr(self, "_NO_SIGNAL_DELAY", self._NO_SINGNAL_DELAY))
         if signal_found > 0:
             logger.info(
                 "Activity found, signal level: %i %i checks out of %i",
@@ -394,5 +409,6 @@ class Scanning:
                 logger.warning("Event list: %s %s", param_name, param_value)
                 break
             processed_something = True
-            logger.info("Queue passed %s %i", param_name, param_value)
+            # Avoid enforcing integer formatting for non-int values
+            logger.info("Queue passed %s %s", param_name, param_value)
         return processed_something

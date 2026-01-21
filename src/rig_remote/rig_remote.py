@@ -174,11 +174,7 @@ def cli():
         app_config.config['log_filename'] = process_path(log)
     else:
         app_config.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
-    # app = RigRemote(root, app_config)
-    # app.apply_config()
-    # app.mainloop()
-    # if app.scan_thread is not None:
-    #     app.scanning.terminate()
+
     app = QtWidgets.QApplication([])
     app.setQuitOnLastWindowClosed(True)
     window = RigRemote(app_config)

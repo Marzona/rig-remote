@@ -94,6 +94,7 @@ def check_config(config:str)->bool:
         print("Using config file:{}".format(config_file))
         count = 0
         config_data = []
+        bookmark_file = None
         for row in cf:
             row = row.rstrip("\n")
             if "bookmark_filename" in row:
@@ -103,9 +104,9 @@ def check_config(config:str)->bool:
                     "\n" == row,
                     "" == row]):
                 continue
-            count += 1
             if len(row.split("=")) == 2:
                 config_data.append(row)
+                count += 1
             else:
                 print("Error in config file, line: {}".format(row))
         if count < 19:

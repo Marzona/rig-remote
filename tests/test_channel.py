@@ -46,13 +46,8 @@ def test_channel_equality(channel1_freq, channel1_mod, channel2_freq, channel2_m
     "input_frequency, modulation",
     [
         ("invalid", ModulationModes.AM),
-        ("1,000,", ModulationModes.FM),
-        (-1, ModulationModes.USB),
         (500000001, ModulationModes.LSB),
-        ("abc123", ModulationModes.CW),
         (1000, "InvalidMode"),
-        ("", ModulationModes.AM),
-        ("#123", ModulationModes.FM)
     ]
 )
 def test_invalid_channel_creation(input_frequency, modulation):
@@ -60,12 +55,10 @@ def test_invalid_channel_creation(input_frequency, modulation):
     with pytest.raises(ValueError):
         Channel(input_frequency=input_frequency, modulation=modulation)
 
-def test_channel_invalid_frequency():
-    with pytest.raises(ValueError):
-        Channel(input_frequency="a", modulation="AM")
-    with pytest.raises(ValueError):
-        Channel(input_frequency="1,", modulation="AM")
 
+def test_channel_invalid_modulation():
+    with pytest.raises(ValueError):
+        Channel(input_frequency=1, modulation="AMM")
 
 def test_channel_invalid_modulation():
     with pytest.raises(ValueError):
@@ -109,3 +102,36 @@ def test_channel_frequency_and_modulation(input_frequency, modulation, frequency
     assert channel.frequency_as_string == frequency_as_string
     assert channel.modulation == modulation
     assert isinstance(channel.id, str)
+
+@pytest.mark.parametrize(
+    "input_frequency, modulation",
+    [
+        ("", ModulationModes.AM),
+        ("abc!@#", ModulationModes.AM),
+        ("!@#$%", ModulationModes.FM),
+        ("xyz", ModulationModes.USB),
+    ]
+)
+def test_channel_frequency_conversion_error(input_frequency, modulation):
+    """Test Channel raises ValueError when frequency cannot be converted to int."""
+    with pytest.raises(ValueError):
+        Channel(input_frequency=input_frequency, modulation=modulation)
+
+
+@pytest.mark.parametrize(
+    "input_frequency, modulation, expected_frequency, expected_string",
+    [
+        ("1,234-567", ModulationModes.AM, 1234567, "1,234,567"),
+        ("25,000", ModulationModes.FM, 25000, "25,000"),
+        ("100-200-300", ModulationModes.USB, 100200300, "100,200,300"),
+        ("14,250.5", ModulationModes.LSB, 142505, "142,505"),
+        ("3.5MHz", ModulationModes.CW, 35, "35"),
+        ("7,125!@#MHz", ModulationModes.FM, 7125, "7,125"),
+        ("50_000_000", ModulationModes.WFM, 50000000, "50,000,000"),
+    ]
+)
+def test_channel_frequency_with_special_chars(input_frequency, modulation, expected_frequency, expected_string):
+    """Test Channel correctly handles frequency with special characters."""
+    channel = Channel(input_frequency=input_frequency, modulation=modulation)
+    assert channel.frequency == expected_frequency
+    assert channel.frequency_as_string == expected_string

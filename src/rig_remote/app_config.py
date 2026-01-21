@@ -93,7 +93,7 @@ class AppConfig:
         else:
             self.config = {}
 
-    def read_conf(self)->None:
+    def read_conf(self) -> None:
         """Read the configuration file.
         If the default one doesn't exist we create one with sane values.
         and then we re-read it. It logs an error if a line of the file is not
@@ -111,9 +111,13 @@ class AppConfig:
                 logger.error(self._UPGRADE_MESSAGE)
                 sys.exit(1)
 
-            for section in config.sections():
-                for item in config.items(section):
-                    self.config[item[0]] = item[1]
+            # If no sections were found, use default config
+            if not config.sections():
+                self.config = self.DEFAULT_CONFIG
+            else:
+                for section in config.sections():
+                    for item in config.items(section):
+                        self.config[item[0]] = item[1]
         else:
             logger.info("Using default configuration...")
             self.config = self.DEFAULT_CONFIG
@@ -125,8 +129,9 @@ class AppConfig:
                 port=int(self.config[f"port{instance_number}"]),
                 number=instance_number,
             )
-            for instance_number in range(1, RIG_COUNT+1)
+            for instance_number in range(1, RIG_COUNT + 1)
         ]
+
     def store_conf(self, window:RigRemote)->None:
         self._get_conf(window)
         self._write_conf()

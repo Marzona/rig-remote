@@ -544,21 +544,38 @@ class RigRemote(QMainWindow):
         
         # Handle hostnames and ports
         for rig_number in range(1, RIG_COUNT+1):
-            hostname=f"hostname{rig_number}"
-            widget_name = f"txt_{hostname}"
+
+            port = f"port{rig_number}"
             try:
+                port_value =int(ac.config[port])
+            except ValueError:
+                widget_name = f"txt_{port}"
+                port_value = int(self.ac.DEFAULT_CONFIG[port])
+                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[port])
+                if not silent:
+                    QMessageBox.critical(
+                        self,
+                        "Config File Error",
+                        "One (or more) of the values in the config file was invalid, and the default was used instead.",
+                    )
+            widget_name = f"txt_hostname{rig_number}"
+
+            hostname = f"hostname{rig_number}"
+            try:
+                hostname_value = ac.config[f"hostname{rig_number}"]
+                logger.debug(f"Validating rig endpoint for rig number {rig_number}, rig hostname {hostname_value} and port {port_value}.")
                 _ = RigEndpoint(
-                    hostname=hostname,
-                    port=int(f"port{rig_number}"),
+                    hostname=hostname_value,
+                    port=port_value,
                     number= rig_number,
                 )
-            except ValueError:
+            except (ValueError, KeyError):
                 self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[hostname])
                 if not silent:
-                    QMessageBox.critical(self, "Config File Error", 
-                        "One (or more) of the values in the config file was invalid, and the default was used instead.")
+                    QMessageBox.critical(self, "Config File Error",
+                                         "One (or more) of the values in the config file was invalid, and the default was used instead.")
             else:
-                self.params[widget_name].setText(ac.config[hostname])
+                self.params[widget_name].setText(hostname_value)
         
         # Test positive integer values
         keys = [f"port{r}" for r in range(1, RIG_COUNT+1)]

@@ -70,58 +70,75 @@ def fake_tzset():
         time.tzset = orig
 
 
-def test_rig_remote_process_path_expands_tilde(set_env_home):
-    set_env_home("/home/testuser")
-    path = "~/mydir/file.txt"
-    expected = os.path.join(os.path.expanduser("~/mydir"), "file.txt")
-    assert rr.process_path(path) == expected
+@pytest.mark.parametrize(
+    "input_path, expected_path, set_home",
+    [
+        ("file.txt", "file.txt", None),
+        ("~/mydir/file.txt", "~/mydir/file.txt", "/home/testuser"),
+        ("~/file.conf", "~/file.conf", "/home/testuser"),
+        ("~/.config/app/file.txt", "~/.config/app/file.txt", "/home/user"),
+        ("/absolute/path/file.txt", "/absolute/path/file.txt", None),
+        ("relative/path/file.txt", "relative/path/file.txt", None),
+    ]
+)
+def test_rig_remote_process_path(input_path, expected_path, set_home, set_env_home):
+    if set_home:
+        set_env_home(set_home)
+    result = rr.process_path(input_path)
+    if "~" in expected_path:
+        expected = os.path.join(os.path.expanduser(os.path.dirname(expected_path)), os.path.basename(expected_path))
+    else:
+        expected = expected_path
+    assert result == expected
 
 
-def test_rig_remote_process_path_no_dir():
-    assert rr.process_path("file.txt") == "file.txt"
-
-
-def test_rig_remote_input_arguments_all_flags(set_argv):
-    set_argv([
-        "prog",
-        "-v",
-        "-b", "/tmp/b.csv",
-        "-c", "/tmp/c.conf",
-        "-l", "/tmp/log.txt",
-        "-p", "/prefix"
-    ])
+@pytest.mark.parametrize(
+    "argv, expected_verbose, expected_bookmark, expected_config, expected_log, expected_prefix",
+    [
+        (["prog"], False, None, None, None, None),
+        (["prog", "-v"], True, None, None, None, None),
+        (["prog", "-b", "/tmp/b.csv"], False, "/tmp/b.csv", None, None, None),
+        (["prog", "-c", "/tmp/c.conf"], False, None, "/tmp/c.conf", None, None),
+        (["prog", "-l", "/tmp/log.txt"], False, None, None, "/tmp/log.txt", None),
+        (["prog", "-p", "/prefix"], False, None, None, None, "/prefix"),
+        (["prog", "-v", "-b", "/tmp/b.csv"], True, "/tmp/b.csv", None, None, None),
+        (["prog", "-v", "-c", "/tmp/c.conf", "-l", "/tmp/log.txt"], True, None, "/tmp/c.conf", "/tmp/log.txt", None),
+        (["prog", "-v", "-b", "/tmp/b.csv", "-c", "/tmp/c.conf", "-l", "/tmp/log.txt", "-p", "/prefix"],
+         True, "/tmp/b.csv", "/tmp/c.conf", "/tmp/log.txt", "/prefix"),
+        (["prog", "--verbose"], True, None, None, None, None),
+        (["prog", "--bookmarks", "/b.csv"], False, "/b.csv", None, None, None),
+        (["prog", "--config", "/c.conf"], False, None, "/c.conf", None, None),
+        (["prog", "--log", "/log.txt"], False, None, None, "/log.txt", None),
+        (["prog", "--prefix", "/p"], False, None, None, None, "/p"),
+    ]
+)
+def test_rig_remote_input_arguments(set_argv, argv, expected_verbose, expected_bookmark,
+                                     expected_config, expected_log, expected_prefix):
+    set_argv(argv)
     args = rr.input_arguments()
-    assert args.verbose is True
-    assert args.alternate_bookmark_file == "/tmp/b.csv"
-    assert args.alternate_config_file == "/tmp/c.conf"
-    assert args.alternate_log_file == "/tmp/log.txt"
-    assert args.alternate_prefix == "/prefix"
+    assert args.verbose is expected_verbose
+    assert args.alternate_bookmark_file == expected_bookmark
+    assert args.alternate_config_file == expected_config
+    assert args.alternate_log_file == expected_log
+    assert args.alternate_prefix == expected_prefix
 
 
-def test_rig_remote_input_arguments_defaults(set_argv):
-    set_argv(["prog"])
-    args = rr.input_arguments()
-    assert args.verbose is False
-    assert args.alternate_bookmark_file is None
-    assert args.alternate_config_file is None
-    assert args.alternate_log_file is None
-    assert args.alternate_prefix is None
-
-
-def test_rig_remote_log_configuration_sets_level_and_handles_tzset(fake_tzset):
-    # preserve root logger state
+@pytest.mark.parametrize(
+    "verbose, expected_level",
+    [
+        (True, logging.INFO),
+        (False, logging.WARNING),
+    ]
+)
+def test_rig_remote_log_configuration_sets_level_and_handles_tzset(fake_tzset, verbose, expected_level):
     root = logging.getLogger()
     orig_handlers = root.handlers[:]
     orig_level = root.level
 
     try:
-        logger_verbose = rr.log_configuration(True)
-        assert logger_verbose.level == logging.INFO
-
-        logger_quiet = rr.log_configuration(False)
-        assert logger_quiet.level == logging.WARNING
+        logger = rr.log_configuration(verbose)
+        assert logger.level == expected_level
     finally:
-        # restore root logger
         for h in root.handlers[:]:
             if h not in orig_handlers:
                 root.removeHandler(h)
@@ -194,137 +211,39 @@ def test_rig_remote_log_configuration_adds_handler_if_none(fake_tzset):
         root.level = orig_level
 
 
-def test_rig_remote_sets_paths_and_launches(set_argv, patch_attr):
-    set_argv([
-        "prog",
-        "-b", "~/bookmarks.csv",
-        "-l", "~/activity.log",
-        "-c", "~/rig.conf",
-        "-p", "~/.prefix"
-    ])
+@pytest.mark.parametrize(
+    "test_scenario, argv, existing_bookmark, existing_log, expected_exit_code",
+    [
+        # Test with command line args overriding
+        ("cli_overrides", ["prog", "-b", "~/bookmarks.csv", "-l", "~/activity.log", "-c", "~/rig.conf", "-p", "~/.prefix"],
+         None, None, 0),
+        # Test respecting existing config values
+        ("respect_existing", ["prog"], "~/existing_bookmarks.csv", "~/existing_activity.log", 0),
+        # Test with explicit config file
+        ("explicit_config", ["prog", "-c", "/tmp/myexplicit.conf"], None, None, 0),
+        # Test with non-zero exit code
+        ("nonzero_exit", ["prog"], None, None, 5),
+        # Test with default log when none
+        ("default_log", ["prog"], None, None, 0),
+    ]
+)
+def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, existing_bookmark, existing_log, expected_exit_code):
+    """Test various CLI scenarios with different configurations."""
+    set_argv(argv)
 
-    class FakeAppConfig:
-        def __init__(self, config_file):
-            self.config_file = config_file
-            self.config = {"bookmark_filename": None, "log_filename": None}
-        def read_conf(self):
-            self.config["bookmark_filename"] = None
-
-    patch_attr(rr, "AppConfig", FakeAppConfig)
-
-    class FakeQApp:
-        def __init__(self, argv_list):
-            self.argv_list = argv_list
-        def setQuitOnLastWindowClosed(self, val):
-            self._quit_on_last = val
-        def exec(self):
-            return 0
-
-    patch_attr(rr.QtWidgets, "QApplication", FakeQApp)
-
-    container = {"instance": None}
-    class FakeWindow:
-        def __init__(self, app_config):
-            self.app_config = app_config
-            container["instance"] = self
-        def resize(self, w, h):
-            self._size = (w, h)
-        def show(self):
-            self._shown = True
-
-    patch_attr(rr, "RigRemote", FakeWindow)
-
-    def fake_exit(code=0):
-        raise SystemExit(code)
-
-    patch_attr(rr.sys, "exit", fake_exit)
-
-    with pytest.raises(SystemExit) as excinfo:
-        rr.cli()
-    assert excinfo.value.code == 0
-
-    window = container["instance"]
-    assert window is not None
-    bookmark_set = window.app_config.config["bookmark_filename"]
-    log_set = window.app_config.config["log_filename"]
-    assert bookmark_set is not None and os.path.expanduser("~/bookmarks.csv") == os.path.expanduser(bookmark_set)
-    assert log_set is not None and os.path.expanduser("~/activity.log") == os.path.expanduser(log_set)
-
-
-def test_rig_remote_respects_existing_appconfig_values(set_argv, patch_attr):
-    set_argv(["prog"])
-
-    class FakeAppConfig:
-        def __init__(self, config_file):
-            self.config_file = config_file
-            self.config = {
-                "bookmark_filename": "~/existing_bookmarks.csv",
-                "log_filename": "~/existing_activity.log"
-            }
-        def read_conf(self):
-            pass
-
-    patch_attr(rr, "AppConfig", FakeAppConfig)
-
-    class FakeQApp:
-        def __init__(self, argv_list):
-            self.argv_list = argv_list
-        def setQuitOnLastWindowClosed(self, val):
-            self._quit_on_last = val
-        def exec(self):
-            return 0
-
-    patch_attr(rr.QtWidgets, "QApplication", FakeQApp)
-
-    container = {"instance": None}
-    class FakeWindow:
-        def __init__(self, app_config):
-            self.app_config = app_config
-            container["instance"] = self
-        def resize(self, w, h):
-            pass
-        def show(self):
-            pass
-
-    patch_attr(rr, "RigRemote", FakeWindow)
-
-    def fake_exit(code=0):
-        raise SystemExit(code)
-
-    patch_attr(rr.sys, "exit", fake_exit)
-
-    with pytest.raises(SystemExit) as excinfo:
-        rr.cli()
-    assert excinfo.value.code == 0
-
-    window = container["instance"]
-    assert window is not None
-
-    # bookmark should be preserved
-    assert os.path.expanduser(window.app_config.config["bookmark_filename"]) == os.path.expanduser("~/existing_bookmarks.csv")
-
-    # log is set to the app default under `~/.rig-remote/rig-remote-log.txt`
-    expected_log = os.path.join(os.path.expanduser("~/.rig-remote"), "rig-remote-log.txt")
-    assert os.path.expanduser(window.app_config.config["log_filename"]) == expected_log
-
-
-def test_rig_remote_uses_explicit_config_file(set_argv, patch_attr):
-    """
-    Ensure the CLI passes the explicit -c config filename into AppConfig.
-    This exercises the branch where an alternate config file is honored.
-    """
-    cfg_path = "/tmp/myexplicit.conf"
-    set_argv(["prog", "-c", cfg_path])
-
-    # capture the config_file passed to AppConfig
     captured = {"config_file": None}
+
     class FakeAppConfig:
         def __init__(self, config_file):
             captured["config_file"] = config_file
             self.config_file = config_file
-            self.config = {"bookmark_filename": None, "log_filename": None}
+            self.config = {
+                "bookmark_filename": existing_bookmark,
+                "log_filename": existing_log
+            }
         def read_conf(self):
-            self.config["bookmark_filename"] = None
+            if test_scenario != "respect_existing":
+                self.config["bookmark_filename"] = None
 
     patch_attr(rr, "AppConfig", FakeAppConfig)
 
@@ -332,9 +251,9 @@ def test_rig_remote_uses_explicit_config_file(set_argv, patch_attr):
         def __init__(self, argv_list):
             self.argv_list = argv_list
         def setQuitOnLastWindowClosed(self, val):
-            pass
+            self._quit_on_last = val
         def exec(self):
-            return 0
+            return expected_exit_code
 
     patch_attr(rr.QtWidgets, "QApplication", FakeQApp)
 
@@ -344,9 +263,11 @@ def test_rig_remote_uses_explicit_config_file(set_argv, patch_attr):
             self.app_config = app_config
             container["instance"] = self
         def resize(self, w, h):
-            pass
+            if test_scenario == "cli_overrides":
+                self._size = (w, h)
         def show(self):
-            pass
+            if test_scenario == "cli_overrides":
+                self._shown = True
 
     patch_attr(rr, "RigRemote", FakeWindow)
 
@@ -357,148 +278,101 @@ def test_rig_remote_uses_explicit_config_file(set_argv, patch_attr):
 
     with pytest.raises(SystemExit) as excinfo:
         rr.cli()
-    assert excinfo.value.code == 0
-
-    # AppConfig should have been constructed with the explicit path (exact match)
-    assert captured["config_file"] == cfg_path
-
-
-def test_rig_remote_propagates_nonzero_app_exec_exit_code(set_argv, patch_attr):
-    set_argv(["prog"])
-
-    class FakeAppConfig:
-        def __init__(self, config_file):
-            self.config_file = config_file
-            self.config = {"bookmark_filename": None, "log_filename": None}
-        def read_conf(self):
-            self.config["bookmark_filename"] = None
-
-    patch_attr(rr, "AppConfig", FakeAppConfig)
-
-    class FakeQAppNonZero:
-        def __init__(self, argv_list):
-            self.argv_list = argv_list
-        def setQuitOnLastWindowClosed(self, val):
-            pass
-        def exec(self):
-            return 5
-
-    patch_attr(rr.QtWidgets, "QApplication", FakeQAppNonZero)
-
-    container = {"instance": None}
-    class FakeWindow:
-        def __init__(self, app_config):
-            self.app_config = app_config
-            container["instance"] = self
-        def resize(self, w, h):
-            pass
-        def show(self):
-            pass
-
-    patch_attr(rr, "RigRemote", FakeWindow)
-
-    def fake_exit(code=0):
-        raise SystemExit(code)
-
-    patch_attr(rr.sys, "exit", fake_exit)
-
-    with pytest.raises(SystemExit) as excinfo:
-        rr.cli()
-    assert excinfo.value.code == 5
-
-def test_rig_remote_log_configuration_calls_tzset_when_present(patch_attr):
-    called = {"v": False}
-    def my_tzset():
-        called["v"] = True
-
-    # ensure tzset is present and record if called
-    patch_attr(time, "tzset", my_tzset)
-
-    root = logging.getLogger()
-    orig_handlers = root.handlers[:]
-    orig_level = root.level
-
-    try:
-        rr.log_configuration(True)
-        assert called["v"] is True
-    finally:
-        # restore root logger
-        for h in root.handlers[:]:
-            if h not in orig_handlers:
-                root.removeHandler(h)
-        root.level = orig_level
-
-
-def test_rig_remote_log_configuration_handles_missing_tzset(patch_attr):
-    # remove tzset if present to exercise branch where tzset is absent
-    if hasattr(time, "tzset"):
-        patch_attr(time, "tzset", None)
-        try:
-            delattr(time, "tzset")
-        except Exception:
-            pass
-
-    root = logging.getLogger()
-    orig_handlers = root.handlers[:]
-    orig_level = root.level
-
-    try:
-        logger = rr.log_configuration(False)
-        # ensure no exception and logger level set to WARNING
-        assert logger.level == logging.WARNING
-        assert root.level == logging.WARNING
-    finally:
-        # restore root logger
-        for h in root.handlers[:]:
-            if h not in orig_handlers:
-                root.removeHandler(h)
-        root.level = orig_level
-
-
-def test_rig_remote_sets_default_log_when_none(set_argv, patch_attr):
-    set_argv(["prog"])
-
-    class FakeAppConfig:
-        def __init__(self, config_file):
-            self.config_file = config_file
-            self.config = {"bookmark_filename": None, "log_filename": None}
-        def read_conf(self):
-            # simulate config with no log filename set
-            self.config["bookmark_filename"] = None
-
-    patch_attr(rr, "AppConfig", FakeAppConfig)
-
-    class FakeQApp:
-        def __init__(self, argv_list):
-            self.argv_list = argv_list
-        def setQuitOnLastWindowClosed(self, val):
-            pass
-        def exec(self):
-            return 0
-
-    patch_attr(rr.QtWidgets, "QApplication", FakeQApp)
-
-    container = {"instance": None}
-    class FakeWindow:
-        def __init__(self, app_config):
-            self.app_config = app_config
-            container["instance"] = self
-        def resize(self, w, h):
-            pass
-        def show(self):
-            pass
-
-    patch_attr(rr, "RigRemote", FakeWindow)
-
-    def fake_exit(code=0):
-        raise SystemExit(code)
-
-    patch_attr(rr.sys, "exit", fake_exit)
-
-    with pytest.raises(SystemExit) as excinfo:
-        rr.cli()
-    assert excinfo.value.code == 0
+    assert excinfo.value.code == expected_exit_code
 
     window = container["instance"]
-    expected_log = os.path.join(os.path.expanduser("~/.rig-remote"), "rig-remote-log.txt")
-    assert os.path.expanduser(window.app_config.config["log_filename"]) == expected_log
+    assert window is not None
+
+    if test_scenario == "cli_overrides":
+        bookmark_set = window.app_config.config["bookmark_filename"]
+        log_set = window.app_config.config["log_filename"]
+        assert bookmark_set is not None and os.path.expanduser("~/bookmarks.csv") == os.path.expanduser(bookmark_set)
+        assert log_set is not None and os.path.expanduser("~/activity.log") == os.path.expanduser(log_set)
+    elif test_scenario == "respect_existing":
+        assert os.path.expanduser(window.app_config.config["bookmark_filename"]) == os.path.expanduser("~/existing_bookmarks.csv")
+        expected_log = os.path.join(os.path.expanduser("~/.rig-remote"), "rig-remote-log.txt")
+        assert os.path.expanduser(window.app_config.config["log_filename"]) == expected_log
+    elif test_scenario == "explicit_config":
+        assert captured["config_file"] == "/tmp/myexplicit.conf"
+    elif test_scenario == "default_log":
+        expected_log = os.path.join(os.path.expanduser("~/.rig-remote"), "rig-remote-log.txt")
+        assert os.path.expanduser(window.app_config.config["log_filename"]) == expected_log
+
+
+@pytest.mark.parametrize(
+    "tzset_scenario, verbose, expected_level",
+    [
+        ("present_and_called", True, logging.INFO),
+        ("present_and_called", False, logging.WARNING),
+        ("missing", True, logging.INFO),
+        ("missing", False, logging.WARNING),
+        ("raises_exception", True, logging.INFO),
+        ("raises_exception", False, logging.WARNING),
+    ]
+)
+def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario, verbose, expected_level):
+    """Test log_configuration with various tzset scenarios."""
+    root = logging.getLogger()
+    orig_handlers = root.handlers[:]
+    orig_level = root.level
+
+    called = {"v": False}
+
+    if tzset_scenario == "present_and_called":
+        def my_tzset():
+            called["v"] = True
+        patch_attr(time, "tzset", my_tzset)
+    elif tzset_scenario == "missing":
+        if hasattr(time, "tzset"):
+            patch_attr(time, "tzset", None)
+            try:
+                delattr(time, "tzset")
+            except Exception:
+                pass
+    elif tzset_scenario == "raises_exception":
+        def failing_tzset():
+            raise RuntimeError("tzset failed")
+        patch_attr(time, "tzset", failing_tzset)
+
+    try:
+        logger = rr.log_configuration(verbose)
+        assert logger.level == expected_level
+        assert root.level == expected_level
+
+        if tzset_scenario == "present_and_called":
+            assert called["v"] is True
+    finally:
+        for h in root.handlers[:]:
+            if h not in orig_handlers:
+                root.removeHandler(h)
+        root.level = orig_level
+
+
+@pytest.mark.parametrize(
+    "verbose, expected_level",
+    [
+        (True, logging.INFO),
+        (False, logging.WARNING),
+    ]
+)
+def test_rig_remote_log_configuration_handles_handler_setlevel_exception(patch_attr, verbose, expected_level):
+    """Test that log_configuration handles exceptions when calling handler.setLevel()."""
+    root = logging.getLogger()
+    orig_handlers = root.handlers[:]
+    orig_level = root.level
+
+    class FailingHandler(logging.Handler):
+        def setLevel(self, level):
+            raise RuntimeError("setLevel failed")
+
+    failing_handler = FailingHandler()
+    root.addHandler(failing_handler)
+
+    try:
+        logger = rr.log_configuration(verbose)
+        assert logger.level == expected_level
+    finally:
+        for h in root.handlers[:]:
+            if h not in orig_handlers:
+                root.removeHandler(h)
+        root.level = orig_level

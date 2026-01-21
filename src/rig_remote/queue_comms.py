@@ -112,25 +112,30 @@ class QueueComms:
         logger.info("child queue size %i", self.child_queue.qsize())
 
     @staticmethod
-    def _signal(queue: Queue[str], signal: tuple[str, str])->None:
-        """Place a signal number on the queue
+    def _signal(queue: Queue[str], signal: tuple[str, str]) -> None:
+        """Place a signal tuple on the queue.
 
-        :param signal: value of the signal
+        :param signal: tuple of (signal_name, signal_value)
         :param queue: Queue to insert signal in
-
+        :raises ValueError: if signal is not a tuple or queue is not a Queue
         """
-
-        if not isinstance(signal,tuple) or not isinstance(queue, Queue):
+        if not isinstance(signal, tuple):
             logger.error(
-                "Value error while inserting a signal into a queue. Value type: %s ",
-                type(signal),
+                "Invalid signal type. Expected tuple, got %s",
+                type(signal).__name__,
             )
-            raise ValueError()
+            raise ValueError(f"Signal must be a tuple, got {type(signal).__name__}")
+
+        if not isinstance(queue, Queue):
+            logger.error(
+                "Invalid queue type. Expected Queue, got %s",
+                type(queue).__name__,
+            )
+            raise ValueError(f"Queue must be a Queue instance, got {type(queue).__name__}")
 
         queue.put(str(signal), False)
 
-    def signal_parent(self, signal: tuple[str, str])->None:
+    def signal_parent(self, signal: tuple[str, str]) -> None:
         """wrapper for _signal()"""
-
         self._signal(self.parent_queue, signal)
         logger.info("parent queue size %s", self.parent_queue.qsize())
