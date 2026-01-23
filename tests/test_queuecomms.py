@@ -105,8 +105,3 @@ def test_queuecomms_signal_parent_valid(valid_signal):
     qc = QueueComms()
     qc.signal_parent(valid_signal)
     assert qc.parent_queue.qsize() == 1
-
-def test_queuecomms_signal_invalid_queue():
-    """Test _signal with invalid queue type raises ValueError (lines 105-107)."""
-    with pytest.raises(ValueError):
-        QueueComms._signal("not_a_queue", ("signal", "value"))

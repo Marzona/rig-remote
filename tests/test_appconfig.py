@@ -94,14 +94,14 @@ def base_config():
     "passes, auto_bookmark, aggr_scan, delay, interval, save_exit, log, "
     "always_on_top, wait, record, sgn_level",
     [
-        (p, ab, ags, d, i, se, l, aot, w, r, sl)
+        (p, ab, ags, d, i, se, log, aot, w, r, sl)
         for p in [1, 100]  # passes
         for ab in [True, False]  # auto_bookmark
         for ags in [True, False]  # aggr_scan
         for d in [1, 2]  # delay
         for i in range(1, 2)  # interval
         for se in [True, False]  # save_exit
-        for l in [True, False]  # log
+        for log in [True, False]  # log
         for aot in [True, False]  # always_on_top
         for w in [True, False]  # wait
         for r in [True, False]  # record

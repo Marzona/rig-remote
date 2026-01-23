@@ -13,8 +13,8 @@ Copyright (c) 2016 Tim Sweeney
 TAS - Tim Sweeney - mainetim@gmail.com
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
+from typing import TYPE_CHECKING  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from rig_remote.ui_qt import RigRemote
 
 import logging
@@ -38,7 +38,7 @@ def shutdown(window:RigRemote)->None:
     :param window: object that represent the UI
     :returns: none
     """
-    if window.ckb_save_exit.get_str_val():
+    if window.ckb_save_exit.isChecked():
         window.bookmarks.save(bookmarks_file=window.bookmarks_file)
         window.ac.store_conf(window=window)
     window.destroy()

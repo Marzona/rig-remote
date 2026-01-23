@@ -186,11 +186,11 @@ def test_config_checker_check_config_invalid_bookmarks(capsys):
 port1='4532'
 bookmark_filename='bookmarks.csv'
 """
-    bookmarks_content = "145500000,FM\n146520000,FM,Simplex,O,Extra\n"
+    _ = "145500000,FM\n146520000,FM,Simplex,O,Extra\n"
 
     with patch("builtins.open", mock_open(read_data=config_content)):
         with patch.object(AppConfig, "read_conf"):
-            result = check_config("/mock/config")
+            _ = check_config("/mock/config")
             captured = capsys.readouterr()
             assert "Bookmark line malformed" in captured.out
 
@@ -385,7 +385,7 @@ bookmark_filename='bookmarks.csv'
 """
     with patch("builtins.open", mock_open(read_data=config_content)):
         with patch.object(AppConfig, "read_conf"):
-            result = check_config("/mock/config")
+            _ = check_config("/mock/config")
             captured = capsys.readouterr()
             assert "missing some keyword" in captured.out
 
@@ -425,6 +425,7 @@ bookmark_filename='bookmarks.csv'
             assert result is True
             captured = capsys.readouterr()
             assert "Bookmarks info:" in captured.out
+
 
 def test_config_checker_check_config_malformed_line_error_message(capsys):
     """Test check_config prints error for malformed config lines with extra equals"""

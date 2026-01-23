@@ -33,8 +33,6 @@ class Bookmark:
     id: str = str(uuid4())
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Bookmark):
-            return NotImplemented
         if self.channel == other.channel and self.description == other.description:
             return True
         else:

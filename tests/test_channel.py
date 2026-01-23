@@ -60,10 +60,6 @@ def test_channel_invalid_modulation():
     with pytest.raises(ValueError):
         Channel(input_frequency=1, modulation="AMM")
 
-def test_channel_invalid_modulation():
-    with pytest.raises(ValueError):
-        Channel(input_frequency=1, modulation="AMM")
-
 @pytest.mark.parametrize(
     "input_frequency, modulation, frequency_as_string",
     [

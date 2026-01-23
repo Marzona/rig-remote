@@ -78,8 +78,8 @@ class ScanningTask:
         self._post_init()
 
     def _post_init(self)->None:
-        self._check_scan_mode()
         self._check_passes()
+        self._check_scan_mode()
         self._check_range_min()
         self._check_range_max()
 

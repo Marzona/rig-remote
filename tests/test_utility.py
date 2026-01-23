@@ -62,35 +62,22 @@ def test_utility_khertz_to_hertz_boolean_inputs(bool_value, expected_output):
 
 
 @pytest.mark.parametrize(
-    "save_on_exit, should_save",
-    [
-        ("", False),
-        (False, False),
-        (0, False),
-        (None, False),
-        ("false", True),  # Non-empty string is truthy in Python
-        ("true", True),
-        ("True", True),
-        ("1", True),
-        (True, True),
-        (1, True),
-        ("yes", True),
-        ("no", True),  # Non-empty string is truthy in Python
-    ]
+    "is_checked",
+    [False, True],
 )
-def test_utility_shutdown_save_scenarios(save_on_exit, should_save):
-    """Test shutdown function with various save on exit values."""
+def test_utility_shutdown_save_scenarios(is_checked):
+    """shutdown saves only when save_exit checkbox is checked; always destroys window."""
     window = MagicMock()
-    window.ckb_save_exit.get_str_val.return_value = save_on_exit
+    window.ckb_save_exit.isChecked.return_value = is_checked
     window.bookmarks_file = "/path/to/bookmarks.csv"
 
     shutdown(window)
 
-    if should_save:
+    if is_checked:
         window.bookmarks.save.assert_called_once_with(bookmarks_file=window.bookmarks_file)
         window.ac.store_conf.assert_called_once_with(window=window)
     else:
         window.bookmarks.save.assert_not_called()
         window.ac.store_conf.assert_not_called()
 
-    window.master.destroy.assert_called_once()
+    window.destroy.assert_called_once()

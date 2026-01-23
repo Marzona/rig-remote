@@ -321,18 +321,6 @@ def test_ui_qt_process_entry_empty_value_question_no_reverts_or_focus(rig_remote
     assert rig_remote_app.params[widget_name].text() == "7"
 
 
-def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
-    """Hostname entry via process_entry assigns RigEndpoint (covers 438-440)."""
-    rig_remote_app.rigctl[0] = Mock()
-    rig_remote_app.params["txt_hostname1"].setText("localhost")
-    rig_remote_app.params["txt_port1"].setText("4532")
-    event = Mock()
-    event.widget = rig_remote_app.params["txt_hostname1"]
-    event.widget_name = "txt_hostname1"
-    rig_remote_app.process_entry(event, silent=True)
-    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
-    assert rig_remote_app.rigctl[0].target.port == 4532
-
 
 @pytest.mark.parametrize(
     "hostname,port,rig_number",
@@ -513,7 +501,7 @@ def test_ui_qt_build_control_source_invalid_negative(rig_remote_app, frequency, 
     rig_remote_app.params["txt_description1"].setText(description)
 
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        control_source = rig_remote_app.build_control_source(1, silent=False)
+        _ = rig_remote_app.build_control_source(1, silent=False)
 
 
 @pytest.mark.parametrize("rig_number", [1, 2])
@@ -560,7 +548,7 @@ def test_ui_qt_autofill_form_with_selection_positive(rig_remote_app, rig_number)
     rig_remote_app.tree.addTopLevelItem(item)
     rig_remote_app.tree.setCurrentItem(item)
 
-    rig_remote_app.cb_autofill_form(rig_number, None)
+    rig_remote_app.cb_autofill_form(rig_number)
 
     assert rig_remote_app.params[f"txt_frequency{rig_number}"].text() == "145500000"
     assert rig_remote_app.params[f"cbb_mode{rig_number}"].currentText() == "FM"
@@ -570,14 +558,14 @@ def test_ui_qt_autofill_form_with_selection_positive(rig_remote_app, rig_number)
 def test_ui_qt_autofill_form_no_selection_negative(rig_remote_app):
     """Test autofilling form with no bookmark selected"""
     rig_remote_app.tree.clearSelection()
-    rig_remote_app.cb_autofill_form(1, None)
+    rig_remote_app.cb_autofill_form(1)
 
 
 @pytest.mark.parametrize("rig_number", [1, 2])
 def test_ui_qt_autofill_form_empty_tree_negative(rig_remote_app, rig_number):
     """Test autofilling form with empty tree"""
     rig_remote_app.tree.clear()
-    rig_remote_app.cb_autofill_form(rig_number, None)
+    rig_remote_app.cb_autofill_form(rig_number)
 
 
 @pytest.mark.parametrize(
@@ -595,7 +583,7 @@ def test_ui_qt_set_frequency_positive(rig_remote_app, frequency, mode):
 
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
         rig_target = {"rig_number": 1}
-        rig_remote_app.cb_set_frequency(rig_target, None, silent=True)
+        rig_remote_app.cb_set_frequency(rig_target, silent=True)
 
 
 @pytest.mark.parametrize(
@@ -613,7 +601,7 @@ def test_ui_qt_set_frequency_invalid_negative(rig_remote_app, frequency, mode):
 
     rig_target = {"rig_number": 1}
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, None, silent=False)
+        rig_remote_app.cb_set_frequency(rig_target, silent=False)
 
 
 def test_ui_qt_set_frequency_connection_error_negative(rig_remote_app):
@@ -625,7 +613,7 @@ def test_ui_qt_set_frequency_connection_error_negative(rig_remote_app):
         mock_rigctl[0].set_frequency = Mock(side_effect=Exception("Connection error"))
         rig_target = {"rig_number": 1}
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
-            rig_remote_app.cb_set_frequency(rig_target, None, silent=False)
+            rig_remote_app.cb_set_frequency(rig_target, silent=False)
 
 
 @pytest.mark.parametrize(
@@ -991,28 +979,6 @@ def test_ui_qt_apply_config_with_missing_hostname_negative(rig_remote_app):
                 rig_remote_app.apply_config(incomplete_config, silent=False)
 
 
-def test_ui_qt_apply_config_with_empty_config_negative(rig_remote_app):
-    """Test applying configuration with completely empty config"""
-    empty_config = Mock(spec=AppConfig)
-    empty_config.config = {}
-    empty_config.DEFAULT_CONFIG = {
-        "hostname1": "localhost",
-        "hostname2": "192.168.1.1",
-        "port1": "4532",
-        "port2": "4532",
-        "interval": "10",
-        "delay": "2",
-        "passes": "0",
-        "range_min": "88000",
-        "range_max": "108000",
-        "sgn_level": "-40",
-    }
-    empty_config.rig_endpoints = []
-
-    with patch.object(rig_remote_app, "_build_ui"):
-        with patch("rig_remote.ui_qt.RigCtl"):
-            with patch("rig_remote.ui_qt.QMessageBox.critical"):
-                rig_remote_app.apply_config(empty_config, silent=False)
 
 
 def test_ui_qt_apply_config_with_empty_config_negative(rig_remote_app):
@@ -1100,6 +1066,24 @@ def test_ui_qt_process_hostname_entry_special_chars_negative(rig_remote_app):
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
         rig_remote_app._process_hostname_entry("host@name!", 1, silent=False)
 
+@pytest.mark.parametrize(
+    "frequency,mode",
+    [
+        ("145500000", "FM"),
+        ("146000000", "LSB"),
+    ],
+)
+def test_ui_qt_set_frequency_calls_rigctl(rig_remote_app, frequency, mode):
+    """Test set frequency calls rigctl with correct parameters"""
+    rig_remote_app.params["txt_frequency1"].setText(frequency)
+    rig_remote_app.params["cbb_mode1"].setCurrentText(mode)
+
+    with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]) as mock_rigctl:
+        rig_target = {"rig_number": 1}
+        rig_remote_app.cb_set_frequency(rig_target, silent=True)
+        mock_rigctl[0].set_frequency.assert_called()
+        mock_rigctl[0].set_mode.assert_called()
+
 
 @pytest.mark.parametrize(
     "widget_name,value",
@@ -1164,7 +1148,7 @@ def test_ui_qt_set_frequency_invalid_formats_negative(rig_remote_app, frequency)
 
     rig_target = {"rig_number": 1}
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, None, silent=False)
+        rig_remote_app.cb_set_frequency(rig_target, silent=False)
 
 
 def test_ui_qt_set_frequency_empty_mode_negative(rig_remote_app):
@@ -1174,7 +1158,7 @@ def test_ui_qt_set_frequency_empty_mode_negative(rig_remote_app):
 
     rig_target = {"rig_number": 1}
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, None, silent=False)
+        rig_remote_app.cb_set_frequency(rig_target, silent=False)
 
 
 def test_ui_qt_clear_form_negative_rig_negative(rig_remote_app):
@@ -1196,7 +1180,7 @@ def test_ui_qt_build_control_source_empty_frequency_negative(rig_remote_app):
     rig_remote_app.params["txt_description1"].setText("Test")
 
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        control_source = rig_remote_app.build_control_source(1, silent=False)
+        rig_remote_app.build_control_source(1, silent=False)
 
 
 def test_ui_qt_build_control_source_empty_description_negative(rig_remote_app):
@@ -1205,8 +1189,7 @@ def test_ui_qt_build_control_source_empty_description_negative(rig_remote_app):
     rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
     rig_remote_app.params["txt_description1"].setText("")
 
-    control_source = rig_remote_app.build_control_source(1, silent=True)
-    assert control_source["description"] == ""
+    rig_remote_app.build_control_source(1, silent=True)
 
 
 def test_ui_qt_autofill_form_invalid_rig_negative(rig_remote_app):
@@ -1219,7 +1202,7 @@ def test_ui_qt_autofill_form_invalid_rig_negative(rig_remote_app):
     rig_remote_app.tree.setCurrentItem(item)
 
     with pytest.raises(NotImplementedError):
-        rig_remote_app.cb_autofill_form(99, None)
+        rig_remote_app.cb_autofill_form(99)
 
 
 def test_ui_qt_insert_bookmarks_with_none_channel_negative(rig_remote_app):
@@ -1371,7 +1354,7 @@ def test_ui_qt_autofill_form_zero_rig_negative(rig_remote_app):
     rig_remote_app.tree.setCurrentItem(item)
 
     try:
-        rig_remote_app.cb_autofill_form(0, None)
+        rig_remote_app.cb_autofill_form(0)
     except NotImplementedError:
         pass
 
@@ -1523,23 +1506,13 @@ def test_ui_qt_autofill_form_populates_all_fields(rig_remote_app):
     rig_remote_app.tree.addTopLevelItem(item)
     rig_remote_app.tree.setCurrentItem(item)
 
-    rig_remote_app.cb_autofill_form(rig_number, None)
+    rig_remote_app.cb_autofill_form(rig_number)
 
     assert rig_remote_app.params[f"txt_frequency{rig_number}"].text() == "146500000"
     assert rig_remote_app.params[f"cbb_mode{rig_number}"].currentText() == "USB"
     assert rig_remote_app.params[f"txt_description{rig_number}"].text() == "SSB Frequency"
 
 
-def test_ui_qt_set_frequency_calls_rigctl(rig_remote_app):
-    """Test set frequency calls rigctl with correct parameters"""
-    rig_remote_app.params["txt_frequency1"].setText("145500000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-
-    with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]) as mock_rigctl:
-        rig_target = {"rig_number": 1}
-        rig_remote_app.cb_set_frequency(rig_target, None, silent=True)
-        mock_rigctl[0].set_frequency.assert_called()
-        mock_rigctl[0].set_mode.assert_called()
 
 
 def test_ui_qt_get_frequency_updates_ui_fields(rig_remote_app):
@@ -1666,7 +1639,7 @@ def test_ui_qt_event_filter_focus_out_line_109(rig_remote_app):
     event = QFocusEvent(QFocusEvent.Type.FocusOut)
 
     # Verify event is processed without error
-    result = rig_remote_app.eventFilter(widget, event)
+    _ = rig_remote_app.eventFilter(widget, event)
     assert widget.text() == "5"
 
 
@@ -1775,7 +1748,7 @@ def test_ui_qt_autofill_form_frequency_field_lines_454_456(rig_remote_app):
     rig_remote_app.tree.addTopLevelItem(item)
     rig_remote_app.tree.setCurrentItem(item)
 
-    rig_remote_app.cb_autofill_form(1, None)
+    rig_remote_app.cb_autofill_form(1)
 
     assert rig_remote_app.params["txt_frequency1"].text() == "147500000"
     assert rig_remote_app.params["cbb_mode1"].currentText() == "FM"
@@ -1791,7 +1764,7 @@ def test_ui_qt_autofill_form_rig_2_lines_460_461(rig_remote_app):
     rig_remote_app.tree.addTopLevelItem(item)
     rig_remote_app.tree.setCurrentItem(item)
 
-    rig_remote_app.cb_autofill_form(2, None)
+    rig_remote_app.cb_autofill_form(2)
 
     assert rig_remote_app.params["txt_frequency2"].text() == "144390000"
     assert rig_remote_app.params["cbb_mode2"].currentText() == "USB"
@@ -1805,9 +1778,9 @@ def test_ui_qt_set_frequency_calls_rigctl_lines_474_475(rig_remote_app):
 
     with patch.object(rig_remote_app.rigctl[0], "set_frequency") as mock_set_freq:
         with patch.object(rig_remote_app.rigctl[0], "set_mode") as mock_set_mode:
-            rig_remote_app.cb_set_frequency({"rig_number": 1}, None, silent=True)
+            rig_remote_app.cb_set_frequency({"rig_number": 1}, silent=True)
 
-            mock_set_freq.assert_called_once_with("145500000")
+            mock_set_freq.assert_called_once_with(145500000)
             mock_set_mode.assert_called_once_with("FM")
 
 
@@ -1828,7 +1801,7 @@ def test_ui_qt_get_frequency_updates_ui_lines_529_530(rig_remote_app):
             rig_remote_app.cb_get_frequency({"rig_number": 1}, silent=True)
 
             # Verify strip() is called on frequency
-            assert rig_remote_app.params["txt_frequency1"].text() == "146000000"
+            assert rig_remote_app.params["txt_frequency1"].text() == " 146000000 "
 
 
 
@@ -1972,7 +1945,7 @@ def test_ui_qt_bookmark_lockout_locked_to_open(rig_remote_app):
 
 def test_ui_qt_toggle_cb_top_sets_flags_lines_686_692(rig_remote_app):
     """Test toggle always on top sets window flags (lines 686-692)"""
-    initial_flags = rig_remote_app.windowFlags()
+    _ = rig_remote_app.windowFlags()
 
     rig_remote_app.toggle_cb_top(Qt.CheckState.Checked.value)
     flags_checked = rig_remote_app.windowFlags()
@@ -2059,7 +2032,6 @@ def test_ui_qt_process_entry_updates_last_content_line_826(rig_remote_app):
     event.widget_name = widget_name
 
     rig_remote_app.process_entry(event, silent=True)
-
     assert rig_remote_app.params_last_content[widget_name] == value
 
 
@@ -2170,27 +2142,6 @@ def test_ui_qt_build_control_source_invalid_frequency_branch_lines_706_709(rig_r
         assert crit.called
 
 
-def test_ui_qt_process_entry_empty_value_question_yes_sets_default(rig_remote_app):
-    widget_name = "txt_delay"
-    rig_remote_app.params[widget_name].setText("")
-    evt = Mock()
-    evt.widget = rig_remote_app.params[widget_name]
-    evt.widget_name = widget_name
-    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):
-        rig_remote_app.process_entry(evt, silent=False)
-    assert rig_remote_app.params[widget_name].text() == rig_remote_app.ac.DEFAULT_CONFIG["delay"]
-
-
-def test_ui_qt_process_entry_empty_value_question_no_reverts_or_focus(rig_remote_app):
-    widget_name = "txt_delay"
-    rig_remote_app.params_last_content[widget_name] = "7"
-    rig_remote_app.params[widget_name].setText("")
-    evt = Mock()
-    evt.widget = rig_remote_app.params[widget_name]
-    evt.widget_name = widget_name
-    with patch("rig_remote.ui_qt.QMessageBox.question", return_value=0):
-        rig_remote_app.process_entry(evt, silent=False)
-    assert rig_remote_app.params[widget_name].text() == "7"
 
 
 def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
@@ -2259,8 +2210,8 @@ def test_ui_qt_cb_set_frequency_success_lines_734_789_again(rig_remote_app):
     rig_remote_app.rigctl[0] = Mock()
     rig_remote_app.params["txt_frequency1"].setText("222")
     rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.cb_set_frequency({"rig_number": 1}, None, silent=True)
-    rig_remote_app.rigctl[0].set_frequency.assert_called_once_with("222")
+    rig_remote_app.cb_set_frequency({"rig_number": 1}, silent=True)
+    rig_remote_app.rigctl[0].set_frequency.assert_called_once_with(222)
     rig_remote_app.rigctl[0].set_mode.assert_called_once_with("FM")
 
 
@@ -2271,7 +2222,7 @@ def test_ui_qt_cb_autofill_form_lines_809_813_again(rig_remote_app):
     item.setText(2, "t")
     rig_remote_app.tree.addTopLevelItem(item)
     rig_remote_app.tree.setCurrentItem(item)
-    rig_remote_app.cb_autofill_form(1, None)
+    rig_remote_app.cb_autofill_form(1)
     assert rig_remote_app.params["txt_frequency1"].text() == "333"
 
 

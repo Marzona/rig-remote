@@ -375,4 +375,4 @@ def test_rig_remote_log_configuration_handles_handler_setlevel_exception(patch_a
         for h in root.handlers[:]:
             if h not in orig_handlers:
                 root.removeHandler(h)
-        root.level = orig_levelRig_re
+        root.level = orig_level

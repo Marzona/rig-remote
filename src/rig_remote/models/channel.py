@@ -38,8 +38,6 @@ class Channel:
     frequency: int = 0
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Channel):
-            return NotImplemented
         return self.frequency == other.frequency and self.modulation == other.modulation
 
     def __post_init__(self)-> None:

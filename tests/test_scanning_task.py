@@ -96,7 +96,7 @@ from rig_remote.models.modulation_modes import ModulationModes
                         lockout="L",
                     )
                 ],
-        ),
+        )
     ],
 )
 def test_scanning_task_init_error(
@@ -171,4 +171,36 @@ def test_scanning_task_full_params(frequency_modulation, interval, delay, passes
     assert task.passes == passes
     assert task.range_min == 0
     assert task.range_max == 500000000
+    assert task.error is None
+
+
+@pytest.mark.parametrize(
+    "passes, expected_passes",
+    [
+        (0, 1),
+        (-1, 1),
+        (-10, 1),
+        (-100, 1),
+    ]
+)
+def test_scanning_task_passes_less_than_one(passes, expected_passes):
+    """Test ScanningTask corrects passes < 1 to minimum value of 1."""
+    task = ScanningTask(
+        frequency_modulation="FM",
+        scan_mode="frequency",
+        new_bookmark_list=[],
+        range_min=100000,
+        range_max=200000,
+        interval=1000,
+        delay=1,
+        passes=passes,
+        sgn_level=0,
+        wait=False,
+        record=False,
+        auto_bookmark=False,
+        log=False,
+        bookmarks=[]
+    )
+
+    assert task.passes == expected_passes
     assert task.error is None

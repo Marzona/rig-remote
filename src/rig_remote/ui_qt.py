@@ -788,8 +788,6 @@ class RigRemote(QMainWindow):
                     auto_bookmark = self.params["ckb_auto_bookmark"].isChecked(),
                     bookmarks = self.new_bookmark_list,
                 )
-                import pdb; pdb.set_trace()
-
                 self.scanning = Scanning(
                     scan_queue=self.scanq,
                     log_filename=self.log_file,
@@ -869,7 +867,7 @@ class RigRemote(QMainWindow):
         self.params[txt_frequency].setText(current_item.text(0))
         self.params[txt_description].setText(current_item.text(2))
 
-    def build_control_source(self, number, silent=False)->None:
+    def build_control_source(self, number, silent=False)->Union[dict, None]:
         """Build control source dictionary"""
         if number not in (1, 2):
             logger.error("The rig number {} is not supported".format(number))

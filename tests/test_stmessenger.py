@@ -45,7 +45,7 @@ def test_stmessenger_end_of_scan(notify_first, expected_result):
 )
 def test_stmessenger_get_event_update(mock_return, expected_result):
     stm = STMessenger(queuecomms=QueueComms())
-    if mock_return == Exception:
+    if mock_return is Exception:
         stm.mqueue.get_from_child = MagicMock(side_effect=Exception)
     else:
         stm.mqueue.get_from_child = MagicMock()

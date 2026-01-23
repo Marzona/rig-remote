@@ -178,8 +178,8 @@ def test_ui_qt_cb_set_frequency_lines_734_789(rig_remote):
     rig_remote.rigctl[0] = Mock()
     rig_remote.params["txt_frequency1"].setText("222")
     rig_remote.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote.cb_set_frequency({"rig_number": 1}, None, silent=True)
-    rig_remote.rigctl[0].set_frequency.assert_called_once_with("222")
+    rig_remote.cb_set_frequency({"rig_number": 1}, silent=True)
+    rig_remote.rigctl[0].set_frequency.assert_called_once_with(222)
     rig_remote.rigctl[0].set_mode.assert_called_once_with("FM")
 
 
@@ -189,7 +189,7 @@ def test_ui_qt_cb_set_frequency_exception_nonempty_lines_734_789(rig_remote):
     rig_remote.params["txt_frequency1"].setText("222")
     rig_remote.params["cbb_mode1"].setCurrentText("FM")
     with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
-        rig_remote.cb_set_frequency({"rig_number": 1}, None, silent=False)
+        rig_remote.cb_set_frequency({"rig_number": 1}, silent=False)
         crit.assert_called_once()
 
 
@@ -199,7 +199,7 @@ def test_ui_qt_cb_set_frequency_exception_empty_fields_lines_734_789(rig_remote)
     rig_remote.params["txt_frequency1"].setText("")
     rig_remote.params["cbb_mode1"].setCurrentText("")
     with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
-        rig_remote.cb_set_frequency({"rig_number": 1}, None, silent=False)
+        rig_remote.cb_set_frequency({"rig_number": 1}, silent=False)
         assert crit.call_count >= 1
 
 
@@ -210,7 +210,7 @@ def test_ui_qt_cb_autofill_form_lines_807_813(rig_remote):
     item.setText(2, "t")
     rig_remote.tree.addTopLevelItem(item)
     rig_remote.tree.setCurrentItem(item)
-    rig_remote.cb_autofill_form(1, None)
+    rig_remote.cb_autofill_form(1)
     assert rig_remote.params["txt_frequency1"].text() == "333"
 
 
