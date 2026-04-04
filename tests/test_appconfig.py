@@ -4,10 +4,12 @@ from rig_remote.app_config import AppConfig
 import pytest
 import configparser
 from rig_remote.constants import RIG_COUNT, CONFIG_SECTIONS
+from unittest.mock import Mock, patch
+
 
 def test_app_config_init():
-    ac = AppConfig(config_file=os.path.join(Path(__file__).parent,"test_files/test_config_files/test-config.file"))
-    assert ac.config_file == os.path.join(Path(__file__).parent,"test_files/test_config_files/test-config.file")
+    ac = AppConfig(config_file=os.path.join(Path(__file__).parent, "test_files/test_config_files/test-config.file"))
+    assert ac.config_file == os.path.join(Path(__file__).parent, "test_files/test_config_files/test-config.file")
 
 
 def get_test_configs():
@@ -16,8 +18,9 @@ def get_test_configs():
     return [
         os.path.join(config_dir, f)
         for f in os.listdir(config_dir)
-        if f.endswith(('.ini', '.file')) and 'missing-header' not in f
+        if f.endswith((".ini", ".file")) and "missing-header" not in f
     ]
+
 
 @pytest.mark.parametrize("config_file", get_test_configs())
 def test_load_all_config_files(config_file):
@@ -29,70 +32,64 @@ def test_load_all_config_files(config_file):
     assert ac.config is not None
 
     # Verify Rig URI section values
-    assert 'hostname1' in ac.config
-    assert 'hostname2' in ac.config
-    assert 'port1' in ac.config
-    assert 'port2' in ac.config
+    assert "hostname1" in ac.config
+    assert "hostname2" in ac.config
+    assert "port1" in ac.config
+    assert "port2" in ac.config
 
     # Verify Scanning section values
-    assert 'passes' in ac.config
-    assert 'aggr_scan' in ac.config
-    assert 'auto_bookmark' in ac.config
-    assert 'range_min' in ac.config
-    assert 'range_max' in ac.config
-    assert 'interval' in ac.config
-    assert 'delay' in ac.config
-    assert 'record' in ac.config
-    assert 'sgn_level' in ac.config
-    assert 'wait' in ac.config
+    assert "passes" in ac.config
+    assert "aggr_scan" in ac.config
+    assert "auto_bookmark" in ac.config
+    assert "range_min" in ac.config
+    assert "range_max" in ac.config
+    assert "interval" in ac.config
+    assert "delay" in ac.config
+    assert "record" in ac.config
+    assert "sgn_level" in ac.config
+    assert "wait" in ac.config
 
     # Verify Main section values
-    assert 'log_filename' in ac.config
-    assert 'save_exit' in ac.config
-    assert 'always_on_top' in ac.config
-    assert 'log' in ac.config
-    assert 'bookmark_filename' in ac.config
+    assert "log_filename" in ac.config
+    assert "save_exit" in ac.config
+    assert "always_on_top" in ac.config
+    assert "log" in ac.config
+    assert "bookmark_filename" in ac.config
 
     # Verify boolean values are properly formatted
-    bool_fields = ['wait', 'record', 'log', 'always_on_top',
-                  'save_exit', 'aggr_scan', 'auto_bookmark']
+    bool_fields = ["wait", "record", "log", "always_on_top", "save_exit", "aggr_scan", "auto_bookmark"]
     for field in bool_fields:
-        assert ac.config[field].lower() in ['true', 'false']
+        assert ac.config[field].lower() in ["true", "false"]
 
     # Verify numeric values are valid
-    assert ac.config['passes'].isdigit()
-    assert ac.config['interval'].isdigit()
-    assert ac.config['delay'].isdigit()
-    assert ac.config['sgn_level'].strip('-').isdigit()
+    assert ac.config["passes"].isdigit()
+    assert ac.config["interval"].isdigit()
+    assert ac.config["delay"].isdigit()
+    assert ac.config["sgn_level"].strip("-").isdigit()
 
     # Verify ports are valid numbers
-    assert ac.config['port1'].isdigit()
-    assert ac.config['port2'].isdigit()
+    assert ac.config["port1"].isdigit()
+    assert ac.config["port2"].isdigit()
 
     # Verify hostnames are not empty
-    assert ac.config['hostname1']
-    assert ac.config['hostname2']
+    assert ac.config["hostname1"]
+    assert ac.config["hostname2"]
 
     # Verify range values contain only digits and commas
-    assert all(c.isdigit() or c == ',' for c in ac.config['range_min'])
-    assert all(c.isdigit() or c == ',' for c in ac.config['range_max'])
+    assert all(c.isdigit() or c == "," for c in ac.config["range_min"])
+    assert all(c.isdigit() or c == "," for c in ac.config["range_max"])
 
 
 @pytest.fixture
 def base_config():
     config = configparser.ConfigParser()
-    config['Rig URI'] = {
-        'hostname1': '127.0.0.1',
-        'hostname2': '127.0.0.1',
-        'port1': '7356',
-        'port2': '7357'
-    }
-    config['Monitor'] = {}
+    config["Rig URI"] = {"hostname1": "127.0.0.1", "hostname2": "127.0.0.1", "port1": "7356", "port2": "7357"}
+    config["Monitor"] = {}
     return config
 
+
 @pytest.mark.parametrize(
-    "passes, auto_bookmark, aggr_scan, delay, interval, save_exit, log, "
-    "always_on_top, wait, record, sgn_level",
+    "passes, auto_bookmark, aggr_scan, delay, interval, save_exit, log, always_on_top, wait, record, sgn_level",
     [
         (p, ab, ags, d, i, se, log, aot, w, r, sl)
         for p in [1, 100]  # passes
@@ -105,38 +102,50 @@ def base_config():
         for aot in [True, False]  # always_on_top
         for w in [True, False]  # wait
         for r in [True, False]  # record
-        for sl in [ -50, 0, 50]  # sgn_level
-    ]
+        for sl in [-50, 0, 50]  # sgn_level
+    ],
 )
-def test_config_file_generation(tmp_path, base_config, passes, auto_bookmark,
-                              aggr_scan, delay, interval, save_exit, log,
-                              always_on_top, wait, record, sgn_level):
+def test_appconfig_config_file_generation(
+    tmp_path,
+    base_config,
+    passes,
+    auto_bookmark,
+    aggr_scan,
+    delay,
+    interval,
+    save_exit,
+    log,
+    always_on_top,
+    wait,
+    record,
+    sgn_level,
+):
     """Test generation of config files with all parameter combinations."""
     config = base_config
 
-    config['Scanning'] = {
-        'passes': str(passes),
-        'aggr_scan': str(aggr_scan).lower(),
-        'auto_bookmark': str(auto_bookmark).lower(),
-        'range_min': '24000',
-        'range_max': '1800000',
-        'interval': str(interval),
-        'delay': str(delay),
-        'record': str(record).lower(),
-        'sgn_level': str(sgn_level),
-        'wait': str(wait).lower()
+    config["Scanning"] = {
+        "passes": str(passes),
+        "aggr_scan": str(aggr_scan).lower(),
+        "auto_bookmark": str(auto_bookmark).lower(),
+        "range_min": "24000",
+        "range_max": "1800000",
+        "interval": str(interval),
+        "delay": str(delay),
+        "record": str(record).lower(),
+        "sgn_level": str(sgn_level),
+        "wait": str(wait).lower(),
     }
 
-    config['Main'] = {
-        'log_filename': 'none',
-        'save_exit': str(save_exit).lower(),
-        'always_on_top': str(always_on_top).lower(),
-        'log': str(log).lower(),
-        'bookmark_filename': './test/test_files/test-bookmarks.csv'
+    config["Main"] = {
+        "log_filename": "none",
+        "save_exit": str(save_exit).lower(),
+        "always_on_top": str(always_on_top).lower(),
+        "log": str(log).lower(),
+        "bookmark_filename": "./test/test_files/test-bookmarks.csv",
     }
 
-    config_path = tmp_path / f'test-config-{passes}-{interval}-{delay}-{sgn_level}.ini'
-    with open(config_path, 'w') as configfile:
+    config_path = tmp_path / f"test-config-{passes}-{interval}-{delay}-{sgn_level}.ini"
+    with open(config_path, "w", encoding="utf-8") as configfile:
         config.write(configfile)
 
     # Verify the config file was created and can be read back
@@ -145,21 +154,19 @@ def test_config_file_generation(tmp_path, base_config, passes, auto_bookmark,
     loaded_config.read(config_path)
 
     # Verify scanning section
-    assert loaded_config['Scanning']['passes'] == str(passes)
-    assert loaded_config['Scanning']['auto_bookmark'] == str(auto_bookmark).lower()
-    assert loaded_config['Scanning']['aggr_scan'] == str(aggr_scan).lower()
-    assert loaded_config['Scanning']['delay'] == str(delay)
-    assert loaded_config['Scanning']['interval'] == str(interval)
-    assert loaded_config['Scanning']['record'] == str(record).lower()
-    assert loaded_config['Scanning']['sgn_level'] == str(sgn_level)
-    assert loaded_config['Scanning']['wait'] == str(wait).lower()
+    assert loaded_config["Scanning"]["passes"] == str(passes)
+    assert loaded_config["Scanning"]["auto_bookmark"] == str(auto_bookmark).lower()
+    assert loaded_config["Scanning"]["aggr_scan"] == str(aggr_scan).lower()
+    assert loaded_config["Scanning"]["delay"] == str(delay)
+    assert loaded_config["Scanning"]["interval"] == str(interval)
+    assert loaded_config["Scanning"]["record"] == str(record).lower()
+    assert loaded_config["Scanning"]["sgn_level"] == str(sgn_level)
+    assert loaded_config["Scanning"]["wait"] == str(wait).lower()
 
     # Verify main section
-    assert loaded_config['Main']['save_exit'] == str(save_exit).lower()
-    assert loaded_config['Main']['log'] == str(log).lower()
-    assert loaded_config['Main']['always_on_top'] == str(always_on_top).lower()
-
-
+    assert loaded_config["Main"]["save_exit"] == str(save_exit).lower()
+    assert loaded_config["Main"]["log"] == str(log).lower()
+    assert loaded_config["Main"]["always_on_top"] == str(always_on_top).lower()
 
 
 def test_appconfig_init_uses_default_when_no_config_file():
@@ -176,7 +183,7 @@ def test_appconfig_read_conf_missing_section_triggers_exit(monkeypatch, tmp_path
     ac = AppConfig(config_file=str(cfg))
 
     def fake_read(self, filename):
-        raise configparser.MissingSectionHeaderError(filename=str(cfg),line ="missing header", lineno=1)
+        raise configparser.MissingSectionHeaderError(filename=str(cfg), line="missing header", lineno=1)
 
     monkeypatch.setattr(configparser.RawConfigParser, "read", fake_read)
     with pytest.raises(SystemExit) as excinfo:
@@ -243,12 +250,21 @@ def test_appconfig_write_conf_handles_makedirs_ioerror(tmp_path, monkeypatch):
 
 def test_appconfig_get_conf_populates_from_window():
     """_get_conf pulls values from a window-like object into ac.config."""
+
     class FakeWidget:
         def __init__(self, v):
             self._v = v
+
         def get(self):
             return self._v
+
         def get_str_val(self):
+            return self._v
+
+        def isChecked(self):
+            return self._v is True
+
+        def text(self):
             return self._v
 
     fake_params = {
@@ -262,16 +278,16 @@ def test_appconfig_get_conf_populates_from_window():
         "txt_sgn_level": FakeWidget("-20"),
         "txt_range_min": FakeWidget("24000"),
         "txt_range_max": FakeWidget("1800000"),
-        "ckb_wait": FakeWidget("false"),
-        "ckb_record": FakeWidget("true"),
-        "ckb_log": FakeWidget("false"),
-        "ckb_auto_bookmark": FakeWidget("true"),
+        "ckb_wait": FakeWidget(False),
+        "ckb_record": FakeWidget(True),
+        "ckb_log": FakeWidget(False),
+        "ckb_auto_bookmark": FakeWidget(True),
     }
 
     window = type("W", (), {})()
     window.params = fake_params
-    window.ckb_top = FakeWidget("true")
-    window.ckb_save_exit = FakeWidget("false")
+    window.ckb_top = FakeWidget(True)
+    window.ckb_save_exit = FakeWidget(False)
     window.bookmarks_file = "/tmp/bookmarks.csv"
     window.log_file = "/tmp/log.txt"
 
@@ -288,14 +304,15 @@ def test_appconfig_get_conf_populates_from_window():
     assert ac.config["sgn_level"] == "-20"
     assert ac.config["range_min"] == "24000"
     assert ac.config["range_max"] == "1800000"
-    assert ac.config["wait"] == "false"
-    assert ac.config["record"] == "true"
-    assert ac.config["log"] == "false"
-    assert ac.config["always_on_top"] == "true"
-    assert ac.config["save_exit"] == "false"
-    assert ac.config["auto_bookmark"] == "true"
+    assert not ac.config["wait"]
+    assert ac.config["record"]
+    assert not ac.config["log"]
+    assert ac.config["always_on_top"]
+    assert not ac.config["save_exit"]
+    assert ac.config["auto_bookmark"]
     assert ac.config["bookmark_filename"] == "/tmp/bookmarks.csv"
     assert ac.config["log_filename"] == "/tmp/log.txt"
+
 
 def test_appconfig_read_conf_with_empty_config_file(tmp_path):
     """When config file exists but is empty (no sections), DEFAULT_CONFIG is used."""
@@ -327,3 +344,77 @@ def test_appconfig_write_conf_includes_aggr_scan(tmp_path):
     loaded_config = configparser.ConfigParser()
     loaded_config.read(cfg_path)
     assert loaded_config["Scanning"]["aggr_scan"] == "true"
+
+
+def test_appconfig_store_conf_calls_get_conf_and_write_conf():
+    """store_conf calls _get_conf to populate config and _write_conf to save it."""
+
+    # Create a mock window similar to the one in test_appconfig_get_conf_populates_from_window
+    class FakeWidget:
+        def __init__(self, v):
+            self._v = v
+
+        def get(self):
+            return self._v
+
+        def get_str_val(self):
+            return self._v
+
+        def isChecked(self):
+            return self._v is False
+
+        def text(self):
+            return self._v
+
+    fake_params = {
+        "txt_hostname1": FakeWidget("host1"),
+        "txt_port1": FakeWidget("1111"),
+        "txt_hostname2": FakeWidget("host2"),
+        "txt_port2": FakeWidget("2222"),
+        "txt_interval": FakeWidget("10"),
+        "txt_delay": FakeWidget("3"),
+        "txt_passes": FakeWidget("5"),
+        "txt_sgn_level": FakeWidget("-20"),
+        "txt_range_min": FakeWidget("24000"),
+        "txt_range_max": FakeWidget("1800000"),
+        "ckb_wait": FakeWidget(False),
+        "ckb_record": FakeWidget(True),
+        "ckb_log": FakeWidget(False),
+        "ckb_auto_bookmark": FakeWidget(True),
+    }
+
+    window = type("W", (), {})()
+    window.params = fake_params
+    window.ckb_top = FakeWidget(True)
+    window.ckb_save_exit = FakeWidget(False)
+    window.bookmarks_file = "/tmp/bookmarks.csv"
+    window.log_file = "/tmp/log.txt"
+
+    ac = AppConfig(config_file="")
+
+    # Mock _write_conf to verify it's called
+    with patch.object(ac, "_write_conf") as mock_write_conf:
+        ac.store_conf(window)
+
+        # Verify _write_conf was called
+        mock_write_conf.assert_called_once()
+
+        # Verify that _get_conf was called by checking config is populated
+        assert ac.config["hostname1"] == "host1"
+        assert ac.config["port1"] == "1111"
+        assert ac.config["hostname2"] == "host2"
+        assert ac.config["port2"] == "2222"
+        assert ac.config["interval"] == "10"
+        assert ac.config["delay"] == "3"
+        assert ac.config["passes"] == "5"
+        assert ac.config["sgn_level"] == "-20"
+        assert ac.config["range_min"] == "24000"
+        assert ac.config["range_max"] == "1800000"
+        assert ac.config["wait"]
+        assert not ac.config["record"]
+        assert ac.config["log"]
+        assert not ac.config["always_on_top"]
+        assert ac.config["save_exit"]
+        assert not ac.config["auto_bookmark"]
+        assert ac.config["bookmark_filename"] == "/tmp/bookmarks.csv"
+        assert ac.config["log_filename"] == "/tmp/log.txt"

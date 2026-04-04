@@ -15,8 +15,10 @@ Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:  # pragma: no cover
     from rig_remote.ui_qt import RigRemote  # pragma: no cover
 import configparser
@@ -86,7 +88,7 @@ class AppConfig:
         """
 
         self._io = IO()
-        self.rig_endpoints:list[RigEndpoint] = []
+        self.rig_endpoints: list[RigEndpoint] = []
         self.config_file = config_file
         if not self.config_file:
             self.config = dict.copy(self.DEFAULT_CONFIG)
@@ -132,11 +134,16 @@ class AppConfig:
             for instance_number in range(1, RIG_COUNT + 1)
         ]
 
-    def store_conf(self, window:RigRemote)->None:
+    def store_conf(self, window: RigRemote) -> None:
+        """Store the configuration from the UI window to file.
+
+        :param window: the UI window object containing the configuration
+        :returns: none
+        """
         self._get_conf(window)
         self._write_conf()
 
-    def _write_conf(self)->None:
+    def _write_conf(self) -> None:
         """Writes the configuration to file. If the default config path
         is missing it will be created. If this is not possible the config file
         will not be saved.
@@ -149,9 +156,7 @@ class AppConfig:
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
-            logger.info(
-                "Error while trying to create config path as %s", self.config_file
-            )
+            logger.info("skip create config path as %s, already exists?", self.config_file)
         config = configparser.RawConfigParser()
         for section in CONFIG_SECTIONS:
             config.add_section(section)
@@ -165,31 +170,30 @@ class AppConfig:
                 config.set("Main", key, self.config[key])
             if key in SCANNING_CONFIG:
                 config.set("Scanning", key, self.config[key])
-
-        with open(self.config_file, "w") as cf:
+        with open(self.config_file, "w", encoding="utf-8") as cf:
             config.write(cf)
 
-    def _get_conf(self, window:RigRemote)->None:
+    def _get_conf(self, window: RigRemote) -> None:
         """populates the ac object reading the info from the UI.
 
         :param window: object used to hold the app configuration.
         :returns  window instance with ac obj updated.
         """
-        self.config["hostname1"] = window.params["txt_hostname1"].get()
-        self.config["port1"] = window.params["txt_port1"].get()
-        self.config["hostname2"] = window.params["txt_hostname2"].get()
-        self.config["port2"] = window.params["txt_port2"].get()
-        self.config["interval"] = window.params["txt_interval"].get()
-        self.config["delay"] = window.params["txt_delay"].get()
-        self.config["passes"] = window.params["txt_passes"].get()
-        self.config["sgn_level"] = window.params["txt_sgn_level"].get()
-        self.config["range_min"] = window.params["txt_range_min"].get()
-        self.config["range_max"] = window.params["txt_range_max"].get()
-        self.config["wait"] = window.params["ckb_wait"].get_str_val()
-        self.config["record"] = window.params["ckb_record"].get_str_val()
-        self.config["log"] = window.params["ckb_log"].get_str_val()
-        self.config["always_on_top"] = window.ckb_top.get_str_val()
-        self.config["save_exit"] = window.ckb_save_exit.get_str_val()
-        self.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].get_str_val()
+        self.config["hostname1"] = window.params["txt_hostname1"].text()
+        self.config["port1"] = window.params["txt_port1"].text()
+        self.config["hostname2"] = window.params["txt_hostname2"].text()
+        self.config["port2"] = window.params["txt_port2"].text()
+        self.config["interval"] = window.params["txt_interval"].text()
+        self.config["delay"] = window.params["txt_delay"].text()
+        self.config["passes"] = window.params["txt_passes"].text()
+        self.config["sgn_level"] = window.params["txt_sgn_level"].text()
+        self.config["range_min"] = window.params["txt_range_min"].text()
+        self.config["range_max"] = window.params["txt_range_max"].text()
+        self.config["wait"] = window.params["ckb_wait"].isChecked()
+        self.config["record"] = window.params["ckb_record"].isChecked()
+        self.config["log"] = window.params["ckb_log"].isChecked()
+        self.config["always_on_top"] = window.ckb_top.isChecked()
+        self.config["save_exit"] = window.ckb_save_exit.isChecked()
+        self.config["auto_bookmark"] = window.params["ckb_auto_bookmark"].isChecked()
         self.config["bookmark_filename"] = window.bookmarks_file
         self.config["log_filename"] = window.log_file

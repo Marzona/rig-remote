@@ -1,8 +1,6 @@
 import pytest
-from unittest.mock import MagicMock
 from rig_remote.utility import (
     khertz_to_hertz,
-    shutdown,
 )
 
 
@@ -21,7 +19,7 @@ from rig_remote.utility import (
         (-1, -1000),
         (-100, -100000),
         (-1000, -1000000),
-    ]
+    ],
 )
 def test_utility_khertz_to_hertz_valid_inputs(input_value, expected_output):
     """Test frequency conversion from kHz to Hz with valid integer inputs."""
@@ -41,7 +39,7 @@ def test_utility_khertz_to_hertz_valid_inputs(input_value, expected_output):
         [1000],
         {"value": 1000},
         (1000,),
-    ]
+    ],
 )
 def test_utility_khertz_to_hertz_invalid_inputs(invalid_value):
     """Test frequency conversion raises TypeError for non-integer inputs."""
@@ -54,30 +52,8 @@ def test_utility_khertz_to_hertz_invalid_inputs(invalid_value):
     [
         (True, 1000),
         (False, 0),
-    ]
+    ],
 )
 def test_utility_khertz_to_hertz_boolean_inputs(bool_value, expected_output):
     """Test frequency conversion with boolean inputs (bool is subclass of int in Python)."""
     assert khertz_to_hertz(bool_value) == expected_output
-
-
-@pytest.mark.parametrize(
-    "is_checked",
-    [False, True],
-)
-def test_utility_shutdown_save_scenarios(is_checked):
-    """shutdown saves only when save_exit checkbox is checked; always destroys window."""
-    window = MagicMock()
-    window.ckb_save_exit.isChecked.return_value = is_checked
-    window.bookmarks_file = "/path/to/bookmarks.csv"
-
-    shutdown(window)
-
-    if is_checked:
-        window.bookmarks.save.assert_called_once_with(bookmarks_file=window.bookmarks_file)
-        window.ac.store_conf.assert_called_once_with(window=window)
-    else:
-        window.bookmarks.save.assert_not_called()
-        window.ac.store_conf.assert_not_called()
-
-    window.destroy.assert_called_once()

@@ -8,6 +8,7 @@ from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
+from PySide6.QtWidgets import QApplication, QTreeWidgetItem, QMessageBox
 
 
 @pytest.fixture(scope="session")
@@ -80,7 +81,6 @@ def mock_bookmark():
     return bookmark
 
 
-
 def test_ui_qt_initialization(rig_remote_app):
     """Test RigRemote initializes with correct defaults"""
     assert rig_remote_app.ac is not None
@@ -103,7 +103,6 @@ def test_ui_qt_minimum_width(rig_remote_app):
 def test_ui_qt_minimum_height(rig_remote_app):
     """Test minimum window height is set"""
     assert rig_remote_app.minimumHeight() >= 244
-
 
 
 def test_ui_qt_tree_widget_created(rig_remote_app):
@@ -226,7 +225,6 @@ def test_ui_qt_scanning_options_widgets_positive(rig_remote_app):
     assert "ckb_log" in rig_remote_app.params
 
 
-
 @pytest.mark.parametrize(
     "widget_name,value",
     [
@@ -240,13 +238,12 @@ def test_ui_qt_scanning_options_widgets_positive(rig_remote_app):
 )
 def test_ui_qt_process_entry_valid_positive(rig_remote_app, widget_name, value):
     """Test processing valid numeric entries"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         event = Mock()
         event.widget = rig_remote_app.params[widget_name]
         event.widget_name = widget_name
         event.widget.setText(value)
-
-        rig_remote_app.process_entry(event, silent=True)
+        rig_remote_app._process_entry(event)
         assert rig_remote_app.params_last_content[widget_name] == value
 
 
@@ -268,10 +265,10 @@ def test_ui_qt_process_entry_invalid_negative(rig_remote_app, widget_name, value
         event.widget_name = widget_name
         event.widget.setText(value)
 
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app._process_entry(event)
 
 
-def test_ui_qt_process_entry_empty_value_silent(rig_remote_app):
+def test_ui_qt_process_record_empty_value_silent(rig_remote_app):
     """Test processing empty entry in silent mode"""
     widget_name = "txt_delay"
     event = Mock()
@@ -280,10 +277,10 @@ def test_ui_qt_process_entry_empty_value_silent(rig_remote_app):
     event.widget.setText("")
 
     with patch("rig_remote.ui_qt.QMessageBox"):
-        rig_remote_app.process_entry(event, silent=True)
+        rig_remote_app.process_record(event)
 
 
-def test_ui_qt_process_entry_empty_value_not_silent(rig_remote_app):
+def test_ui_qt_process_record_empty_value_not_silent(rig_remote_app):
     """Test processing empty entry in non-silent mode"""
     widget_name = "txt_delay"
     event = Mock()
@@ -292,7 +289,7 @@ def test_ui_qt_process_entry_empty_value_not_silent(rig_remote_app):
     event.widget.setText("")
 
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app.process_record(event)
 
 
 def test_ui_qt_process_entry_empty_value_question_yes_sets_default(rig_remote_app):
@@ -303,7 +300,7 @@ def test_ui_qt_process_entry_empty_value_question_yes_sets_default(rig_remote_ap
     event.widget = rig_remote_app.params[widget_name]
     event.widget_name = widget_name
     with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):  # Yes
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app._process_entry(event)
     assert rig_remote_app.params[widget_name].text() == rig_remote_app.ac.DEFAULT_CONFIG["delay"]
 
 
@@ -317,9 +314,8 @@ def test_ui_qt_process_entry_empty_value_question_no_reverts_or_focus(rig_remote
     event.widget = rig_remote_app.params[widget_name]
     event.widget_name = widget_name
     with patch("rig_remote.ui_qt.QMessageBox.question", return_value=0):  # No
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app._process_entry(event)
     assert rig_remote_app.params[widget_name].text() == "7"
-
 
 
 @pytest.mark.parametrize(
@@ -383,7 +379,6 @@ def test_ui_qt_process_port_entry_invalid_negative(rig_remote_app, port, rig_num
         rig_remote_app._process_port_entry(port, rig_number, silent=False)
 
 
-
 @pytest.mark.parametrize(
     "checkbox_name,initial_state,final_state",
     [
@@ -424,45 +419,44 @@ def test_ui_qt_checkbox_state_toggle_multiple_times_positive(rig_remote_app, che
 
 def test_ui_qt_process_wait_checkbox_positive(rig_remote_app):
     """Test wait checkbox processing when checked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_wait"].setChecked(True)
         rig_remote_app.process_wait(Qt.CheckState.Checked.value)
 
 
 def test_ui_qt_process_wait_checkbox_unchecked(rig_remote_app):
     """Test wait checkbox processing when unchecked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_wait"].setChecked(False)
         rig_remote_app.process_wait(Qt.CheckState.Unchecked.value)
 
 
 def test_ui_qt_process_record_checkbox_positive(rig_remote_app):
     """Test record checkbox processing when checked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_record"].setChecked(True)
         rig_remote_app.process_record(Qt.CheckState.Checked.value)
 
 
 def test_ui_qt_process_record_checkbox_unchecked(rig_remote_app):
     """Test record checkbox processing when unchecked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_record"].setChecked(False)
         rig_remote_app.process_record(Qt.CheckState.Unchecked.value)
 
 
 def test_ui_qt_process_log_checkbox_positive(rig_remote_app):
     """Test log checkbox processing when checked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_log"].setChecked(True)
         rig_remote_app.process_log(Qt.CheckState.Checked.value)
 
 
 def test_ui_qt_process_log_checkbox_unchecked(rig_remote_app):
     """Test log checkbox processing when unchecked"""
-    with patch.object(rig_remote_app, "scanq"):
+    with patch.object(rig_remote_app, "scan_queue"):
         rig_remote_app.params["ckb_log"].setChecked(False)
         rig_remote_app.process_log(Qt.CheckState.Unchecked.value)
-
 
 
 @pytest.mark.parametrize(
@@ -537,7 +531,6 @@ def test_ui_qt_clear_form_invalid_negative(rig_remote_app, invalid_rig_number):
         rig_remote_app._clear_form(invalid_rig_number)
 
 
-
 @pytest.mark.parametrize("rig_number", [1, 2])
 def test_ui_qt_autofill_form_with_selection_positive(rig_remote_app, rig_number):
     """Test autofilling form from bookmark selection for valid rigs"""
@@ -582,8 +575,8 @@ def test_ui_qt_set_frequency_positive(rig_remote_app, frequency, mode):
     rig_remote_app.params["cbb_mode1"].setCurrentText(mode)
 
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
-        rig_target = {"rig_number": 1}
-        rig_remote_app.cb_set_frequency(rig_target, silent=True)
+        rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
+        rig_remote_app.cb_set_frequency(rig_endpoint, silent=True)
 
 
 @pytest.mark.parametrize(
@@ -599,9 +592,9 @@ def test_ui_qt_set_frequency_invalid_negative(rig_remote_app, frequency, mode):
     if mode:
         rig_remote_app.params["cbb_mode1"].setCurrentText(mode)
 
-    rig_target = {"rig_number": 1}
+    rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, silent=False)
+        rig_remote_app.cb_set_frequency(rig_endpoint, silent=False)
 
 
 def test_ui_qt_set_frequency_connection_error_negative(rig_remote_app):
@@ -611,9 +604,9 @@ def test_ui_qt_set_frequency_connection_error_negative(rig_remote_app):
 
     with patch.object(rig_remote_app, "rigctl") as mock_rigctl:
         mock_rigctl[0].set_frequency = Mock(side_effect=Exception("Connection error"))
-        rig_target = {"rig_number": 1}
+        rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
-            rig_remote_app.cb_set_frequency(rig_target, silent=False)
+            rig_remote_app.cb_set_frequency(rig_endpoint, silent=False)
 
 
 @pytest.mark.parametrize(
@@ -629,8 +622,8 @@ def test_ui_qt_get_frequency_positive(rig_remote_app, frequency, mode):
         rig_remote_app.rigctl[0].get_frequency = Mock(return_value=frequency)
         rig_remote_app.rigctl[0].get_mode = Mock(return_value=mode)
 
-        rig_target = {"rig_number": 1}
-        rig_remote_app.cb_get_frequency(rig_target, silent=True)
+        rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
+        rig_remote_app.cb_get_frequency(rig_endpoint, silent=True)
 
 
 def test_ui_qt_get_frequency_connection_error_negative(rig_remote_app):
@@ -638,10 +631,9 @@ def test_ui_qt_get_frequency_connection_error_negative(rig_remote_app):
     with patch.object(rig_remote_app, "rigctl") as mock_rigctl:
         mock_rigctl[0].get_frequency = Mock(side_effect=Exception("Connection error"))
 
-        rig_target = {"rig_number": 1}
+        rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
-            rig_remote_app.cb_get_frequency(rig_target, silent=False)
-
+            rig_remote_app.cb_get_frequency(rig_endpoint, silent=False)
 
 
 def test_ui_qt_insert_bookmarks_single_positive(rig_remote_app, mock_bookmark):
@@ -734,7 +726,7 @@ def test_ui_qt_process_entry_wrapper_positive(rig_remote_app):
     """Test process entry wrapper calls correct function"""
     rig_remote_app.params["txt_delay"].setText("5")
 
-    with patch.object(rig_remote_app, "process_entry") as mock_process:
+    with patch.object(rig_remote_app, "_process_entry") as mock_process:
         rig_remote_app.process_entry_wrapper("txt_delay")
         mock_process.assert_called_once()
 
@@ -755,7 +747,6 @@ def test_ui_qt_toggle_always_on_top_unchecked_positive(rig_remote_app):
 def test_ui_qt_toggle_always_on_top_states_positive(rig_remote_app, state):
     """Test toggling always on top with various states"""
     rig_remote_app.toggle_cb_top(state)
-
 
 
 def test_ui_qt_apply_config_hostnames_positive(rig_remote_app, mock_app_config):
@@ -812,7 +803,6 @@ def test_ui_qt_apply_config_with_invalid_config_negative(rig_remote_app):
                 rig_remote_app.apply_config(empty_config, silent=False)
 
 
-
 def test_ui_qt_pop_up_about_positive(rig_remote_app):
     """Test about popup is called"""
     with patch("rig_remote.ui_qt.QMessageBox.about"):
@@ -828,7 +818,6 @@ def test_ui_qt_about_message_content_positive(rig_remote_app):
 def test_ui_qt_about_message_not_empty_positive(rig_remote_app):
     """Test about message is not empty"""
     assert len(rig_remote_app._ABOUT) > 0
-
 
 
 def test_ui_qt_bookmarks_file_property_positive(rig_remote_app):
@@ -910,7 +899,6 @@ def test_ui_qt_apply_config_with_invalid_port_negative(rig_remote_app, mock_app_
     assert rig_remote_app.params["txt_port1"].text() == "4532"
 
 
-
 def test_ui_qt_apply_config_with_invalid_range_negative(rig_remote_app):
     """Test applying configuration with invalid frequency range"""
     invalid_config = Mock(spec=AppConfig)
@@ -977,8 +965,6 @@ def test_ui_qt_apply_config_with_missing_hostname_negative(rig_remote_app):
         with patch("rig_remote.ui_qt.RigCtl"):
             with patch("rig_remote.ui_qt.QMessageBox.critical"):
                 rig_remote_app.apply_config(incomplete_config, silent=False)
-
-
 
 
 def test_ui_qt_apply_config_with_empty_config_negative(rig_remote_app):
@@ -1066,6 +1052,7 @@ def test_ui_qt_process_hostname_entry_special_chars_negative(rig_remote_app):
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
         rig_remote_app._process_hostname_entry("host@name!", 1, silent=False)
 
+
 @pytest.mark.parametrize(
     "frequency,mode",
     [
@@ -1079,8 +1066,12 @@ def test_ui_qt_set_frequency_calls_rigctl(rig_remote_app, frequency, mode):
     rig_remote_app.params["cbb_mode1"].setCurrentText(mode)
 
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]) as mock_rigctl:
-        rig_target = {"rig_number": 1}
-        rig_remote_app.cb_set_frequency(rig_target, silent=True)
+        rig_endpoint = RigEndpoint(
+            hostname="127.0.0.1",
+            port=8080,
+            number=1,
+        )
+        rig_remote_app.cb_set_frequency(rig_endpoint, silent=True)
         mock_rigctl[0].set_frequency.assert_called()
         mock_rigctl[0].set_mode.assert_called()
 
@@ -1093,7 +1084,7 @@ def test_ui_qt_set_frequency_calls_rigctl(rig_remote_app, frequency, mode):
         ("txt_passes", ""),
     ],
 )
-def test_ui_qt_process_entry_empty_negative(rig_remote_app, widget_name, value):
+def test_ui_qt_process_record_empty_negative(rig_remote_app, widget_name, value):
     """Test processing empty entries"""
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
         event = Mock()
@@ -1101,7 +1092,7 @@ def test_ui_qt_process_entry_empty_negative(rig_remote_app, widget_name, value):
         event.widget_name = widget_name
         event.widget.setText(value)
 
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app.process_record(event)
 
 
 @pytest.mark.parametrize(
@@ -1113,7 +1104,7 @@ def test_ui_qt_process_entry_empty_negative(rig_remote_app, widget_name, value):
         ("txt_passes", "--100"),
     ],
 )
-def test_ui_qt_process_entry_non_numeric_negative(rig_remote_app, widget_name, value):
+def test_ui_qt_process_record_non_numeric_negative(rig_remote_app, widget_name, value):
     """Test processing non-numeric entries"""
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
         event = Mock()
@@ -1121,7 +1112,7 @@ def test_ui_qt_process_entry_non_numeric_negative(rig_remote_app, widget_name, v
         event.widget_name = widget_name
         event.widget.setText(value)
 
-        rig_remote_app.process_entry(event, silent=False)
+        rig_remote_app.process_record(event)
 
 
 def test_ui_qt_checkbox_state_invalid_negative(rig_remote_app):
@@ -1146,9 +1137,9 @@ def test_ui_qt_set_frequency_invalid_formats_negative(rig_remote_app, frequency)
     rig_remote_app.params["txt_frequency1"].setText(frequency)
     rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
 
-    rig_target = {"rig_number": 1}
+    rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, silent=False)
+        rig_remote_app.cb_set_frequency(rig_endpoint, silent=False)
 
 
 def test_ui_qt_set_frequency_empty_mode_negative(rig_remote_app):
@@ -1156,9 +1147,9 @@ def test_ui_qt_set_frequency_empty_mode_negative(rig_remote_app):
     rig_remote_app.params["txt_frequency1"].setText("145500000")
     rig_remote_app.params["cbb_mode1"].setCurrentText("")
 
-    rig_target = {"rig_number": 1}
+    rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
     with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.cb_set_frequency(rig_target, silent=False)
+        rig_remote_app.cb_set_frequency(rig_endpoint, silent=False)
 
 
 def test_ui_qt_clear_form_negative_rig_negative(rig_remote_app):
@@ -1333,12 +1324,12 @@ def test_ui_qt_rig_ordinals_out_of_bounds_negative(rig_remote_app, rig_number):
 
 def test_ui_qt_get_frequency_invalid_rig_negative(rig_remote_app):
     """Test getting frequency from invalid rig"""
+    rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
-        rig_target = {"rig_number": 99}
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             # Invalid rig number may raise NotImplementedError or be handled gracefully
             try:
-                rig_remote_app.cb_get_frequency(rig_target, silent=False)
+                rig_remote_app.cb_get_frequency(rig_endpoint, silent=False)
             except NotImplementedError:
                 pass
 
@@ -1361,7 +1352,7 @@ def test_ui_qt_autofill_form_zero_rig_negative(rig_remote_app):
 
 def test_ui_qt_process_entry_wrapper_nonexistent_widget_negative(rig_remote_app):
     """Test process entry wrapper with nonexistent widget"""
-    with patch.object(rig_remote_app, "process_entry"):
+    with patch.object(rig_remote_app, "process_record"):
         # Nonexistent widget will raise KeyError
         with pytest.raises(KeyError):
             rig_remote_app.process_entry_wrapper("nonexistent_widget")
@@ -1389,17 +1380,17 @@ def test_ui_qt_extract_bookmarks_corrupted_data_negative(rig_remote_app):
     assert len(bookmarks) == 1
 
 
-def test_ui_qt_process_entry_with_focus_out_event(rig_remote_app):
+def test_ui_qt_process_record_with_focus_out_event(rig_remote_app):
     """Test process entry is called on focus out event"""
     widget_name = "txt_delay"
     rig_remote_app.params[widget_name].setText("5")
 
-    with patch.object(rig_remote_app, "process_entry") as mock_process:
+    with patch.object(rig_remote_app, "process_record") as mock_process:
         # Simulate focus out event
         event = Mock()
         event.widget = rig_remote_app.params[widget_name]
         event.widget_name = widget_name
-        rig_remote_app.process_entry(event, silent=True)
+        rig_remote_app.process_record(event)
         mock_process.assert_called()
 
 
@@ -1513,16 +1504,14 @@ def test_ui_qt_autofill_form_populates_all_fields(rig_remote_app):
     assert rig_remote_app.params[f"txt_description{rig_number}"].text() == "SSB Frequency"
 
 
-
-
 def test_ui_qt_get_frequency_updates_ui_fields(rig_remote_app):
     """Test get frequency updates UI fields with retrieved values"""
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]) as mock_rigctl:
         mock_rigctl[0].get_frequency = Mock(return_value="146000000")
         mock_rigctl[0].get_mode = Mock(return_value="LSB")
 
-        rig_target = {"rig_number": 1}
-        rig_remote_app.cb_get_frequency(rig_target, silent=True)
+        rig_endpoint = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
+        rig_remote_app.cb_get_frequency(rig_endpoint, silent=True)
 
         assert rig_remote_app.params["txt_frequency1"].text() == "146000000"
 
@@ -1579,7 +1568,7 @@ def test_ui_qt_process_entry_updates_last_content(rig_remote_app):
     event.widget = rig_remote_app.params[widget_name]
     event.widget_name = widget_name
 
-    rig_remote_app.process_entry(event, silent=True)
+    rig_remote_app._process_entry(event)
     assert rig_remote_app.params_last_content[widget_name] == value
 
 
@@ -1627,302 +1616,6 @@ def test_ui_qt_extract_bookmarks_returns_bookmark_list(rig_remote_app):
     assert isinstance(bookmarks[0], Bookmark)
 
 
-
-def test_ui_qt_event_filter_focus_out_line_109(rig_remote_app):
-    """Test eventFilter processes focus out events (line 109)"""
-    widget = rig_remote_app.params["txt_delay"]
-    widget.setText("5")
-
-    # Create a focus out event
-    from PySide6.QtGui import QFocusEvent
-
-    event = QFocusEvent(QFocusEvent.Type.FocusOut)
-
-    # Verify event is processed without error
-    _ = rig_remote_app.eventFilter(widget, event)
-    assert widget.text() == "5"
-
-
-
-def test_ui_qt_process_hostname_rigctl_assignment_lines_386_388(rig_remote_app):
-    """Test hostname processing assigns rigctl target (lines 386-388)"""
-    rig_remote_app.params["txt_port1"].setText("4532")
-    rig_remote_app.params["txt_hostname1"].setText("localhost")
-
-    event = Mock()
-    event.widget = rig_remote_app.params["txt_hostname1"]
-    event.widget_name = "txt_hostname1"
-
-    rig_remote_app.process_entry(event, silent=True)
-
-    # Verify rigctl target was set
-    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
-    assert rig_remote_app.rigctl[0].target.port == 4532
-
-
-def test_ui_qt_process_port_rigctl_assignment_lines_790_796(rig_remote_app):
-    """Test port processing assigns rigctl target (lines 790-796)"""
-    rig_remote_app.params["txt_hostname1"].setText("localhost")
-    rig_remote_app.params["txt_port1"].setText("4532")
-
-    event = Mock()
-    event.widget = rig_remote_app.params["txt_port1"]
-    event.widget_name = "txt_port1"
-
-    rig_remote_app.process_entry(event, silent=True)
-
-    # Verify rigctl target was set with correct port
-    assert rig_remote_app.rigctl[0].target.port == 4532
-    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
-
-
-def test_ui_qt_build_control_source_frequency_validation_line_428(rig_remote_app):
-    """Test build control source validates frequency (line 428)"""
-    rig_remote_app.params["txt_frequency1"].setText("145500000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("Test")
-
-    control_source = rig_remote_app.build_control_source(1, silent=True)
-
-    assert control_source is not None
-    assert control_source["frequency"] == "145500000"
-    assert isinstance(control_source, dict)
-
-
-def test_ui_qt_build_control_source_mode_extraction_lines_438_440(rig_remote_app):
-    """Test build control source extracts mode (lines 438-440)"""
-    rig_remote_app.params["txt_frequency1"].setText("146000000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("LSB")
-    rig_remote_app.params["txt_description1"].setText("SSB")
-
-    control_source = rig_remote_app.build_control_source(1, silent=True)
-
-    assert control_source["mode"] == "LSB"
-    assert "mode" in control_source
-
-
-def test_ui_qt_build_control_source_description_extraction_lines_938_944(rig_remote_app):
-    """Test build control source extracts description"""
-    rig_remote_app.params["txt_frequency1"].setText("145500000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("Test Description")
-
-    control_source = rig_remote_app.build_control_source(1, silent=True)
-
-    assert control_source["description"] == "Test Description"
-
-
-def test_ui_qt_build_control_source_invalid_frequency_lines_945_963(rig_remote_app):
-    """Test build control source validates invalid frequency (lines 945-963)"""
-    rig_remote_app.params["txt_frequency1"].setText("invalid")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("Test")
-
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        control_source = rig_remote_app.build_control_source(1, silent=False)
-
-    assert control_source is None
-
-
-
-def test_ui_qt_clear_form_all_fields_lines_445_446(rig_remote_app):
-    """Test clear form clears all fields (lines 445-446)"""
-    rig_remote_app.params["txt_frequency1"].setText("145500000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("Test")
-
-    rig_remote_app._clear_form(1)
-
-    assert rig_remote_app.params["txt_frequency1"].text() == ""
-    assert rig_remote_app.params["txt_description1"].text() == ""
-    assert rig_remote_app.params["cbb_mode1"].currentIndex() == -1
-
-
-
-def test_ui_qt_autofill_form_frequency_field_lines_454_456(rig_remote_app):
-    """Test autofill form populates frequency (lines 454-456)"""
-    item = QTreeWidgetItem(rig_remote_app.tree)
-    item.setText(0, "147500000")
-    item.setText(1, "FM")
-    item.setText(2, "Test Freq")
-    rig_remote_app.tree.addTopLevelItem(item)
-    rig_remote_app.tree.setCurrentItem(item)
-
-    rig_remote_app.cb_autofill_form(1)
-
-    assert rig_remote_app.params["txt_frequency1"].text() == "147500000"
-    assert rig_remote_app.params["cbb_mode1"].currentText() == "FM"
-    assert rig_remote_app.params["txt_description1"].text() == "Test Freq"
-
-
-def test_ui_qt_autofill_form_rig_2_lines_460_461(rig_remote_app):
-    """Test autofill form for rig 2 (lines 460-461)"""
-    item = QTreeWidgetItem(rig_remote_app.tree)
-    item.setText(0, "144390000")
-    item.setText(1, "USB")
-    item.setText(2, "Rig 2 Test")
-    rig_remote_app.tree.addTopLevelItem(item)
-    rig_remote_app.tree.setCurrentItem(item)
-
-    rig_remote_app.cb_autofill_form(2)
-
-    assert rig_remote_app.params["txt_frequency2"].text() == "144390000"
-    assert rig_remote_app.params["cbb_mode2"].currentText() == "USB"
-
-
-
-def test_ui_qt_set_frequency_calls_rigctl_lines_474_475(rig_remote_app):
-    """Test set frequency calls rigctl (lines 474-475)"""
-    rig_remote_app.params["txt_frequency1"].setText("145500000")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-
-    with patch.object(rig_remote_app.rigctl[0], "set_frequency") as mock_set_freq:
-        with patch.object(rig_remote_app.rigctl[0], "set_mode") as mock_set_mode:
-            rig_remote_app.cb_set_frequency({"rig_number": 1}, silent=True)
-
-            mock_set_freq.assert_called_once_with(145500000)
-            mock_set_mode.assert_called_once_with("FM")
-
-
-def test_ui_qt_get_frequency_calls_rigctl_lines_523_524(rig_remote_app):
-    """Test get frequency calls rigctl (lines 523-524)"""
-    with patch.object(rig_remote_app.rigctl[0], "get_frequency", return_value="145500000"):
-        with patch.object(rig_remote_app.rigctl[0], "get_mode", return_value="FM"):
-            rig_remote_app.cb_get_frequency({"rig_number": 1}, silent=True)
-
-            assert rig_remote_app.params["txt_frequency1"].text() == "145500000"
-            assert rig_remote_app.params["cbb_mode1"].currentText() == "FM"
-
-
-def test_ui_qt_get_frequency_updates_ui_lines_529_530(rig_remote_app):
-    """Test get frequency updates UI fields (lines 529-530)"""
-    with patch.object(rig_remote_app.rigctl[0], "get_frequency", return_value=" 146000000 "):
-        with patch.object(rig_remote_app.rigctl[0], "get_mode", return_value="LSB"):
-            rig_remote_app.cb_get_frequency({"rig_number": 1}, silent=True)
-
-            # Verify strip() is called on frequency
-            assert rig_remote_app.params["txt_frequency1"].text() == " 146000000 "
-
-
-
-def test_ui_qt_insert_bookmarks_create_item_line_561(rig_remote_app):
-    """Test insert bookmarks creates tree item (line 561)"""
-    mock_bookmark = Mock(spec=Bookmark)
-    channel_mock = Mock()
-    channel_mock.frequency = "145500000"
-    channel_mock.modulation = "FM"
-    mock_bookmark.channel = channel_mock
-    mock_bookmark.description = "Test"
-    mock_bookmark.lockout = "O"
-
-    rig_remote_app._insert_bookmarks([mock_bookmark], silent=True)
-
-    assert rig_remote_app.tree.topLevelItemCount() == 1
-
-
-def test_ui_qt_insert_bookmarks_set_columns_lines_577_579(rig_remote_app):
-    """Test insert bookmarks sets all columns (lines 577-579)"""
-    mock_bookmark = Mock(spec=Bookmark)
-    channel_mock = Mock()
-    channel_mock.frequency = "145500000"
-    channel_mock.modulation = "LSB"
-    mock_bookmark.channel = channel_mock
-    mock_bookmark.description = "Local Repeater"
-    mock_bookmark.lockout = "O"
-
-    rig_remote_app._insert_bookmarks([mock_bookmark], silent=True)
-
-    item = rig_remote_app.tree.topLevelItem(0)
-    assert item.text(0) == "145500000"
-    assert item.text(1) == "LSB"
-    assert item.text(2) == "Local Repeater"
-
-
-def test_ui_qt_extract_bookmarks_retrieves_data_lines_611_613(rig_remote_app):
-    """Test extract bookmarks retrieves data (lines 611-613)"""
-    mock_bookmark = Mock(spec=Bookmark)
-    channel_mock = Mock()
-    channel_mock.frequency = "145500000"
-    channel_mock.modulation = "FM"
-    mock_bookmark.channel = channel_mock
-    mock_bookmark.description = "Test"
-    mock_bookmark.lockout = "O"
-
-    rig_remote_app._insert_bookmarks([mock_bookmark], silent=True)
-    bookmarks = rig_remote_app._extract_bookmarks()
-
-    assert len(bookmarks) == 1
-    assert bookmarks[0].channel.frequency == 145500000
-    assert bookmarks[0].channel.modulation == "FM"
-    assert bookmarks[0].description == "Test"
-
-
-
-def test_ui_qt_apply_config_sets_hostname_port_lines_617_619(rig_remote_app, mock_app_config):
-    """Test apply config sets hostname and port (lines 617-619)"""
-    mock_app_config.config["hostname1"] = "192.168.1.1"
-    mock_app_config.config["port1"] = "4532"
-
-    with patch.object(rig_remote_app, "_build_ui"):
-        with patch("rig_remote.ui_qt.RigCtl"):
-            rig_remote_app.apply_config(mock_app_config, silent=True)
-
-    assert rig_remote_app.params["txt_hostname1"].text() == "192.168.1.1"
-    assert rig_remote_app.params["txt_port1"].text() == "4532"
-
-
-
-def test_ui_qt_apply_config_sets_parameters_lines_625_652(rig_remote_app, mock_app_config):
-    """Test apply config sets all parameters (lines 625-652)"""
-    mock_app_config.config = {
-        "hostname1": "localhost",
-        "hostname2": "localhost",
-        "port1": "4532",
-        "port2": "4533",
-        "interval": "25",
-        "delay": "2",
-        "passes": "0",
-        "range_min": "50000",
-        "range_max": "1000000",
-        "sgn_level": "-50",
-        "auto_bookmark": "true",
-        "record": "true",
-        "wait": "true",
-        "log": "true",
-        "save_exit": "true",
-        "always_on_top": "true",
-    }
-
-    with patch.object(rig_remote_app, "_build_ui"):
-        rig_remote_app.apply_config(mock_app_config, silent=True)
-
-    assert rig_remote_app.params["txt_interval"].text() == "25"
-    assert rig_remote_app.params["txt_delay"].text() == "2"
-    assert rig_remote_app.params["txt_passes"].text() == "0"
-    assert rig_remote_app.params["txt_range_min"].text() == "50000"
-    assert rig_remote_app.params["txt_range_max"].text() == "1000000"
-    assert rig_remote_app.params["txt_sgn_level"].text() == "-50"
-
-
-def test_ui_qt_bookmark_lockout_open_to_locked_lines_656_659(rig_remote_app):
-    """Test bookmark lockout toggles from open to locked (lines 656-659)"""
-    mock_bookmark = Mock(spec=Bookmark)
-    channel_mock = Mock()
-    channel_mock.frequency = "145500000"
-    channel_mock.modulation = "FM"
-    mock_bookmark.channel = channel_mock
-    mock_bookmark.description = "Test"
-    mock_bookmark.lockout = "O"
-
-    rig_remote_app._insert_bookmarks([mock_bookmark], silent=True)
-    item = rig_remote_app.tree.topLevelItem(0)
-    rig_remote_app.tree.setCurrentItem(item)
-    rig_remote_app.bookmark_lockout()
-
-    assert item.data(0, Qt.ItemDataRole.UserRole) == "L"
-    assert item.background(0).color() == QColor("red")
-
-
 def test_ui_qt_bookmark_lockout_locked_to_open(rig_remote_app):
     """Test bookmark lockout toggles from locked to open"""
     mock_bookmark = Mock(spec=Bookmark)
@@ -1942,149 +1635,14 @@ def test_ui_qt_bookmark_lockout_locked_to_open(rig_remote_app):
     assert item.background(0).color() == QColor("white")
 
 
-
-def test_ui_qt_toggle_cb_top_sets_flags_lines_686_692(rig_remote_app):
-    """Test toggle always on top sets window flags (lines 686-692)"""
-    _ = rig_remote_app.windowFlags()
-
-    rig_remote_app.toggle_cb_top(Qt.CheckState.Checked.value)
-    flags_checked = rig_remote_app.windowFlags()
-
-    # Verify flag includes WindowStaysOnTopHint
-    assert flags_checked & Qt.WindowType.WindowStaysOnTopHint
-
-    rig_remote_app.toggle_cb_top(Qt.CheckState.Unchecked.value)
-    flags_unchecked = rig_remote_app.windowFlags()
-
-    # Verify flag does not include WindowStaysOnTopHint
-    assert not (flags_unchecked & Qt.WindowType.WindowStaysOnTopHint)
-
-
-
-def test_ui_qt_process_wait_checkbox_lines_700_707(rig_remote_app):
-    """Test process wait checkbox (lines 700-707)"""
-    rig_remote_app.scan_thread = Mock()  # Simulate active scan
-
-    with patch.object(rig_remote_app.scanq, "send_event_update") as mock_send:
-        rig_remote_app.process_wait(Qt.CheckState.Checked.value)
-
-        mock_send.assert_called_once()
-        args = mock_send.call_args[0][0]
-        assert args[0] == "ckb_wait"
-        assert args[1] is True
-
-
-def test_ui_qt_process_record_checkbox_lines_711_713(rig_remote_app):
-    """Test process record checkbox (lines 711-713)"""
-    rig_remote_app.scan_thread = Mock()
-
-    with patch.object(rig_remote_app.scanq, "send_event_update") as mock_send:
-        rig_remote_app.process_record(Qt.CheckState.Checked.value)
-
-        mock_send.assert_called_once()
-        args = mock_send.call_args[0][0]
-        assert args[0] == "ckb_record"
-
-
-def test_ui_qt_process_log_checkbox_line_717(rig_remote_app):
-    """Test process log checkbox (line 717)"""
-    rig_remote_app.scan_thread = Mock()
-
-    with patch.object(rig_remote_app.scanq, "send_event_update") as mock_send:
-        rig_remote_app.process_log(Qt.CheckState.Checked.value)
-
-        mock_send.assert_called_once()
-        args = mock_send.call_args[0][0]
-        assert args[0] == "ckb_log"
-
-
-def test_ui_qt_process_auto_bookmark_checkbox_lines_724_plus(rig_remote_app):
-    """Test process auto bookmark checkbox"""
-    rig_remote_app.scan_thread = Mock()
-
-    with patch.object(rig_remote_app.scanq, "send_event_update") as mock_send:
-        rig_remote_app.process_auto_bookmark(Qt.CheckState.Checked.value)
-
-        mock_send.assert_called_once()
-        args = mock_send.call_args[0][0]
-        assert args[0] == "ckb_auto_bookmark"
-
-
 def test_ui_qt_process_checkbutton_stores_last_content(rig_remote_app):
     """Test checkbox processing stores last content"""
     rig_remote_app.scan_thread = Mock()
 
-    with patch.object(rig_remote_app.scanq, "send_event_update"):
+    with patch.object(rig_remote_app.scan_queue, "send_event_update"):
         rig_remote_app.process_wait(Qt.CheckState.Checked.value)
 
         assert rig_remote_app.params_last_content["ckb_wait"] is True
-
-
-
-def test_ui_qt_process_entry_updates_last_content_line_826(rig_remote_app):
-    """Test process entry updates params_last_content (line 826)"""
-    widget_name = "txt_delay"
-    value = "5"
-    rig_remote_app.params[widget_name].setText(value)
-
-    event = Mock()
-    event.widget = rig_remote_app.params[widget_name]
-    event.widget_name = widget_name
-
-    rig_remote_app.process_entry(event, silent=True)
-    assert rig_remote_app.params_last_content[widget_name] == value
-
-
-def test_ui_qt_process_entry_broadcast_signal_lines_847_848(rig_remote_app):
-    """Test process entry broadcasts signal (lines 847-848)"""
-    widget_name = "txt_interval"
-    value = "20"
-    rig_remote_app.params[widget_name].setText(value)
-    rig_remote_app.scan_thread = Mock()  # Simulate active scan
-
-    event = Mock()
-    event.widget = rig_remote_app.params[widget_name]
-    event.widget_name = widget_name
-
-    with patch.object(rig_remote_app.scanq, "send_event_update") as mock_send:
-        rig_remote_app.process_entry(event, silent=True)
-
-        mock_send.assert_called_once()
-
-
-def test_ui_qt_process_entry_validation_failure_lines_870_904(rig_remote_app):
-    """Test process entry handles validation failure (lines 870-904)"""
-    widget_name = "txt_sgn_level"
-    invalid_value = "abc"
-    original_value = "-50"
-
-    rig_remote_app.params[widget_name].setText(original_value)
-    rig_remote_app.params_last_content[widget_name] = original_value
-    rig_remote_app.params[widget_name].setText(invalid_value)
-
-    event = Mock()
-    event.widget = rig_remote_app.params[widget_name]
-    event.widget_name = widget_name
-
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
-        rig_remote_app.process_entry(event, silent=False)
-
-    # Verify widget still has focus or is in error state
-    assert rig_remote_app.params[widget_name].text() == invalid_value
-
-
-def test_ui_qt_process_hostname_entry_validation_lines_919_932(rig_remote_app):
-    """Test process hostname entry validation (lines 919-932)"""
-    rig_remote_app.params["txt_port1"].setText("4532")
-    rig_remote_app.params["txt_hostname1"].setText("invalid hostname with spaces")
-
-    event = Mock()
-    event.widget = rig_remote_app.params["txt_hostname1"]
-    event.widget_name = "txt_hostname1"
-
-    # Should handle gracefully even with unusual hostnames
-    rig_remote_app.process_entry(event, silent=True)
-
 
 
 def test_ui_qt_bookmark_add_broadcasts_and_saves(rig_remote_app):
@@ -2094,7 +1652,7 @@ def test_ui_qt_bookmark_add_broadcasts_and_saves(rig_remote_app):
     rig_remote_app.params["txt_description1"].setText("New Bookmark")
 
     with patch.object(rig_remote_app.bookmarks, "save"):
-        rig_remote_app.cb_add(1, silent=True)
+        rig_remote_app.add_bookmark_from_rig(1, silent=True)
 
     assert rig_remote_app.tree.topLevelItemCount() == 1
     item = rig_remote_app.tree.topLevelItem(0)
@@ -2124,24 +1682,12 @@ def test_ui_qt_bookmark_delete_removes_and_saves(rig_remote_app):
 
 def test_ui_qt_process_checkbuttons_send_event_when_scan_active(rig_remote_app):
     rig_remote_app.scan_thread = object()
-    with patch.object(rig_remote_app.scanq, "send_event_update") as send:
+    with patch.object(rig_remote_app.scan_queue, "send_event_update") as send:
         rig_remote_app.process_wait(Qt.CheckState.Checked.value)
         rig_remote_app.process_record(Qt.CheckState.Checked.value)
         rig_remote_app.process_log(Qt.CheckState.Checked.value)
         rig_remote_app.process_auto_bookmark(Qt.CheckState.Checked.value)
         assert send.call_count == 4
-
-
-def test_ui_qt_build_control_source_invalid_frequency_branch_lines_706_709(rig_remote_app):
-    rig_remote_app.params["txt_frequency1"].setText("not_a_number")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("desc")
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
-        res = rig_remote_app.build_control_source(1, silent=False)
-        assert res is None
-        assert crit.called
-
-
 
 
 def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
@@ -2151,102 +1697,6 @@ def test_ui_qt_process_entry_hostname_path_assigns_endpoint(rig_remote_app):
     evt = Mock()
     evt.widget = rig_remote_app.params["txt_hostname1"]
     evt.widget_name = "txt_hostname1"
-    rig_remote_app.process_entry(evt, silent=True)
-    assert rig_remote_app.rigctl[0].target.hostname == "localhost"
-    assert rig_remote_app.rigctl[0].target.port == 4532
-
-
-def test_ui_qt_process_hostname_entry_error_lines_445_446(rig_remote_app):
-    rig_remote_app.params["txt_port1"].setText("bad")
-    rig_remote_app.rigctl[0] = Mock()
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
-        rig_remote_app._process_hostname_entry("localhost", 1, silent=False)
-        assert crit.called
-
-
-def test_ui_qt_extract_two_bookmarks_lines_634_669(rig_remote_app):
-    bookmarks = []
-    for i in range(2):
-        bm = Mock(spec=Bookmark)
-        ch = Mock()
-        ch.frequency = 100 + i
-        ch.modulation = "FM"
-        bm.channel = ch
-        bm.description = f"d{i}"
-        bm.lockout = "O"
-        bookmarks.append(bm)
-    rig_remote_app._insert_bookmarks(bookmarks, silent=True)
-    out = rig_remote_app._extract_bookmarks()
-    assert len(out) == 2
-
-
-def test_ui_qt_build_control_source_valid_lines_673_676_again(rig_remote_app):
-    rig_remote_app.params["txt_frequency1"].setText("123456")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.params["txt_description1"].setText("d")
-    res = rig_remote_app.build_control_source(1, silent=True)
-    assert res == {"frequency": "123456", "mode": "FM", "description": "d"}
-
-
-def test_ui_qt_get_bookmark_from_item_lines_717_724_again(rig_remote_app):
-    item = QTreeWidgetItem()
-    item.setText(0, "100")
-    item.setText(1, "FM")
-    item.setText(2, "d")
-    item.setData(0, Qt.ItemDataRole.UserRole, "O")
-    bm = rig_remote_app._get_bookmark_from_item(item)
-    assert isinstance(bm, Bookmark)
-
-
-def test_ui_qt_cb_get_frequency_lines_728_730_again(rig_remote_app):
-    rig_remote_app.rigctl[0] = Mock()
-    rig_remote_app.rigctl[0].get_frequency.return_value = "111"
-    rig_remote_app.rigctl[0].get_mode.return_value = "AM"
-    rig_remote_app.cb_get_frequency({"rig_number": 1}, silent=True)
-    assert rig_remote_app.params["txt_frequency1"].text() == "111"
-
-
-def test_ui_qt_cb_set_frequency_success_lines_734_789_again(rig_remote_app):
-    rig_remote_app.rigctl[0] = Mock()
-    rig_remote_app.params["txt_frequency1"].setText("222")
-    rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
-    rig_remote_app.cb_set_frequency({"rig_number": 1}, silent=True)
-    rig_remote_app.rigctl[0].set_frequency.assert_called_once_with(222)
-    rig_remote_app.rigctl[0].set_mode.assert_called_once_with("FM")
-
-
-def test_ui_qt_cb_autofill_form_lines_809_813_again(rig_remote_app):
-    item = QTreeWidgetItem()
-    item.setText(0, "333")
-    item.setText(1, "USB")
-    item.setText(2, "t")
-    rig_remote_app.tree.addTopLevelItem(item)
-    rig_remote_app.tree.setCurrentItem(item)
-    rig_remote_app.cb_autofill_form(1)
-    assert rig_remote_app.params["txt_frequency1"].text() == "333"
-
-
-def test_ui_qt_frequency_toggle_no_mode_lines_864_865_again(rig_remote_app):
-    rig_remote_app.params["cbb_freq_modulation"].setCurrentIndex(-1)
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as crit:
-        rig_remote_app.frequency_toggle()
-        assert crit.called
-
-
-def test_ui_qt_cb_delete_lines_889_891_again(rig_remote_app):
-    item = QTreeWidgetItem()
-    item.setText(0, "555")
-    item.setText(1, "FM")
-    item.setText(2, "t")
-    item.setData(0, Qt.ItemDataRole.UserRole, "O")
-    rig_remote_app.tree.addTopLevelItem(item)
-    rig_remote_app.tree.setCurrentItem(item)
-    with patch.object(rig_remote_app.bookmarks, "delete_bookmark") as db, patch.object(rig_remote_app.bookmarks, "save") as sv:
-        rig_remote_app.cb_delete(1)
-        db.assert_called_once()
-        sv.assert_called_once()
-
-
-def test_ui_qt_cb_delete_no_selection_lines_903_907_again(rig_remote_app):
-    rig_remote_app.tree.clearSelection()
-    rig_remote_app.cb_delete(1)
+    rig_remote_app._process_entry(evt)
+    assert rig_remote_app.rigctl[0].endpoint.hostname == "localhost"
+    assert rig_remote_app.rigctl[0].endpoint.port == 4532

@@ -14,6 +14,7 @@ License: MIT License
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
 """
+
 from unittest.mock import Mock, create_autospec
 
 import pytest
@@ -35,9 +36,9 @@ def scanning():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     scanning = Scanning(
-        scan_queue=STMessenger(queuecomms=QueueComms()),
+        scan_queue=STMessenger(queue_comms=QueueComms()),
         log_filename="test_filename",
         rigctl=rigctl,
     )
@@ -50,18 +51,21 @@ def scanning():
 @pytest.fixture
 def create_bookmark():
     """Factory fixture to create bookmarks with different configurations."""
+
     def _create(frequency=1, modulation="FM", description="test", lockout=""):
         return Bookmark(
             channel=Channel(input_frequency=frequency, modulation=modulation),
             description=description,
             lockout=lockout,
         )
+
     return _create
 
 
 @pytest.fixture
 def create_scanning_task():
     """Factory fixture to create scanning tasks with various configurations."""
+
     def _create(
         scan_mode="frequency",
         frequency_modulation="FM",
@@ -80,7 +84,7 @@ def create_scanning_task():
         return ScanningTask(
             frequency_modulation=frequency_modulation,
             scan_mode=scan_mode,
-            new_bookmark_list=[],
+            new_bookmarks_list=[],
             range_min=range_min,
             range_max=range_max,
             interval=interval,
@@ -93,13 +97,11 @@ def create_scanning_task():
             log=log,
             bookmarks=bookmarks or [],
         )
+
     return _create
 
 
-@pytest.mark.parametrize(
-    "call_count",
-    [1, 2, 3, 5, 10]
-)
+@pytest.mark.parametrize("call_count", [1, 2, 3, 5, 10])
 def test_scanning_terminate_multiple_calls(scanning, call_count):
     """Test terminate can be called multiple times safely."""
     assert scanning._scan_active is True
@@ -121,11 +123,18 @@ def test_scanning_terminate_multiple_calls(scanning, call_count):
         ("frequency", "FM", True, True, True),
         ("bookmarks", "CW", True, True, True),
         ("frequency", "WFM", False, False, True),
-    ]
+    ],
 )
-def test_scanning_scan_wrapper_modes(scanning, create_bookmark, create_scanning_task,
-                                      scan_mode, modulation, log_enabled,
-                                      record_enabled, auto_bookmark_enabled):
+def test_scanning_scan_wrapper_modes(
+    scanning,
+    create_bookmark,
+    create_scanning_task,
+    scan_mode,
+    modulation,
+    log_enabled,
+    record_enabled,
+    auto_bookmark_enabled,
+):
     """Test scan wrapper routes to correct method based on scan_mode."""
     bookmarks = [create_bookmark(modulation=modulation, lockout="L")] if scan_mode == "bookmarks" else []
 
@@ -163,10 +172,11 @@ def test_scanning_scan_wrapper_modes(scanning, create_bookmark, create_scanning_
         ("L", "LSB"),
         ("L", "CW"),
         ("L", "WFM"),
-    ]
+    ],
 )
-def test_scanning_scan_bookmarks_with_lockout(scanning, create_bookmark, create_scanning_task,
-                                                lockout_value, modulation):
+def test_scanning_scan_bookmarks_with_lockout(
+    scanning, create_bookmark, create_scanning_task, lockout_value, modulation
+):
     """Test bookmarks with lockout 'L' are skipped."""
     bookmarks = [create_bookmark(modulation=modulation, lockout=lockout_value)]
     task = create_scanning_task(scan_mode="bookmarks", bookmarks=bookmarks)
@@ -191,12 +201,13 @@ def test_scanning_scan_bookmarks_with_lockout(scanning, create_bookmark, create_
         ("bookmarks", 2, True),
         ("bookmarks", 3, True),
         ("frequency", 0, True),
-    ]
+    ],
 )
-def test_scanning_scan_various_configurations(scanning, create_bookmark, create_scanning_task,
-                                               scan_mode, num_bookmarks, log_enabled):
+def test_scanning_scan_various_configurations(
+    scanning, create_bookmark, create_scanning_task, scan_mode, num_bookmarks, log_enabled
+):
     """Test scanning with various configurations."""
-    bookmarks = [create_bookmark(frequency=i*1000) for i in range(1, num_bookmarks + 1)]
+    bookmarks = [create_bookmark(frequency=i * 1000) for i in range(1, num_bookmarks + 1)]
     task = create_scanning_task(
         scan_mode=scan_mode,
         bookmarks=bookmarks,
@@ -227,10 +238,11 @@ def test_scanning_scan_various_configurations(scanning, create_bookmark, create_
         ("frequency", IOError, "Test IOError"),
         ("bookmarks", IOError, "File not found"),
         ("frequency", IOError, "Permission denied"),
-    ]
+    ],
 )
-def test_scanning_scan_io_errors(scanning, create_bookmark, create_scanning_task,
-                                  scan_mode, exception_class, error_message):
+def test_scanning_scan_io_errors(
+    scanning, create_bookmark, create_scanning_task, scan_mode, exception_class, error_message
+):
     """Test IOError handling during log file operations."""
     bookmarks = [create_bookmark(), create_bookmark(frequency=2000)] if scan_mode == "bookmarks" else []
     task = create_scanning_task(scan_mode=scan_mode, bookmarks=bookmarks, log=True)
@@ -261,10 +273,11 @@ def test_scanning_scan_io_errors(scanning, create_bookmark, create_scanning_task
         (TimeoutError, "frequency", 3, "AM"),
         (ConnectionError, "frequency", 1, "FM"),
         (ConnectionError, "frequency", 2, "USB"),
-    ]
+    ],
 )
-def test_scanning_set_frequency_exceptions(scanning, create_scanning_task,
-                                            exception_type, scan_mode, passes, modulation):
+def test_scanning_set_frequency_exceptions(
+    scanning, create_scanning_task, exception_type, scan_mode, passes, modulation
+):
     """Test exception handling in set_frequency operations."""
     task = create_scanning_task(
         scan_mode=scan_mode,
@@ -291,10 +304,9 @@ def test_scanning_set_frequency_exceptions(scanning, create_scanning_task,
         (TimeoutError, "frequency", "FM"),
         (TimeoutError, "frequency", "CW"),
         (ConnectionError, "frequency", "WFM"),
-    ]
+    ],
 )
-def test_scanning_set_mode_exceptions(scanning, create_scanning_task,
-                                       exception_type, scan_mode, modulation):
+def test_scanning_set_mode_exceptions(scanning, create_scanning_task, exception_type, scan_mode, modulation):
     """Test exception handling in set_mode operations."""
     task = create_scanning_task(
         scan_mode=scan_mode,
@@ -320,14 +332,13 @@ def test_scanning_set_mode_exceptions(scanning, create_scanning_task,
         (2, 100, 3000, False, True, "USB"),
         (1, 200, 5000, False, False, "LSB"),
         (4, 50, 2000, False, True, "FM"),
-    ]
+    ],
 )
-def test_scanning_bookmarks_no_wait_scenarios(scanning, create_bookmark, create_scanning_task,
-                                               num_bookmarks, sgn_level, signal_level,
-                                               wait, record, modulation):
+def test_scanning_bookmarks_no_wait_scenarios(
+    scanning, create_bookmark, create_scanning_task, num_bookmarks, sgn_level, signal_level, wait, record, modulation
+):
     """Test bookmark scanning without wait flag."""
-    bookmarks = [create_bookmark(frequency=i*1000, modulation=modulation)
-                 for i in range(1, num_bookmarks + 1)]
+    bookmarks = [create_bookmark(frequency=i * 1000, modulation=modulation) for i in range(1, num_bookmarks + 1)]
     task = create_scanning_task(
         scan_mode="bookmarks",
         bookmarks=bookmarks,
@@ -364,14 +375,13 @@ def test_scanning_bookmarks_no_wait_scenarios(scanning, create_bookmark, create_
         (3, 100, 100, True, "AM"),
         (2, 500, 500, True, "USB"),
         (1, 1000, 1000, False, "LSB"),
-    ]
+    ],
 )
-def test_scanning_bookmarks_with_wait_scenarios(scanning, create_bookmark, create_scanning_task,
-                                                 num_bookmarks, sgn_level, signal_level,
-                                                 record, modulation):
+def test_scanning_bookmarks_with_wait_scenarios(
+    scanning, create_bookmark, create_scanning_task, num_bookmarks, sgn_level, signal_level, record, modulation
+):
     """Test bookmark scanning with wait flag enabled."""
-    bookmarks = [create_bookmark(frequency=i*1000, modulation=modulation)
-                 for i in range(1, num_bookmarks + 1)]
+    bookmarks = [create_bookmark(frequency=i * 1000, modulation=modulation) for i in range(1, num_bookmarks + 1)]
     task = create_scanning_task(
         scan_mode="bookmarks",
         bookmarks=bookmarks,
@@ -408,10 +418,11 @@ def test_scanning_bookmarks_with_wait_scenarios(scanning, create_bookmark, creat
         (TimeoutError, "bookmarks", True, False),
         (ConnectionError, "bookmarks", True, True),
         (OSError, "bookmarks", False, False),
-    ]
+    ],
 )
-def test_scanning_bookmark_exceptions_scenarios(scanning, create_bookmark, create_scanning_task,
-                                                 exception_type, scan_mode, wait, record):
+def test_scanning_bookmark_exceptions_scenarios(
+    scanning, create_bookmark, create_scanning_task, exception_type, scan_mode, wait, record
+):
     """Test exception handling during bookmark scanning."""
     bookmarks = [create_bookmark(), create_bookmark(frequency=2000)]
     task = create_scanning_task(
@@ -440,11 +451,22 @@ def test_scanning_bookmark_exceptions_scenarios(scanning, create_bookmark, creat
         (10000, 15000, 1, 300, 35000, False, True, True, "USB"),
         (1000, 2000, 1, 100, 20000, True, True, True, "LSB"),
         (50000, 55000, 1, 500, 40000, True, True, False, "WFM"),
-    ]
+    ],
 )
-def test_scanning_frequency_wait_scenarios(scanning, create_bookmark, create_scanning_task,
-                                            range_min, range_max, interval, sgn_level,
-                                            signal_level, wait, record, auto_bookmark, modulation):
+def test_scanning_frequency_wait_scenarios(
+    scanning,
+    create_bookmark,
+    create_scanning_task,
+    range_min,
+    range_max,
+    interval,
+    sgn_level,
+    signal_level,
+    wait,
+    record,
+    auto_bookmark,
+    modulation,
+):
     """Test frequency scanning with various parameter combinations."""
     bookmarks = [create_bookmark(), create_bookmark(frequency=2000)]
     task = create_scanning_task(
@@ -461,7 +483,7 @@ def test_scanning_frequency_wait_scenarios(scanning, create_bookmark, create_sca
         frequency_modulation=modulation,
     )
 
-    scanning._scan_queue.send_event_update(event_list=("tests", "tests"))
+    scanning._scan_queue.send_event_update(event=("tests", "tests"))
     scanning._rigctl = create_autospec(RigCtl)
     scanning._rigctl.get_level.return_value = signal_level
     scanning._rigctl.get_mode.return_value = modulation
@@ -484,7 +506,7 @@ def test_scanning_frequency_wait_scenarios(scanning, create_bookmark, create_sca
         (3, 5000, 10000, 2),
         (1, 10000, 20000, 5),
         (2, 1000, 5000, 2),
-    ]
+    ],
 )
 def test_scanning_multiple_passes(scanning, create_scanning_task, passes, range_min, range_max, interval):
     """Test scanning with multiple passes."""
@@ -513,10 +535,11 @@ def test_scanning_multiple_passes(scanning, create_scanning_task, passes, range_
         ("LSB", 400, True),
         ("CW", 500, True),
         ("WFM", 600, True),
-    ]
+    ],
 )
-def test_scanning_different_modulations(scanning, create_bookmark, create_scanning_task,
-                                        modulation, sgn_level, expected_calls):
+def test_scanning_different_modulations(
+    scanning, create_bookmark, create_scanning_task, modulation, sgn_level, expected_calls
+):
     """Test scanning with different modulation types."""
     bookmarks = [create_bookmark(modulation=modulation)]
     task = create_scanning_task(
@@ -544,18 +567,24 @@ def test_scanning_different_modulations(scanning, create_bookmark, create_scanni
         ("txt_range_max", "200", True, None),
         ("ckb_wait", True, True, None),
         ("invalid_event", "x", False, None),
-    ]
+    ],
 )
-def test_scanning_process_queue_events(scanning, create_scanning_task, event_name, event_value, expected_processed, expected_range_min, monkeypatch):
+def test_scanning_process_queue_events(
+    scanning, create_scanning_task, event_name, event_value, expected_processed, expected_range_min, monkeypatch
+):
     task = create_scanning_task(delay=0)
+
     # stub messenger to return one event then stop
     class FakeMessenger:
         calls = 0
+
         def update_queued(self):
             self.calls += 1
             return self.calls == 1
+
         def get_event_update(self):
             return (event_name, event_value)
+
     scanning._scan_queue = FakeMessenger()
     processed = scanning._process_queue(task)
     assert processed is expected_processed
@@ -572,7 +601,7 @@ def test_scanning_process_queue_events(scanning, create_scanning_task, event_nam
         (None, ValueError("bad mode")),
         (None, OSError("comm")),
         (None, TimeoutError("timeout")),
-    ]
+    ],
 )
 def test_scanning_channel_tune_exceptions(scanning, freq_exception, mode_exception):
     scanning._rigctl = create_autospec(RigCtl)
@@ -594,18 +623,21 @@ def test_scanning_autobookmark_branches(scanning, create_scanning_task):
     assert scanning._prev_level == 100 and scanning._prev_freq == 1000
     # branch: lower/equal level -> append and erase
     scanning._autobookmark(level=50, freq=1200, task=task)
-    assert len(task.new_bookmark_list) == 1
+    assert len(task.new_bookmarks_list) == 1
     assert scanning._prev_level == 0 and scanning._prev_freq == 0
     # branch: greater level -> store (parameters intentionally swapped in implementation)
     scanning._autobookmark(level=200, freq=1300, task=task)
     assert scanning._hold_bookmark is True
 
 
-@pytest.mark.parametrize("initial_passes, expected_active, expected_result", [
-    (2, True, 1),
-    (1, False, 0),
-    (0, False, 0),
-])
+@pytest.mark.parametrize(
+    "initial_passes, expected_active, expected_result",
+    [
+        (2, True, 1),
+        (1, False, 0),
+        (0, False, 0),
+    ],
+)
 def test_scanning_pass_count_update(scanning, initial_passes, expected_active, expected_result):
     scanning._scan_active = True
     out = scanning._pass_count_update(pass_count=initial_passes)
@@ -613,29 +645,37 @@ def test_scanning_pass_count_update(scanning, initial_passes, expected_active, e
     assert scanning._scan_active is expected_active
 
 
-@pytest.mark.parametrize("dbfs, expected_sgn", [
-    (0, 0),
-    (5, 50),
-    (10, 100),
-])
+@pytest.mark.parametrize(
+    "dbfs, expected_sgn",
+    [
+        (0, 0),
+        (5, 50),
+        (10, 100),
+    ],
+)
 def test_scanning_dbfs_to_sgn(dbfs, expected_sgn):
     assert Scanning._dbfs_to_sgn(dbfs) == expected_sgn
 
 
-@pytest.mark.parametrize("levels, expected", [
-    ([0, 0], False),
-    ([1000, 0], True),
-])
+@pytest.mark.parametrize(
+    "levels, expected",
+    [
+        ([0, 0], False),
+        ([1000, 0], True),
+    ],
+)
 def test_scanning_signal_check(scanning, levels, expected):
     # rig mock cycles through provided levels
     class RigMock:
         def __init__(self, vals):
             self.vals = vals
             self.i = 0
+
         def get_level(self):
-            v = self.vals[min(self.i, len(self.vals)-1)]
+            v = self.vals[min(self.i, len(self.vals) - 1)]
             self.i += 1
             return v
+
     rig = RigMock(levels)
     assert scanning._signal_check(sgn_level=100, rig=rig) is expected
 
@@ -654,19 +694,26 @@ def test_scanning_erase_prev_bookmark(scanning):
     assert scanning._prev_level == 0 and scanning._prev_freq == 0
 
 
-@pytest.mark.parametrize("delay, events", [
-    (0, []),
-    (2, [("txt_delay", 1), ("txt_interval", 2)]),
-])
+@pytest.mark.parametrize(
+    "delay, events",
+    [
+        (0, []),
+        (2, [("txt_delay", 1), ("txt_interval", 2)]),
+    ],
+)
 def test_scanning_queue_sleep_processes_events(scanning, create_scanning_task, delay, events):
     task = create_scanning_task(delay=delay)
+
     class MQ:
         def __init__(self, evs):
             self.evs = list(evs)
+
         def update_queued(self):
             return len(self.evs) > 0
+
         def get_event_update(self):
             return self.evs.pop(0)
+
     scanning._scan_queue = MQ(events)
     scanning._queue_sleep(task)
     # when events present, attributes updated accordingly
@@ -687,16 +734,20 @@ def test_scanning_channel_tune_success_path(scanning):
 def test_scanning_process_queue_invalid_break(scanning, create_scanning_task):
     """Ensure invalid event triggers warning and breaks without processing anything (hits lines 272-275)."""
     task = create_scanning_task(delay=0)
+
     class FakeMessenger:
         def __init__(self):
             self.calls = 0
+
         def update_queued(self):
             # Return True twice to exercise loop and break
             self.calls += 1
             return self.calls <= 2
+
         def get_event_update(self):
             # First invalid, then would-be valid (won't be reached due to break)
             return ("bad_event", "ignored")
+
     scanning._scan_queue = FakeMessenger()
     processed = scanning._process_queue(task)
     assert processed is False
@@ -708,18 +759,23 @@ def test_scanning_signal_check_true_branch(scanning, levels):
         def __init__(self, vals):
             self.vals = vals
             self.i = 0
+
         def get_level(self):
-            v = self.vals[min(self.i, len(self.vals)-1)]
+            v = self.vals[min(self.i, len(self.vals) - 1)]
             self.i += 1
             return v
+
     rig = RigMock(levels)
     assert scanning._signal_check(sgn_level=50, rig=rig) is True
 
 
-@pytest.mark.parametrize("scan_mode, expect_called", [
-    ("bookmarks", True),
-    ("frequency", True),
-])
+@pytest.mark.parametrize(
+    "scan_mode, expect_called",
+    [
+        ("bookmarks", True),
+        ("frequency", True),
+    ],
+)
 def test_scanning_scan_dispatch_modes(scanning, create_scanning_task, scan_mode, expect_called):
     """Test scan dispatch uses the private dispatch map correctly."""
     # speed up by disabling sleep
@@ -728,10 +784,12 @@ def test_scanning_scan_dispatch_modes(scanning, create_scanning_task, scan_mode,
 
     # Spy wrappers to detect calls
     called = {"bookmarks": 0, "frequency": 0}
+
     def _wrap(fn_name):
         def _inner(t):
             called[fn_name] += 1
             return t
+
         return _inner
 
     # monkeypatch private dispatch entries
@@ -757,10 +815,12 @@ def test_scanning_scan_dispatch_unknown_mode(scanning, create_scanning_task):
 
     # Spy wrappers to detect calls
     called = {"bookmarks": 0, "frequency": 0}
+
     def _wrap(fn_name):
         def _inner(t):
             called[fn_name] += 1
             return t
+
         return _inner
 
     # monkeypatch private dispatch entries

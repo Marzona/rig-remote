@@ -28,17 +28,19 @@ from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
 from PySide6 import QtWidgets
 
-# helper functions
-def input_arguments()->argparse.Namespace:
-    """Argument parser.
 
-    """
+# helper functions
+def input_arguments() -> argparse.Namespace:
+    """Argument parser."""
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(textwrap.fill(
-            "Rig controller that interacts with a rig using the rigctl protocol.\
-             ")),
+        description=textwrap.dedent(
+            textwrap.fill(
+                "Rig controller that interacts with a rig using the rigctl protocol.\
+             "
+            )
+        ),
         epilog="""Please refer to:
         https://github.com/Marzona/rig-remote/wiki
         http://gqrx.dk/,
@@ -51,46 +53,52 @@ def input_arguments()->argparse.Namespace:
         License: MIT License
 
         Copyright (c) 2015 Simone Marzona
-        Copyright (c) 2016 Tim Sweeney""")
+        Copyright (c) 2016 Tim Sweeney""",
+    )
 
-    parser.add_argument("--bookmarks",
-                        "-b",
-                        type=str,
-                        required=False,
-                        dest="alternate_bookmark_file",
-                        help="Sets the full path for the bookmark file.")
+    parser.add_argument(
+        "--bookmarks",
+        "-b",
+        type=str,
+        required=False,
+        dest="alternate_bookmark_file",
+        help="Sets the full path for the bookmark file.",
+    )
 
-    parser.add_argument("--config",
-                        "-c",
-                        type=str,
-                        required=False,
-                        dest="alternate_config_file",
-                        help="Sets the full path for the config file.")
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        required=False,
+        dest="alternate_config_file",
+        help="Sets the full path for the config file.",
+    )
 
-    parser.add_argument("--log",
-                        "-l",
-                        type=str,
-                        required=False,
-                        dest="alternate_log_file",
-                        help="Sets the full path for the activity log file.")
+    parser.add_argument(
+        "--log",
+        "-l",
+        type=str,
+        required=False,
+        dest="alternate_log_file",
+        help="Sets the full path for the activity log file.",
+    )
 
-    parser.add_argument("--prefix",
-                        "-p",
-                        type=str,
-                        required=False,
-                        dest="alternate_prefix",
-                        help="Sets the directory prefix for default working files. " +
-                        "NOTE: Individual path options override this prefix.")
+    parser.add_argument(
+        "--prefix",
+        "-p",
+        type=str,
+        required=False,
+        dest="alternate_prefix",
+        help="Sets the directory prefix for default working files. "
+        + "NOTE: Individual path options override this prefix.",
+    )
 
-    parser.add_argument("--verbose",
-                        "-v",
-                        dest="verbose",
-                        action="store_true",
-                        help="Increase log verbosity.")
+    parser.add_argument("--verbose", "-v", dest="verbose", action="store_true", help="Increase log verbosity.")
 
     return parser.parse_args()
 
-def log_configuration(verbose: bool)->Logger:
+
+def log_configuration(verbose: bool) -> Logger:
     """
     Configure logging and return the root logger with an explicit level set.
     Ensures time.tzset is called if available and that handlers use the same level.
@@ -126,7 +134,7 @@ def log_configuration(verbose: bool)->Logger:
     return logger
 
 
-def process_path(path:str)->str:
+def process_path(path: str) -> str:
     """Handle tilde expansion in a path.
 
     :param path: path to expand
@@ -139,7 +147,7 @@ def process_path(path:str)->str:
 
 
 # entry point
-def cli()->None:
+def cli() -> None:
     DEFAULT_PREFIX = os.path.expanduser("~/.rig-remote")
     DEFAULT_CONFIG_FILENAME = "rig-remote.conf"
     DEFAULT_LOG_FILENAME = "rig-remote-log.txt"
@@ -167,15 +175,15 @@ def cli()->None:
 
     if args.alternate_bookmark_file is not None:
         bookmarks = args.alternate_bookmark_file
-        app_config.config['bookmark_filename'] = process_path(bookmarks)
+        app_config.config["bookmark_filename"] = process_path(bookmarks)
     elif app_config.config["bookmark_filename"] is None:
         app_config.config["bookmark_filename"] = os.path.join(dir_prefix, DEFAULT_BOOKMARK_FILENAME)
     # set activity log filename
     if args.alternate_log_file is not None:
         log = args.alternate_log_file
-        app_config.config['log_filename'] = process_path(log)
+        app_config.config["log_filename"] = process_path(log)
     else:
-        app_config.config['log_filename'] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
+        app_config.config["log_filename"] = os.path.join(dir_prefix, DEFAULT_LOG_FILENAME)
 
     app = QtWidgets.QApplication([])
     app.setQuitOnLastWindowClosed(True)
@@ -184,5 +192,6 @@ def cli()->None:
     window.show()
     sys.exit(app.exec())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     cli()

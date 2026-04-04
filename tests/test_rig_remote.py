@@ -11,8 +11,10 @@ from rig_remote import rig_remote as rr
 @pytest.fixture
 def set_argv():
     old = sys.argv[:]
+
     def _set(argv_list):
         sys.argv[:] = list(argv_list)
+
     yield _set
     sys.argv[:] = old
 
@@ -20,11 +22,13 @@ def set_argv():
 @pytest.fixture
 def set_env_home():
     old = os.environ.get("HOME")
+
     def _set(val):
         if val is None:
             os.environ.pop("HOME", None)
         else:
             os.environ["HOME"] = val
+
     yield _set
     if old is None:
         os.environ.pop("HOME", None)
@@ -39,11 +43,13 @@ def patch_attr():
     Usage: patch_attr(obj, "name", new_value)
     """
     patches = []
+
     def _patch(obj, name, value):
         had = hasattr(obj, name)
         orig = getattr(obj, name, None)
         patches.append((obj, name, orig, had))
         setattr(obj, name, value)
+
     yield _patch
     for obj, name, orig, had in reversed(patches):
         if had:
@@ -79,7 +85,7 @@ def fake_tzset():
         ("~/.config/app/file.txt", "~/.config/app/file.txt", "/home/user"),
         ("/absolute/path/file.txt", "/absolute/path/file.txt", None),
         ("relative/path/file.txt", "relative/path/file.txt", None),
-    ]
+    ],
 )
 def test_rig_remote_process_path(input_path, expected_path, set_home, set_env_home):
     if set_home:
@@ -103,17 +109,24 @@ def test_rig_remote_process_path(input_path, expected_path, set_home, set_env_ho
         (["prog", "-p", "/prefix"], False, None, None, None, "/prefix"),
         (["prog", "-v", "-b", "/tmp/b.csv"], True, "/tmp/b.csv", None, None, None),
         (["prog", "-v", "-c", "/tmp/c.conf", "-l", "/tmp/log.txt"], True, None, "/tmp/c.conf", "/tmp/log.txt", None),
-        (["prog", "-v", "-b", "/tmp/b.csv", "-c", "/tmp/c.conf", "-l", "/tmp/log.txt", "-p", "/prefix"],
-         True, "/tmp/b.csv", "/tmp/c.conf", "/tmp/log.txt", "/prefix"),
+        (
+            ["prog", "-v", "-b", "/tmp/b.csv", "-c", "/tmp/c.conf", "-l", "/tmp/log.txt", "-p", "/prefix"],
+            True,
+            "/tmp/b.csv",
+            "/tmp/c.conf",
+            "/tmp/log.txt",
+            "/prefix",
+        ),
         (["prog", "--verbose"], True, None, None, None, None),
         (["prog", "--bookmarks", "/b.csv"], False, "/b.csv", None, None, None),
         (["prog", "--config", "/c.conf"], False, None, "/c.conf", None, None),
         (["prog", "--log", "/log.txt"], False, None, None, "/log.txt", None),
         (["prog", "--prefix", "/p"], False, None, None, None, "/p"),
-    ]
+    ],
 )
-def test_rig_remote_input_arguments(set_argv, argv, expected_verbose, expected_bookmark,
-                                     expected_config, expected_log, expected_prefix):
+def test_rig_remote_input_arguments(
+    set_argv, argv, expected_verbose, expected_bookmark, expected_config, expected_log, expected_prefix
+):
     set_argv(argv)
     args = rr.input_arguments()
     assert args.verbose is expected_verbose
@@ -128,7 +141,7 @@ def test_rig_remote_input_arguments(set_argv, argv, expected_verbose, expected_b
     [
         (True, logging.INFO),
         (False, logging.WARNING),
-    ]
+    ],
 )
 def test_rig_remote_log_configuration_sets_level_and_handles_tzset(fake_tzset, verbose, expected_level):
     root = logging.getLogger()
@@ -215,8 +228,13 @@ def test_rig_remote_log_configuration_adds_handler_if_none(fake_tzset):
     "test_scenario, argv, existing_bookmark, existing_log, expected_exit_code",
     [
         # Test with command line args overriding
-        ("cli_overrides", ["prog", "-b", "~/bookmarks.csv", "-l", "~/activity.log", "-c", "~/rig.conf", "-p", "~/.prefix"],
-         None, None, 0),
+        (
+            "cli_overrides",
+            ["prog", "-b", "~/bookmarks.csv", "-l", "~/activity.log", "-c", "~/rig.conf", "-p", "~/.prefix"],
+            None,
+            None,
+            0,
+        ),
         # Test respecting existing config values
         ("respect_existing", ["prog"], "~/existing_bookmarks.csv", "~/existing_activity.log", 0),
         # Test with explicit config file
@@ -225,9 +243,11 @@ def test_rig_remote_log_configuration_adds_handler_if_none(fake_tzset):
         ("nonzero_exit", ["prog"], None, None, 5),
         # Test with default log when none
         ("default_log", ["prog"], None, None, 0),
-    ]
+    ],
 )
-def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, existing_bookmark, existing_log, expected_exit_code):
+def test_rig_remote_cli_scenarios(
+    set_argv, patch_attr, test_scenario, argv, existing_bookmark, existing_log, expected_exit_code
+):
     """Test various CLI scenarios with different configurations."""
     set_argv(argv)
 
@@ -237,10 +257,8 @@ def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, exi
         def __init__(self, config_file):
             captured["config_file"] = config_file
             self.config_file = config_file
-            self.config = {
-                "bookmark_filename": existing_bookmark,
-                "log_filename": existing_log
-            }
+            self.config = {"bookmark_filename": existing_bookmark, "log_filename": existing_log}
+
         def read_conf(self):
             if test_scenario != "respect_existing":
                 self.config["bookmark_filename"] = None
@@ -250,21 +268,26 @@ def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, exi
     class FakeQApp:
         def __init__(self, argv_list):
             self.argv_list = argv_list
+
         def setQuitOnLastWindowClosed(self, val):
             self._quit_on_last = val
+
         def exec(self):
             return expected_exit_code
 
     patch_attr(rr.QtWidgets, "QApplication", FakeQApp)
 
     container = {"instance": None}
+
     class FakeWindow:
         def __init__(self, app_config):
             self.app_config = app_config
             container["instance"] = self
+
         def resize(self, w, h):
             if test_scenario == "cli_overrides":
                 self._size = (w, h)
+
         def show(self):
             if test_scenario == "cli_overrides":
                 self._shown = True
@@ -289,7 +312,9 @@ def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, exi
         assert bookmark_set is not None and os.path.expanduser("~/bookmarks.csv") == os.path.expanduser(bookmark_set)
         assert log_set is not None and os.path.expanduser("~/activity.log") == os.path.expanduser(log_set)
     elif test_scenario == "respect_existing":
-        assert os.path.expanduser(window.app_config.config["bookmark_filename"]) == os.path.expanduser("~/existing_bookmarks.csv")
+        assert os.path.expanduser(window.app_config.config["bookmark_filename"]) == os.path.expanduser(
+            "~/existing_bookmarks.csv"
+        )
         expected_log = os.path.join(os.path.expanduser("~/.rig-remote"), "rig-remote-log.txt")
         assert os.path.expanduser(window.app_config.config["log_filename"]) == expected_log
     elif test_scenario == "explicit_config":
@@ -308,7 +333,7 @@ def test_rig_remote_cli_scenarios(set_argv, patch_attr, test_scenario, argv, exi
         ("missing", False, logging.WARNING),
         ("raises_exception", True, logging.INFO),
         ("raises_exception", False, logging.WARNING),
-    ]
+    ],
 )
 def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario, verbose, expected_level):
     """Test log_configuration with various tzset scenarios."""
@@ -319,8 +344,10 @@ def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario
     called = {"v": False}
 
     if tzset_scenario == "present_and_called":
+
         def my_tzset():
             called["v"] = True
+
         patch_attr(time, "tzset", my_tzset)
     elif tzset_scenario == "missing":
         if hasattr(time, "tzset"):
@@ -330,8 +357,10 @@ def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario
             except Exception:
                 pass
     elif tzset_scenario == "raises_exception":
+
         def failing_tzset():
             raise RuntimeError("tzset failed")
+
         patch_attr(time, "tzset", failing_tzset)
 
     try:
@@ -353,7 +382,7 @@ def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario
     [
         (True, logging.INFO),
         (False, logging.WARNING),
-    ]
+    ],
 )
 def test_rig_remote_log_configuration_handles_handler_setlevel_exception(patch_attr, verbose, expected_level):
     """Test that log_configuration handles exceptions when calling handler.setLevel()."""

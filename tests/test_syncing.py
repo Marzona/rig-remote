@@ -17,7 +17,7 @@ def test_syncing_terminate():
 def test_sycing_sync():
     syncing = Syncing()
     sync_task = SyncTask(
-        syncq=STMessenger(queuecomms=QueueComms()),
+        syncq=STMessenger(queue_comms=QueueComms()),
         src_rig=create_autospec(RigCtl),
         dst_rig=create_autospec(RigCtl),
         error="",

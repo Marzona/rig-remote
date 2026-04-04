@@ -7,119 +7,119 @@ from rig_remote.models.modulation_modes import ModulationModes
 
 
 @pytest.mark.parametrize(
-    "frequency_modulation, scan_mode, new_bookmark_list, range_min, range_max, interval, delay, passes, sgn_level, wait, record, auto_bookmark, log, bookmarks",
+    "frequency_modulation, scan_mode, new_bookmarks_list, range_min, range_max, interval, delay, passes, sgn_level, wait, record, auto_bookmark, log, bookmarks",
     [
         (
-                "AM",
-                "frequency",
-                [],
-                6,
-                4,
-                1000,
-                1,
-                1,
-                0,
-                False,
-                False,
-                False,
-                False,
-                [
-                    Bookmark(
-                        channel=Channel(input_frequency=1, modulation="AM"),
-                        description="description1",
-                        lockout="L",
-                    )
-                ],
+            "AM",
+            "frequency",
+            [],
+            6,
+            4,
+            1000,
+            1,
+            1,
+            0,
+            False,
+            False,
+            False,
+            False,
+            [
+                Bookmark(
+                    channel=Channel(input_frequency=1, modulation="AM"),
+                    description="description1",
+                    lockout="L",
+                )
+            ],
         ),
         (
-                "AM",
-                "frequenc",
-                [],
-                1,
-                4,
-                1000,
-                1,
-                1,
-                0,
-                False,
-                False,
-                False,
-                False,
-                [
-                    Bookmark(
-                        channel=Channel(input_frequency=1, modulation="AM"),
-                        description="description1",
-                        lockout="L",
-                    )
-                ],
+            "AM",
+            "frequenc",
+            [],
+            1,
+            4,
+            1000,
+            1,
+            1,
+            0,
+            False,
+            False,
+            False,
+            False,
+            [
+                Bookmark(
+                    channel=Channel(input_frequency=1, modulation="AM"),
+                    description="description1",
+                    lockout="L",
+                )
+            ],
         ),
         (
-                "AM",
-                "bookmark",
-                [],
-                1,
-                4,
-                1000,
-                1,
-                1,
-                0,
-                False,
-                False,
-                False,
-                False,
-                [
-                    Bookmark(
-                        channel=Channel(input_frequency=1, modulation="AM"),
-                        description="description1",
-                        lockout="L",
-                    )
-                ],
+            "AM",
+            "bookmark",
+            [],
+            1,
+            4,
+            1000,
+            1,
+            1,
+            0,
+            False,
+            False,
+            False,
+            False,
+            [
+                Bookmark(
+                    channel=Channel(input_frequency=1, modulation="AM"),
+                    description="description1",
+                    lockout="L",
+                )
+            ],
         ),
         (
-                "AM",
-                "not_supported_mode",
-                [],
-                1,
-                4,
-                1000,
-                1,
-                1,
-                0,
-                False,
-                False,
-                False,
-                False,
-                [
-                    Bookmark(
-                        channel=Channel(input_frequency=1, modulation="AM"),
-                        description="description1",
-                        lockout="L",
-                    )
-                ],
-        )
+            "AM",
+            "not_supported_mode",
+            [],
+            1,
+            4,
+            1000,
+            1,
+            1,
+            0,
+            False,
+            False,
+            False,
+            False,
+            [
+                Bookmark(
+                    channel=Channel(input_frequency=1, modulation="AM"),
+                    description="description1",
+                    lockout="L",
+                )
+            ],
+        ),
     ],
 )
 def test_scanning_task_init_error(
-        frequency_modulation,
-        scan_mode,
-        new_bookmark_list,
-        range_min,
-        range_max,
-        interval,
-        delay,
-        passes,
-        sgn_level,
-        wait,
-        record,
-        auto_bookmark,
-        log,
-        bookmarks,
+    frequency_modulation,
+    scan_mode,
+    new_bookmarks_list,
+    range_min,
+    range_max,
+    interval,
+    delay,
+    passes,
+    sgn_level,
+    wait,
+    record,
+    auto_bookmark,
+    log,
+    bookmarks,
 ):
     with pytest.raises(ValueError):
         ScanningTask(
             frequency_modulation=frequency_modulation,
             scan_mode=scan_mode,
-            new_bookmark_list=new_bookmark_list,
+            new_bookmarks_list=new_bookmarks_list,
             range_min=range_min,
             range_max=range_max,
             interval=interval,
@@ -133,6 +133,7 @@ def test_scanning_task_init_error(
             bookmarks=bookmarks,
         )
 
+
 @pytest.mark.parametrize(
     "frequency_modulation, interval, delay, passes",
     [
@@ -141,7 +142,7 @@ def test_scanning_task_init_error(
         for interval in range(1, 6)
         for delay in range(1, 6)
         for passes in range(1, 6)
-    ]
+    ],
 )
 def test_scanning_task_full_params(frequency_modulation, interval, delay, passes):
     """Test ScanningTask with all combinations of modulation modes and scanning parameters."""
@@ -151,7 +152,7 @@ def test_scanning_task_full_params(frequency_modulation, interval, delay, passes
     task = ScanningTask(
         frequency_modulation=frequency_modulation,
         scan_mode="frequency",
-        new_bookmark_list=[],
+        new_bookmarks_list=[],
         range_min=-100,  # Should be corrected to 0
         range_max=range_max,
         interval=interval_hz,
@@ -162,7 +163,7 @@ def test_scanning_task_full_params(frequency_modulation, interval, delay, passes
         record=False,
         auto_bookmark=False,
         log=False,
-        bookmarks=[]
+        bookmarks=[],
     )
 
     assert task.frequency_modulation == frequency_modulation
@@ -181,14 +182,14 @@ def test_scanning_task_full_params(frequency_modulation, interval, delay, passes
         (-1, 1),
         (-10, 1),
         (-100, 1),
-    ]
+    ],
 )
 def test_scanning_task_passes_less_than_one(passes, expected_passes):
     """Test ScanningTask corrects passes < 1 to minimum value of 1."""
     task = ScanningTask(
         frequency_modulation="FM",
         scan_mode="frequency",
-        new_bookmark_list=[],
+        new_bookmarks_list=[],
         range_min=100000,
         range_max=200000,
         interval=1000,
@@ -199,7 +200,7 @@ def test_scanning_task_passes_less_than_one(passes, expected_passes):
         record=False,
         auto_bookmark=False,
         log=False,
-        bookmarks=[]
+        bookmarks=[],
     )
 
     assert task.passes == expected_passes

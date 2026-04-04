@@ -33,13 +33,9 @@ class Bookmark:
     id: str = str(uuid4())
 
     def __eq__(self, other: object) -> bool:
-        if self.channel == other.channel and self.description == other.description:
-            return True
-        else:
-            logger.info(
-                "channel or description are different, bookmarks are not the same."
-            )
-            return False
+        if not isinstance(other, Bookmark):
+            raise NotImplementedError
+        return self.channel == other.channel and self.description == other.description
 
     def __post_init__(self) -> None:
         if self.lockout.upper() not in self._LOCKOUTS:
