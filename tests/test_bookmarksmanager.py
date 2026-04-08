@@ -111,8 +111,8 @@ def test_bookmarkmanager_load2(filename, delimiter, expected):
 @pytest.mark.parametrize(
     "filename, count",
     [
-        (os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks.csv"), 0),
-        (os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-duplicates.csv"), 1),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks.csv")), 0),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-duplicates.csv")), 1),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
@@ -130,8 +130,8 @@ def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
 @pytest.mark.parametrize(
     "filename",
     [
-        os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-broken.csv"),
-        os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-unsupported.csv"),
+        Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-broken.csv")),
+        Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-unsupported.csv")),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote_unsupported(filename):
@@ -230,15 +230,15 @@ def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
 def test_bookmarkmanager_import_bookmarks_no_file():
     bookmarks_manager = BookmarksManager()
     bookmarks_manager._detect_format = Mock()
-    bookmarks_manager.import_bookmarks(filename="")
+    bookmarks_manager.import_bookmarks(filename=None)
     bookmarks_manager._detect_format.assert_not_called()
 
 
 @pytest.mark.parametrize(
     "filename, count",
     [
-        (os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks.csv"), 0),
-        (os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks-duplicates.csv"), 2),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks.csv")), 0),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks-duplicates.csv")), 2),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_gqrx(filename, count):

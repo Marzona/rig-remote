@@ -347,7 +347,7 @@ class RigRemote(QMainWindow):
         # Bookmarks menu
         bookmarks_menu = menubar.addMenu("Bookmarks")
         import_action = bookmarks_menu.addAction("Import")
-        import_action.triggered.connect(self._import_bookmarks)
+        import_action.triggered.connect(self._import_bookmarks_dialog)
 
         export_menu = bookmarks_menu.addMenu("Export")
         export_gqrx = export_menu.addAction("Export GQRX")
@@ -373,10 +373,25 @@ class RigRemote(QMainWindow):
         """Load bookmarks from file"""
         self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
 
-    def _import_bookmarks(self, bookmarks_file_path: str) -> None:
-        """Import bookmarks"""
+    def _import_bookmarks_dialog(self) -> None:
+        """Prompt the user to select a bookmarks file to import."""
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import bookmarks",
+            "",
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not filename:
+            return
+
+        self._import_bookmarks(Path(filename))
+
+    def _import_bookmarks(self, bookmarks_file_path: Path) -> None:
+        """Import bookmarks from the selected file."""
 
         bookmark_list = self.bookmarks.import_bookmarks(bookmarks_file_path)
+        if not bookmark_list:
+            return
         self._insert_bookmarks(bookmarks=bookmark_list)
         [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
 

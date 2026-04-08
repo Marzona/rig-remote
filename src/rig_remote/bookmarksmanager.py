@@ -151,7 +151,7 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename: str) -> Union[list[Bookmark], None]:
+    def import_bookmarks(self, filename: Path) -> Union[list[Bookmark], None]:
         """handles the import of the bookmarks. It is a
         Wrapper around the import functions and the requester function.
 
@@ -161,7 +161,7 @@ class BookmarksManager:
             return None
         return self._importers_map[self._detect_format(filename)](filename)
 
-    def _detect_format(self, filename: str) -> str:
+    def _detect_format(self, filename: Path) -> str:
         """Method for detecting the bookmark type. Only two types are supported.
 
         :param filename: file path to read
@@ -179,22 +179,22 @@ class BookmarksManager:
         logger.error(message)
         raise BookmarkFormatError(message)
 
-    def _import_rig_remote(self, file_path: str) -> list[Bookmark]:
+    def _import_rig_remote(self, file_path: Path) -> list[Bookmark]:
         """Imports the bookmarks using rig-remote format. It wraps around
         the load method.
 
         :param file_path: path of the file to import
         """
 
-        return self.load(file_path, ",")
+        return self.load(str(file_path), ",")
 
-    def _import_gqrx(self, file_path: str) -> list[Bookmark]:
+    def _import_gqrx(self, file_path: Path) -> list[Bookmark]:
         """Method for importing gqrx bookmarks.
 
         :param file_path: path of the file to be loaded
         """
 
-        self._io.csv_load(file_path, ";")
+        self._io.csv_load(str(file_path), ";")
 
         count = 0
         bookmarks = []
