@@ -1,5 +1,6 @@
 import logging
 import threading
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QMessageBox,
     QApplication,
+    QFileDialog,
 )
 from PySide6.QtCore import Qt, QTimer, QEvent
 from PySide6.QtGui import QColor, QBrush
@@ -349,9 +351,9 @@ class RigRemote(QMainWindow):
 
         export_menu = bookmarks_menu.addMenu("Export")
         export_gqrx = export_menu.addAction("Export GQRX")
-        export_gqrx.triggered.connect(self.bookmarks.export_gqrx)
+        export_gqrx.triggered.connect(self._export_gqrx)
         export_rig = export_menu.addAction("Export rig-remote")
-        export_rig.triggered.connect(self.bookmarks.export_rig_remote)
+        export_rig.triggered.connect(self._export_rig_remote)
 
     def pop_up_about(self) -> None:
         """Display about dialog"""
@@ -371,11 +373,48 @@ class RigRemote(QMainWindow):
         """Load bookmarks from file"""
         self._insert_bookmarks(bookmarks=self.bookmarks.load(self.bookmarks_file, ","))
 
-    def _import_bookmarks(self) -> None:
+    def _import_bookmarks(self, bookmarks_file_path: str) -> None:
         """Import bookmarks"""
-        bookmark_list = self.bookmarks.import_bookmarks()
+
+        bookmark_list = self.bookmarks.import_bookmarks(bookmarks_file_path)
         self._insert_bookmarks(bookmarks=bookmark_list)
         [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
+
+    def _export_rig_remote(self) -> None:
+        """Prompt the user for an export destination and export rig-remote bookmarks."""
+        default_filename = self.ac.config.get("bookmark_filename", "")
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export rig-remote bookmarks",
+            str(default_filename),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not filename:
+            return
+
+        path = Path(filename)
+        try:
+            self.bookmarks.export_rig_remote(path)
+        except Exception as err:
+            QMessageBox.critical(self, "Export error", f"Could not export bookmarks:\n{err}")
+
+    def _export_gqrx(self) -> None:
+        """Prompt the user for an export destination and export GQRX bookmarks."""
+        default_filename = self.ac.config.get("bookmark_filename", "")
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export GQRX bookmarks",
+            str(default_filename),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not filename:
+            return
+
+        path = Path(filename)
+        try:
+            self.bookmarks.export_gqrx(path)
+        except Exception as err:
+            QMessageBox.critical(self, "Export error", f"Could not export bookmarks:\n{err}")
 
     def _insert_bookmarks(self, bookmarks: list, silent: bool = False) -> None:
         """Insert bookmarks into tree view"""

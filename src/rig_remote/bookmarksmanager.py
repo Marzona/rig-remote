@@ -17,7 +17,8 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 import logging
-from typing import Union, Callable
+from pathlib import Path
+from typing import Callable, Union
 
 from rig_remote.exceptions import (
     InvalidPathError,
@@ -236,24 +237,28 @@ class BookmarksManager:
         logger.info("bookmark %s added", bookmark)
         return False
 
-    def export_rig_remote(self, filename: str) -> None:
+    def export_rig_remote(self, filename: Path) -> None:
         """Wrapper method for exporting using rig remote csv format.
-        it wraps around the save method used when "save on exit" is selected.
+        It wraps around the save method used when "save on exit" is selected.
+
+        :param filename: destination path for the exported bookmarks
         """
 
         self.save(
-            bookmarks_file=filename,
+            bookmarks_file=str(filename),
             delimiter=",",
         )
 
-    def export_gqrx(self, filename: str) -> None:
-        """Wrapper method for exporting using rig remote csv format.
+    def export_gqrx(self, filename: Path) -> None:
+        """Wrapper method for exporting using gqrx bookmark format.
         It wraps around the save method used when "save on exit" is selected
         and around a function that provides the format/data conversion.
+
+        :param filename: destination path for the exported bookmarks
         """
 
         self._io.rows = self._GQRX_BOOKMARK_HEADER
-        self._save_gqrx(filename)
+        self._save_gqrx(str(filename))
 
     def _save_gqrx(self, filename: str) -> None:
         """Private method for saving the bookmarks file in csv compatible

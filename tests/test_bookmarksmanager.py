@@ -188,12 +188,12 @@ def test_bookmarkmanager_add_bookmark():
 
 
 def test_bookmarkmanager_export_rig_remote(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_rig_remote(filename="tests")
+    bookmark_manager_with_bookmarks.export_rig_remote(filename=Path("tests"))
     bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ",")
 
 
 def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_gqrx(filename="tests")
+    bookmark_manager_with_bookmarks.export_gqrx(filename=Path("tests"))
     bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ";")
 
     assert len(bookmark_manager_with_bookmarks._io.rows) == 7
