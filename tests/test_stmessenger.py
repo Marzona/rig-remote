@@ -27,6 +27,10 @@ def test_stmessenger_send_event_update_validation(event, should_raise):
     "mock_return, expected_result",
     [
         (None, None),
+        ("not_a_tuple", None),
+        (("only_one_element",), None),
+        (("param", "value"), ("param", "value")),
+        (("txt_delay", "5"), ("txt_delay", "5")),
     ],
 )
 def test_stmessenger_get_event_update_exception(mock_return, expected_result):

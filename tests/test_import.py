@@ -19,8 +19,8 @@ import_statements = [
     "from rig_remote.exceptions import InvalidPathError",
     "from rig_remote.exceptions import UnsupportedScanningConfigError",
     "from rig_remote.rigctl import RigCtl",
-    "from rig_remote.scanning import Scanning",
-    "from rig_remote.scanning import ScanningTask",
+    "from rig_remote.scanning import Scanning2",
+    "from rig_remote.scanning import create_scanner",
     "from rig_remote.stmessenger import STMessenger",
 ]
 

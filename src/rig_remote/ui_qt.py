@@ -22,7 +22,7 @@ from rig_remote.exceptions import (
 from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rigctl import RigCtl
-from rig_remote.scanning import Scanning
+from rig_remote.scanning import Scanning2, create_scanner
 from rig_remote.syncing import Syncing
 from rig_remote.models.sync_task import SyncTask
 from rig_remote.models.scanning_task import ScanningTask
@@ -67,7 +67,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.scan_thread: Optional[threading.Thread] = None
         self.sync_thread: Optional[threading.Thread] = None
         self.scan_mode: Optional[str] = None
-        self.scanning: Optional[Scanning] = None
+        self.scanning: Optional[Scanning2] = None
         self.syncing: Optional[Syncing] = None
         self.selected_bookmark = None
         self.scan_queue = STMessenger(queue_comms=QueueComms())
@@ -571,7 +571,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                     auto_bookmark=self.params["ckb_auto_bookmark"].isChecked(),
                     bookmarks=self.new_bookmarks_list,
                 )
-                self.scanning = Scanning(
+                self.scanning = create_scanner(
+                    scan_mode=scan_mode,
                     scan_queue=self.scan_queue,
                     log_filename=self.log_file,
                     rigctl=self.rigctl[0],  # all scanning activities are performed using rig 1

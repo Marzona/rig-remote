@@ -730,7 +730,7 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
     rig_remote_app.tree.clear()
     rig_remote_app._insert_bookmarks([mock_bookmark])
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_qt.Scanning"):
+    with patch("rig_remote.ui_qt.create_scanner"):
         with patch("rig_remote.ui_qt.threading.Thread") as mock_thread_cls:
             with patch("rig_remote.ui_qt.QTimer.singleShot"):
                 rig_remote_app._scan("bookmarks", "start", "FM")
@@ -741,7 +741,7 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
 
 def test_scan_start_frequency_mode(rig_remote_app):
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_qt.Scanning"):
+    with patch("rig_remote.ui_qt.create_scanner"):
         with patch("rig_remote.ui_qt.threading.Thread"):
             with patch("rig_remote.ui_qt.QTimer.singleShot"):
                 rig_remote_app._scan("frequency", "start", "FM")
