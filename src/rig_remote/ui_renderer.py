@@ -8,7 +8,6 @@ It is designed as a mixin class to be used with the main RigRemote class.
 import logging
 
 from PySide6.QtWidgets import (
-    QMainWindow,
     QWidget,
     QGridLayout,
     QLabel,
@@ -17,33 +16,13 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QTreeWidget,
-    QTreeWidgetItem,
     QGroupBox,
-    QMessageBox,
-    QApplication,
-    QFileDialog,
 )
-from PySide6.QtCore import Qt, QTimer, QEvent
-from PySide6.QtGui import QColor, QBrush
-from typing_extensions import Union
 
 from rig_remote.constants import RIG_COUNT
-from rig_remote.exceptions import (
-    UnsupportedScanningConfigError,
-    UnsupportedSyncConfigError,
-)
-from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rigctl import RigCtl
-from rig_remote.scanning import Scanning
-from rig_remote.syncing import Syncing
-from rig_remote.models.sync_task import SyncTask
-from rig_remote.models.scanning_task import ScanningTask
-from rig_remote.models.bookmark import Bookmark
-from rig_remote.queue_comms import QueueComms
 
-from rig_remote.stmessenger import STMessenger
-from rig_remote.app_config import AppConfig
 from rig_remote.models.modulation_modes import ModulationModes
 from typing import Any
 
@@ -52,6 +31,43 @@ logger = logging.getLogger(__name__)
 
 class RigRemoteUIBuilder:
     """Mixin class containing UI building methods for RigRemote."""
+
+    _ORDINAL_NUMBERS: list[str]
+    params: dict[str, Any]
+    params_last_content: dict[str, str]
+    rigctl: list[RigCtl]
+    tree: QTreeWidget
+    ckb_top: QCheckBox
+    ckb_save_exit: QCheckBox
+    sync_button: QPushButton
+    freq_scan_toggle: QPushButton
+    book_scan_toggle: QPushButton
+    book_lockout: QPushButton
+
+    def setWindowTitle(self, title: str) -> None: ...
+    def setMinimumSize(self, width: int, height: int) -> None: ...
+    def setCentralWidget(self, widget: QWidget) -> None: ...
+    def menuBar(self) -> Any: ...
+    def close(self) -> bool: raise NotImplementedError
+    def process_entry_wrapper(self, widget_name: str) -> None: ...
+    def process_wait(self, state: int) -> None: ...
+    def process_record(self, state: int) -> None: ...
+    def process_log(self, state: int) -> None: ...
+    def process_auto_bookmark(self, state: int) -> None: ...
+    def frequency_toggle(self) -> None: ...
+    def bookmark_toggle(self) -> None: ...
+    def bookmark_lockout(self) -> None: ...
+    def sync_toggle(self) -> None: ...
+    def toggle_cb_top(self, state: int) -> None: ...
+    def add_bookmark_from_rig(self, rig_number: int) -> None: ...
+    def cb_set_frequency(self, rig_endpoint: RigEndpoint, silent: bool = False) -> None: ...
+    def cb_get_frequency(self, rig_endpoint: RigEndpoint) -> None: ...
+    def cb_delete(self, source: int) -> None: ...
+    def cb_autofill_form(self, rig_number: int) -> None: ...
+    def pop_up_about(self) -> None: ...
+    def _import_bookmarks_dialog(self) -> None: ...
+    def _export_gqrx(self) -> None: ...
+    def _export_rig_remote(self) -> None: ...
 
     def _build_ui(self) -> None:
         """Build the entire UI"""
@@ -123,7 +139,7 @@ class RigRemoteUIBuilder:
         grid.addWidget(QLabel("Mode:"), 1, 0)
         cbb_mode = f"cbb_mode{rig_number}"
         self.params[cbb_mode] = QComboBox()
-        self.params[cbb_mode].addItems(ModulationModes)
+        self.params[cbb_mode].addItems([mode.value for mode in ModulationModes])
         self.params[cbb_mode].setToolTip("Mode to use for tuning the frequency.")
         grid.addWidget(self.params[cbb_mode], 1, 1, 1, 3)
 
@@ -135,7 +151,7 @@ class RigRemoteUIBuilder:
 
         self.btn_tune1 = QPushButton("Set")
         self.btn_tune1.setToolTip("Tune the frequency and mode from the rig control panel above.")
-        self.btn_tune1.clicked.connect(lambda: self.cb_set_frequency(self.rigctl[rig_number - 1].endpoint, None))
+        self.btn_tune1.clicked.connect(lambda: self.cb_set_frequency(self.rigctl[rig_number - 1].endpoint, False))
         grid.addWidget(self.btn_tune1, 3, 0)
 
         self.btn_load1 = QPushButton("Get")
@@ -231,7 +247,7 @@ class RigRemoteUIBuilder:
 
         grid.addWidget(QLabel("Scan mode:"), 2, 0)
         self.params["cbb_freq_modulation"] = QComboBox()
-        self.params["cbb_freq_modulation"].addItems(ModulationModes)
+        self.params["cbb_freq_modulation"].addItems([mode.value for mode in ModulationModes])
         self.params["cbb_freq_modulation"].setToolTip("Mode to use for the frequency scan.")
         grid.addWidget(self.params["cbb_freq_modulation"], 2, 1)
 

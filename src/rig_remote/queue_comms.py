@@ -117,20 +117,10 @@ class QueueComms:
         :param queue: Queue to insert signal in
         :raises ValueError: if signal is not a tuple or queue is not a Queue
         """
-        if not isinstance(signal, tuple):
-            logger.error(
-                "Invalid signal type. Expected tuple, got %s",
-                type(signal).__name__,
-            )
-            raise ValueError(f"Signal must be a tuple, got {type(signal).__name__}")
-
         if not isinstance(queue, Queue):
-            logger.error(
-                "Invalid queue type. Expected Queue, got %s",
-                type(queue).__name__,
-            )
-            raise ValueError(f"Queue must be a Queue instance, got {type(queue).__name__}")
-
+            raise ValueError(f"queue must be a Queue instance, got {type(queue)}")
+        if not isinstance(signal, tuple):
+            raise ValueError(f"signal must be a tuple, got {type(signal)}")
         queue.put(signal, False)
 
     def signal_parent(self, signal: tuple[str, str]) -> None:

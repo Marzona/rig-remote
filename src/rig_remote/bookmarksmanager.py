@@ -59,7 +59,7 @@ class BookmarksManager:
     def __init__(
         self,
         io: IO = IO(),
-        factory: Callable[[int, str, str, str], Bookmark] = bookmark_factory,
+        factory: Callable[..., Bookmark] = bookmark_factory,
     ) -> None:
         self._io = io
         self.bookmarks: list[Bookmark] = []
@@ -269,8 +269,8 @@ class BookmarksManager:
         """
 
         for bookmark in self.bookmarks:
-            gqrx_bookmark: list[Union[str, int]] = [
-                int(bookmark.channel.frequency),
+            gqrx_bookmark = [
+                bookmark.channel.frequency,
                 bookmark.description,
                 bookmark.channel.modulation,
                 "",

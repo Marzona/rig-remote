@@ -22,7 +22,7 @@ import csv
 import datetime
 import logging
 import os.path
-from typing import TextIO
+from typing import Any, TextIO
 
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.models.bookmark import Bookmark
@@ -34,7 +34,7 @@ class IO:
     """IO wrapper class"""
 
     def __init__(self) -> None:
-        self.rows: list[list[str]] = []
+        self.rows: list[list[Any]] = []
 
     @staticmethod
     def _path_check(csv_file: str) -> None:

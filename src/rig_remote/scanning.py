@@ -89,6 +89,11 @@ class Scanning:
         logger.info("Terminating scan.")
         self._scan_active = False
 
+    def _should_stop(self) -> bool:
+        """Return True if the scan has been terminated. Used inside while loops
+        to avoid mypy narrowing self._scan_active to Literal[True]."""
+        return not self._scan_active
+
     def _queue_sleep(self, task: ScanningTask) -> None:
         """check the queue regularly during 'sleep'
 
@@ -216,7 +221,7 @@ class Scanning:
                     self._rigctl.stop_recording()
                     logger.info("Recording stopped.")
 
-                if not self._scan_active:
+                if self._should_stop():
                     logger.info("Scanning stopped, exiting scanning loop.")
                     return task
             pass_count = self._pass_count_update(pass_count=pass_count)
@@ -241,7 +246,7 @@ class Scanning:
                 logger.error("Frequency beyond than max, stopping scan")
                 self.terminate()
             while freq < task.range_max:
-                if not self._scan_active:
+                if self._should_stop():
                     return task
                 if self._process_queue(task):
                     # the ui allows some params to be changed during the scan.
@@ -367,7 +372,10 @@ class Scanning:
         logger.info("checking for scaning update events")
         processed_something = False
         while self._scan_queue.update_queued():
-            param_name, param_value = self._scan_queue.get_event_update()
+            event = self._scan_queue.get_event_update()
+            if event is None:
+                break
+            param_name, param_value = event
             logger.warning("Retrieved event %s %s", param_name, param_value)
             if param_name not in self._VALID_SCAN_UPDATE_EVENT_NAMES:
                 logger.warning(

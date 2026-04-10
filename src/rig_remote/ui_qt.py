@@ -4,18 +4,10 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (
     QMainWindow,
-    QWidget,
-    QGridLayout,
-    QLabel,
     QLineEdit,
-    QPushButton,
-    QComboBox,
     QCheckBox,
-    QTreeWidget,
     QTreeWidgetItem,
-    QGroupBox,
     QMessageBox,
-    QApplication,
     QFileDialog,
 )
 from PySide6.QtCore import Qt, QTimer, QEvent
@@ -39,9 +31,8 @@ from rig_remote.queue_comms import QueueComms
 
 from rig_remote.stmessenger import STMessenger
 from rig_remote.app_config import AppConfig
-from rig_remote.models.modulation_modes import ModulationModes
 from rig_remote.ui_renderer import RigRemoteUIBuilder
-from typing import Any
+from typing import Any, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -70,19 +61,19 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.ac = app_config
 
         # Initialize attributes
-        self.params: dict[str, Union[QCheckBox, QLineEdit, QComboBox]] = {}
-        self.params_last_content: dict[str, str] = {}
+        self.params: dict[str, Any] = {}
+        self.params_last_content: dict[str, Any] = {}
         self.bookmarks = BookmarksManager()
-        self.scan_thread = None
-        self.sync_thread = None
-        self.scan_mode = None
-        self.scanning = None
+        self.scan_thread: Optional[threading.Thread] = None
+        self.sync_thread: Optional[threading.Thread] = None
+        self.scan_mode: Optional[str] = None
+        self.scanning: Optional[Scanning] = None
+        self.syncing: Optional[Syncing] = None
         self.selected_bookmark = None
         self.scan_queue = STMessenger(queue_comms=QueueComms())
         self.sync_queue = STMessenger(queue_comms=QueueComms())
         self.new_bookmarks_list: list[Bookmark] = []
         self.rigctl: list[RigCtl] = []
-        self.tree: QTreeWidget = None
 
         self._build_ui()
         self._load_bookmarks()
@@ -101,7 +92,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         Returns:
             str: bookmark filename
         """
-        return self.ac.config["bookmark_filename"]
+        return str(self.ac.config["bookmark_filename"] or "")
 
     def _load_bookmarks(self) -> None:
         """Load bookmarks from file"""
@@ -165,7 +156,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         except Exception as err:
             QMessageBox.critical(self, "Export error", f"Could not export bookmarks:\n{err}")
 
-    def _insert_bookmarks(self, bookmarks: list, silent: bool = False) -> None:
+    def _insert_bookmarks(self, bookmarks: list[Bookmark], silent: bool = False) -> None:
         """Insert bookmarks into tree view"""
         logger.info("adding %i bookmarks", len(bookmarks))
         for entry in bookmarks:
@@ -180,7 +171,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                 item.setBackground(1, QBrush(QColor("red")))
                 item.setBackground(2, QBrush(QColor("red")))
 
-    def process_entry_wrapper(self, widget_name: QTreeWidget) -> None:
+    def process_entry_wrapper(self, widget_name: str) -> None:
         """Wrapper for process_entry to work with Qt signals"""
         widget = self.params[widget_name]
 
@@ -192,7 +183,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         event_list = event_listMock(widget, widget_name)
         self._process_entry(event_list)
 
-    def _process_entry(self, event_list, silent: bool = False) -> None:
+    def _process_entry(self, event_list: Any, silent: bool = False) -> None:
         """Process entry widget changes"""
         widget = event_list.widget
         widget_name = event_list.widget_name if hasattr(event_list, "widget_name") else str(widget.objectName())
@@ -304,7 +295,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         event_list = ("ckb_auto_bookmark", state == Qt.CheckState.Checked.value)
         self._process_checkbutton(event_list)
 
-    def _process_checkbutton(self, event_list: tuple[str, str]) -> None:
+    def _process_checkbutton(self, event_list: tuple[str, Union[str, bool]]) -> None:
         """Process checkbox state changes"""
         if self.scan_thread is not None:
             self.scan_queue.send_event_update(event_list)
@@ -327,11 +318,11 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         for rig_number in range(1, RIG_COUNT + 1):
             port = f"port{rig_number}"
             try:
-                port_value = int(ac.config[port])
+                port_value = int(ac.config[port] or "0")
             except ValueError:
                 widget_name = f"txt_{port}"
-                port_value = int(self.ac.DEFAULT_CONFIG[port])
-                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[port])
+                port_value = int(self.ac.DEFAULT_CONFIG[port] or "0")
+                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[port] or "")
                 if not silent:
                     QMessageBox.critical(
                         self,
@@ -342,7 +333,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
             hostname = f"hostname{rig_number}"
             try:
-                hostname_value = ac.config[f"hostname{rig_number}"]
+                hostname_value = str(ac.config[f"hostname{rig_number}"] or "")
                 logger.debug(
                     "Validating rig endpoint for rig number %s, rig hostname %s and port %s.",
                     rig_number,
@@ -355,7 +346,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                     number=rig_number,
                 )
             except (ValueError, KeyError):
-                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[hostname])
+                self.params[widget_name].setText(self.ac.DEFAULT_CONFIG[hostname] or "")
                 if not silent:
                     QMessageBox.critical(
                         self,
@@ -370,20 +361,22 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         keys.extend(["interval", "delay", "passes", "range_min", "range_max"])
         for key in keys:
             ekey = f"txt_{key}"
-            if str.isdigit(ac.config[key].replace(",", "")):
-                self.params[ekey].setText(ac.config[key])
+            config_key_val = str(ac.config[key] or "")
+            if str.isdigit(config_key_val.replace(",", "")):
+                self.params[ekey].setText(config_key_val)
             else:
-                self.params[ekey].setText(self.ac.DEFAULT_CONFIG[key])
+                self.params[ekey].setText(self.ac.DEFAULT_CONFIG[key] or "")
                 eflag = True
 
         # Test integer values for signal level
+        sgn_val = str(ac.config["sgn_level"] or "")
         try:
-            int(ac.config["sgn_level"])
+            int(sgn_val)
         except ValueError:
-            self.params["txt_sgn_level"].setText(self.ac.DEFAULT_CONFIG["sgn_level"])
+            self.params["txt_sgn_level"].setText(str(self.ac.DEFAULT_CONFIG["sgn_level"] or ""))
             eflag = True
         else:
-            self.params["txt_sgn_level"].setText(ac.config["sgn_level"])
+            self.params["txt_sgn_level"].setText(sgn_val)
 
         if eflag and not silent:
             QMessageBox.critical(
@@ -393,12 +386,12 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
             )
 
         # Set checkboxes
-        self.params["ckb_auto_bookmark"].setChecked(ac.config.get("auto_bookmark", "false").lower() == "true")
-        self.params["ckb_record"].setChecked(ac.config.get("record", "false").lower() == "true")
-        self.params["ckb_wait"].setChecked(ac.config.get("wait", "false").lower() == "true")
-        self.params["ckb_log"].setChecked(ac.config.get("log", "false").lower() == "true")
-        self.ckb_save_exit.setChecked(ac.config.get("save_exit", "false").lower() == "true")
-        self.ckb_top.setChecked(ac.config.get("always_on_top", "false").lower() == "true")
+        self.params["ckb_auto_bookmark"].setChecked(str(ac.config.get("auto_bookmark") or "false").lower() == "true")
+        self.params["ckb_record"].setChecked(str(ac.config.get("record") or "false").lower() == "true")
+        self.params["ckb_wait"].setChecked(str(ac.config.get("wait") or "false").lower() == "true")
+        self.params["ckb_log"].setChecked(str(ac.config.get("log") or "false").lower() == "true")
+        self.ckb_save_exit.setChecked(str(ac.config.get("save_exit") or "false").lower() == "true")
+        self.ckb_top.setChecked(str(ac.config.get("always_on_top") or "false").lower() == "true")
 
         # Initialize rig control
         self.rigctl = [RigCtl(self.ac.rig_endpoints[i]) for i in range(RIG_COUNT)]
@@ -429,7 +422,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
             raise UnsupportedSyncConfigError
 
         if action.lower() == "stop" and self.sync_thread is not None:
-            self.syncing.terminate()
+            if self.syncing is not None:
+                self.syncing.terminate()
             self.sync_thread.join()
             self.sync_thread = None
             return
@@ -452,7 +446,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                 self.sync_toggle()
                 return
 
-            self.sync_thread = threading.Thread(endpoint=self.syncing.sync, args=(task,))
+            self.sync_thread = threading.Thread(target=self.syncing.sync, args=(task,))
             self.sync_thread.start()
             QTimer.singleShot(0, self.check_sync_thread)
 
@@ -469,7 +463,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
     def bookmark_lockout(self) -> None:
         """Toggle lockout of selected bookmark"""
-        current_item = self.tree.currentItem()
+        current_item = cast(Optional[QTreeWidgetItem], self.tree.currentItem())
         if current_item is None:
             return
 
@@ -533,7 +527,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
         if action.lower() == "stop" and self.scan_thread is not None:
             logger.info("Stopping ongoing scan")
-            self.scanning.terminate()
+            if self.scanning is not None:
+                self.scanning.terminate()
             self.scan_thread.join()
             self.scan_thread = None
             if scan_mode.lower() == "frequency":
@@ -631,7 +626,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
     def cb_autofill_form(self, rig_number: int) -> None:
         """Auto-fill bookmark fields with selected entry"""
-        current_item = self.tree.currentItem()
+        current_item = cast(Optional[QTreeWidgetItem], self.tree.currentItem())
         if current_item is None:
             return
 
@@ -645,7 +640,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.params[txt_frequency].setText(current_item.text(0))
         self.params[txt_description].setText(current_item.text(2))
 
-    def build_control_source(self, number: int, silent: bool = False) -> Union[dict, None]:
+    def build_control_source(self, number: int, silent: bool = False) -> Optional[dict[str, Any]]:
         """Build control source dictionary"""
         if number not in (1, 2):
             logger.error("The rig number %s is not supported", number)
@@ -702,6 +697,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         idx = self.tree.topLevelItemCount()
         for i in range(self.tree.topLevelItemCount()):
             item = self.tree.topLevelItem(i)
+            if item is None:
+                continue
             curr_freq = int(item.text(0))
             if int(bookmark.channel.frequency) < curr_freq:
                 idx = i
@@ -727,7 +724,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         bookmark_list = []
         for i in range(self.tree.topLevelItemCount()):
             item = self.tree.topLevelItem(i)
-            bookmark_list.append(self._get_bookmark_from_item(item))
+            if item is not None:
+                bookmark_list.append(self._get_bookmark_from_item(item))
         return bookmark_list
 
     def cb_delete(self, source: int) -> None:
@@ -748,7 +746,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
     def _get_bookmark_from_item(item: QTreeWidgetItem) -> Bookmark:
         """Get bookmark object from tree item"""
         return bookmark_factory(
-            input_frequency=item.text(0),
+            input_frequency=int(item.text(0)),
             modulation=item.text(1),
             description=item.text(2),
             lockout=str(item.data(0, Qt.ItemDataRole.UserRole)),
@@ -773,10 +771,12 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                 self.bookmarks.save(bookmarks_file=self.bookmarks_file)
                 self.ac.store_conf(window=self)
             if self.scan_thread is not None and self.scan_thread.is_alive():
-                self.scanning.terminate()
+                if self.scanning is not None:
+                    self.scanning.terminate()
                 self.scan_thread.join(timeout=2)  # Wait max 2 seconds
             if self.sync_thread is not None and self.sync_thread.is_alive():
-                self.syncing.terminate()
+                if self.syncing is not None:
+                    self.syncing.terminate()
                 self.sync_thread.join(timeout=2)  # Wait max 2 seconds
             event.accept()
         else:
@@ -789,4 +789,4 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         Returns:
             str: _description_
         """
-        return self.ac.config["log_filename"]
+        return str(self.ac.config["log_filename"] or "")

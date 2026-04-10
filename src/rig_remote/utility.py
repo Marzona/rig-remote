@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING  # pragma: no cover
 
 if TYPE_CHECKING:  # pragma: no cover
-    from rig_remote.ui_qt import RigRemote
+    pass
 
 import logging
 
@@ -32,6 +32,6 @@ def khertz_to_hertz(value: int) -> int:
     :return: frequency in hertz
     """
     if not isinstance(value, int):
-        logger.error("khertz_to_hertz: value must be an integer, got %s", type(value))
+        logger.error("khertz_to_hertz: value must be an integer, got %s", type(value))  # type: ignore[unreachable]
         raise TypeError("value must be an integer")
     return value * 1000

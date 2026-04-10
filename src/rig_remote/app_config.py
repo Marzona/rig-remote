@@ -17,7 +17,7 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:  # pragma: no cover
     from rig_remote.ui_qt import RigRemote  # pragma: no cover
@@ -46,7 +46,7 @@ class AppConfig:
 
     """
 
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: ClassVar[dict[str, str | bool | None]] = {
         "hostname1": "127.0.0.1",
         "port1": "7356",
         "hostname2": "127.0.0.1",
@@ -128,7 +128,7 @@ class AppConfig:
         self.rig_endpoints = [
             RigEndpoint(
                 hostname=str(self.config[f"hostname{instance_number}"]),
-                port=int(self.config[f"port{instance_number}"]),
+                port=int(self.config[f"port{instance_number}"] or "0"),
                 number=instance_number,
             )
             for instance_number in range(1, RIG_COUNT + 1)
@@ -162,14 +162,16 @@ class AppConfig:
             config.add_section(section)
 
         for key in self.config.keys():
+            raw = self.config[key]
+            value: str | None = str(raw).lower() if isinstance(raw, bool) else raw
             if key in RIG_URI_CONFIG:
-                config.set("Rig URI", key, self.config[key])
+                config.set("Rig URI", key, value)
             if key in MONITOR_CONFIG:
-                config.set("Monitor", key, self.config[key])
+                config.set("Monitor", key, value)
             if key in MAIN_CONFIG:
-                config.set("Main", key, self.config[key])
+                config.set("Main", key, value)
             if key in SCANNING_CONFIG:
-                config.set("Scanning", key, self.config[key])
+                config.set("Scanning", key, value)
         with open(self.config_file, "w", encoding="utf-8") as cf:
             config.write(cf)
 

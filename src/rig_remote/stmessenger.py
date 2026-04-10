@@ -19,7 +19,7 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-from typing import Union
+from typing import Any, Union
 
 from rig_remote.queue_comms import QueueComms
 import logging
@@ -36,7 +36,7 @@ class STMessenger:
     def __init__(self, queue_comms: QueueComms):
         self.queue_comms = queue_comms
 
-    def send_event_update(self, event: tuple[str, str]) -> None:
+    def send_event_update(self, event: tuple[str, Any]) -> None:
         """Send an event update to the scanning thread.
 
         :param event: tuple of event name and state
@@ -47,7 +47,7 @@ class STMessenger:
         if isinstance(event, tuple) and len(event) == 2:
             self.queue_comms.send_to_child(event)
         else:
-            logger.error("Event : %s", event)
+            logger.error("Event : %s", event)  # type: ignore[unreachable]
             raise ValueError("Bad event update attempt.")
 
     def update_queued(self) -> bool:

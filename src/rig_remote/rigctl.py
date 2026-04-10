@@ -181,9 +181,7 @@ class RigCtl:
         """
         output = self._send_message("f")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting radio frequency, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return float(output)
 
     def set_mode(self, mode: str) -> None:
@@ -192,7 +190,7 @@ class RigCtl:
 
         """
         if not isinstance(mode, str):
-            logger.error("Expected unicode string while setting modulation mode, got %s", mode)
+            logger.error("Expected unicode string while setting modulation mode, got %s", mode)  # type: ignore[unreachable]
             raise ValueError
         self._send_message(request=f"M {mode}")
 
@@ -204,10 +202,9 @@ class RigCtl:
         # older versions of gqrx replies with only the mode (u'WFM_ST' as an example)
         # newer versions replies with something like u'WFM_ST\n160000'
         output_message = self._send_message(request="m")
+        if not isinstance(output_message, str):
+            raise ValueError(f"Expected string response, got {type(output_message)}")
         output = output_message
-        if not isinstance(output, str):
-            logger.error("Expected unicode string while getting radio frequency, got %s", output)
-            raise ValueError
         if "\n" in output_message:
             output = output_message.split("\n")[0]
 
@@ -237,12 +234,7 @@ class RigCtl:
 
         output = self._send_message(request="l")
         if not isinstance(output, str):
-            logger.error(
-                "Expected unicode string while getting radio signal level, got %s",
-                output,
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return float(output.strip())
 
     def set_vfo(self, vfo: str) -> str:
@@ -268,9 +260,7 @@ class RigCtl:
 
         output = self._send_message("v")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting VFO, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_rit(self, rit: int) -> str:
@@ -280,9 +270,8 @@ class RigCtl:
         """
 
         if not isinstance(rit, int):
-            logger.error("RIT value must be an int, got %s", type(rit))
+            logger.error("RIT value must be an int, got %s", type(rit))  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"J {rit}")
 
     def get_rit(self) -> str:
@@ -293,9 +282,7 @@ class RigCtl:
 
         output = self._send_message("j")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting RIT, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_xit(self, xit: str) -> str:
@@ -305,9 +292,8 @@ class RigCtl:
         """
 
         if not isinstance(xit, str):
-            logger.error("XIT value must be a string, got %s", type(xit))
+            logger.error("XIT value must be a string, got %s", type(xit))  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"J {xit}")
 
     def get_xit(self) -> str:
@@ -318,9 +304,7 @@ class RigCtl:
 
         output = self._send_message("j")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting XIT, got %s", type(output))
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_split_freq(self, split_freq: int) -> str:
@@ -330,7 +314,7 @@ class RigCtl:
         """
 
         if not isinstance(split_freq, int):
-            logger.error("XIT value must be an integer, got %s", type(split_freq))
+            logger.error("XIT value must be an integer, got %s", type(split_freq))  # type: ignore[unreachable]
             raise ValueError
         return self._send_message(f"I {split_freq}")
 
@@ -372,12 +356,7 @@ class RigCtl:
 
         output = self._send_message("x")
         if not isinstance(output, str):
-            logger.error(
-                "Expected string while getting split_frequency_mode, got %s",
-                type(output),
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_func(self, func: str) -> str:
@@ -404,8 +383,7 @@ class RigCtl:
 
         output = self._send_message("u")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting func, got %s", output)
-            raise ValueError
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_parm(self, parm: str) -> str:
@@ -431,9 +409,7 @@ class RigCtl:
 
         output = self._send_message("p")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting parm, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_antenna(self, antenna: int) -> str:
@@ -443,9 +419,8 @@ class RigCtl:
         """
 
         if not isinstance(antenna, int):
-            logger.error("antenna value must be an int, got %s", antenna)
+            logger.error("antenna value must be an int, got %s", antenna)  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"Y {antenna}")
 
     def get_antenna(self) -> int:
@@ -455,10 +430,11 @@ class RigCtl:
         """
 
         output = self._send_message("y")
-        if not isinstance(output, int):
+        try:
+            return int(output)
+        except ValueError:
             logger.error("Expected integer while getting radio antenna, got %s", output)
-            raise ValueError
-        return output
+            raise
 
     def rig_reset(self, reset_signal: str) -> str:
         """Wrapper around _request. It configures the command for resetting
