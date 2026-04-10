@@ -94,3 +94,9 @@ def test_bookmark_comparison(
     )
 
     assert (test_bookmark1 == test_bookmark2) == expected
+
+
+def test_bookmark_eq_non_bookmark_raises():
+    bookmark = Bookmark(channel=Channel(input_frequency=1, modulation="AM"), description="test")
+    with pytest.raises(NotImplementedError):
+        bookmark.__eq__("not a bookmark")

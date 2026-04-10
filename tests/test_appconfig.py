@@ -217,6 +217,7 @@ def test_appconfig_write_conf_creates_file_and_sections(tmp_path):
 
     # ensure writable string values (avoid None in DEFAULT_CONFIG for writing)
     ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+    ac.config["monitor_mode_loops"] = "10"
 
     # call internal writer and verify file was created and contains expected sections
     ac._write_conf()

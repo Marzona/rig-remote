@@ -171,8 +171,14 @@ def test_disk_io_close_error(log_file, tmp_path):
     log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))
 
+    handler = log_file.log_file_handler
+    real_close = handler.close
     # Mock the file close to raise an error
-    log_file.log_file_handler.close = MagicMock(side_effect=OSError("Close failed"))
+    handler.close = MagicMock(side_effect=OSError("Close failed"))
 
     # Test should complete without raising exception (error is logged)
     log_file.close()
+
+    # Restore real close so the file object can be properly finalized by GC
+    handler.close = real_close
+    real_close()

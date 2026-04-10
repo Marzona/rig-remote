@@ -149,3 +149,7 @@ def cli() -> None:
         dump_info()
     elif args.check_config:
         check_config(args.check_config)
+
+
+if __name__ == "__main__":
+    cli()

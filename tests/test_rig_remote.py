@@ -1,9 +1,11 @@
 # python
 import os
+import runpy
 import sys
 import time
 import logging
 import pytest
+from unittest.mock import patch
 
 from rig_remote import rig_remote as rr
 
@@ -405,3 +407,16 @@ def test_rig_remote_log_configuration_handles_handler_setlevel_exception(patch_a
             if h not in orig_handlers:
                 root.removeHandler(h)
         root.level = orig_level
+
+
+def test_rig_remote_main_block():
+    """Cover the if __name__ == '__main__' block."""
+    sys.modules.pop("rig_remote.rig_remote", None)
+    with patch("sys.argv", ["rig_remote"]), \
+         patch("sys.exit"), \
+         patch("rig_remote.app_config.AppConfig") as mock_cfg_cls, \
+         patch("rig_remote.ui_qt.RigRemote"), \
+         patch("PySide6.QtWidgets.QApplication") as mock_qapp:
+        mock_cfg_cls.return_value.config = {"bookmark_filename": None, "log_filename": None}
+        mock_qapp.return_value.exec.return_value = 0
+        runpy.run_module("rig_remote.rig_remote", run_name="__main__")

@@ -52,6 +52,17 @@ def test_sync_task_comparison_false(syncq1, src_rig1, dst_rig1, error1, syncq2, 
     assert (sync_task1 == sync_task2) == expected
 
 
+def test_sync_task_eq_non_sync_task_raises():
+    sync_task = SyncTask(
+        STMessenger(queue_comms=QueueComms()),
+        RigCtl(endpoint=RigEndpoint(hostname="localhost", port=8080, number=1, name="rig1")),
+        RigCtl(endpoint=RigEndpoint(hostname="localhost", port=8081, number=2, name="rig2")),
+        "",
+    )
+    with pytest.raises(NotImplementedError):
+        sync_task.__eq__("not a sync task")
+
+
 def test_sync_task_comparison_true():
     src_rig = RigCtl(endpoint=RigEndpoint(hostname="localhost", port=8080, number=1, name="test_rig1"))
     dst_rig = RigCtl(endpoint=RigEndpoint(hostname="localhost", port=8081, number=2, name="test_rig2"))

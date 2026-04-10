@@ -1,3 +1,5 @@
+import runpy
+import sys
 import pytest
 from unittest.mock import patch, mock_open
 
@@ -425,6 +427,15 @@ bookmark_filename='bookmarks.csv'
             assert result is True
             captured = capsys.readouterr()
             assert "Bookmarks info:" in captured.out
+
+
+def test_config_checker_main_block(capsys):
+    """Cover the if __name__ == '__main__' block."""
+    sys.modules.pop("config_checker.config_checker", None)
+    with patch("sys.argv", ["config_checker"]):
+        runpy.run_module("config_checker.config_checker", run_name="__main__")
+    captured = capsys.readouterr()
+    assert "At least one option is required" in captured.out
 
 
 def test_config_checker_check_config_malformed_line_error_message(capsys):
