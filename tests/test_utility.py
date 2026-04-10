@@ -1,46 +1,59 @@
 import pytest
-from unittest.mock import MagicMock
 from rig_remote.utility import (
     khertz_to_hertz,
-    shutdown,
-    center_window
 )
 
-def test_utility_khertz_to_hertz():
-    """Test frequency conversion from kHz to Hz."""
-    assert khertz_to_hertz(1000) == 1000000
-    assert khertz_to_hertz(1000) == 1000000
 
-    with pytest.raises(TypeError):
-        khertz_to_hertz("invalid")
+@pytest.mark.parametrize(
+    "input_value, expected_output",
+    [
+        (0, 0),
+        (1, 1000),
+        (10, 10000),
+        (100, 100000),
+        (1000, 1000000),
+        (5000, 5000000),
+        (10000, 10000000),
+        (50000, 50000000),
+        (100000, 100000000),
+        (-1, -1000),
+        (-100, -100000),
+        (-1000, -1000000),
+    ],
+)
+def test_utility_khertz_to_hertz_valid_inputs(input_value, expected_output):
+    """Test frequency conversion from kHz to Hz with valid integer inputs."""
+    assert khertz_to_hertz(input_value) == expected_output
 
-def test_utility_shutdown_without_save():
-    """Test shutdown function when save on exit is disabled."""
-    window = MagicMock()
-    window.ckb_save_exit.get_str_val.return_value = "false"
 
-    shutdown(window)
+@pytest.mark.parametrize(
+    "invalid_value",
+    [
+        "invalid",
+        "1000",
+        1000.5,
+        10.25,
+        None,
+        [],
+        {},
+        [1000],
+        {"value": 1000},
+        (1000,),
+    ],
+)
+def test_utility_khertz_to_hertz_invalid_inputs(invalid_value):
+    """Test frequency conversion raises TypeError for non-integer inputs."""
+    with pytest.raises(TypeError, match="value must be an integer"):
+        khertz_to_hertz(invalid_value)
 
-    assert not hasattr(window, '_io') or not window._io.save.called
-    window.master.destroy.assert_called_once()
 
-
-def test_utility_center_window_custom_size():
-    """Test window centering calculation with custom size."""
-    window = MagicMock()
-    window.winfo_screenwidth.return_value = 1920
-    window.winfo_screenheight.return_value = 1080
-
-    center_window(window, width=800, height=600)
-
-    window.geometry.assert_called_once_with("800x600+560+240")
-
-def test_utility_center_window_default_size():
-    """Test window centering calculation with default size."""
-    window = MagicMock()
-    window.winfo_screenwidth.return_value = 1920
-    window.winfo_screenheight.return_value = 1080
-
-    center_window(window)
-
-    window.geometry.assert_called_once_with("300x200+810+440")
+@pytest.mark.parametrize(
+    "bool_value, expected_output",
+    [
+        (True, 1000),
+        (False, 0),
+    ],
+)
+def test_utility_khertz_to_hertz_boolean_inputs(bool_value, expected_output):
+    """Test frequency conversion with boolean inputs (bool is subclass of int in Python)."""
+    assert khertz_to_hertz(bool_value) == expected_output

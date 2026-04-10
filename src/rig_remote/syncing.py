@@ -29,7 +29,7 @@ class Syncing:
 
     _SYNC_INTERVAL = 0.1
 
-    def __init__(self):
+    def __init__(self)-> None:
         self.sync_active = True
 
     def terminate(self)->None:
@@ -51,7 +51,7 @@ class Syncing:
             task.dst_rig.set_frequency(task.src_rig.get_frequency())
             task.dst_rig.set_mode(task.src_rig.get_mode())
             time.sleep(self._SYNC_INTERVAL)
-            if once is True:
+            if  once:
                 self.terminate()
         task.syncq.notify_end_of_scan()
         self.terminate()

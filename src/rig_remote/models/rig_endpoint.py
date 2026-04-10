@@ -33,7 +33,7 @@ class RigEndpoint:
     id: str = str(uuid4())
     name: str = ""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._is_valid_port(port=self.port)
         self._is_valid_hostname(hostname=self.hostname)
         self._is_valid_number()

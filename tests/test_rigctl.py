@@ -16,7 +16,7 @@ def test_rigctl_set_commands_no_param(command, message):
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     getattr(rigctl, command)()
     rigctl._send_message.assert_called_once_with(request=message)
@@ -108,7 +108,7 @@ def test_rigctl_set_commands(command, parameter, message):
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     getattr(rigctl, command)(parameter)
     rigctl._send_message.assert_called_once_with(request=message)
@@ -119,7 +119,7 @@ def test_rigctl_set_commands_socket_mock():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     with patch("socket.socket") as mock_socket:
         rigctl.set_frequency(frequency=1.1)
         assert mock_socket.call_count == 1
@@ -127,12 +127,13 @@ def test_rigctl_set_commands_socket_mock():
         mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
         mock_socket().close.assert_called_once()
 
+
 def test_rigctl_set_commands_socket_mock_exception():
     hostname = "localhost"
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.sendall.side_effect = TimeoutError("Socket timeout")
         with pytest.raises(TimeoutError):
@@ -140,6 +141,7 @@ def test_rigctl_set_commands_socket_mock_exception():
         assert mock_socket.call_count == 1
         mock_socket().connect.assert_called_once_with(("localhost", 8080))
         mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
+
 
 @pytest.mark.parametrize(
     "command, message, msg_type",
@@ -162,7 +164,7 @@ def test_rigctl_get_commands(command, message, msg_type):
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     if msg_type == "int":
         rigctl._send_message.return_value = 2
@@ -193,12 +195,12 @@ def test_rigctl_get_commands_error(command, message, msg_type):
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     if msg_type == "int":
         rigctl._send_message.return_value = 2
     else:
-        rigctl._send_message.return_value = "2"
+        rigctl._send_message.return_value = "a"
     with pytest.raises(ValueError):
         getattr(rigctl, command)()
 
@@ -224,7 +226,7 @@ def test_rigctl_set_commands_error(command, parameter, message, msg_type):
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     if msg_type == "int":
         rigctl._send_message.return_value = 2
@@ -240,12 +242,12 @@ def test_rigctl_set_commands_error(command, parameter, message, msg_type):
         ("get_split_mode", "x"),
     ],
 )
-def test_rigctl_get_commands_no_reqest(command, message):
+def test_rigctl_get_commands_no_request(command, message):
     hostname = "localhost"
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     rigctl._send_message.return_value = "2"
 
@@ -258,10 +260,11 @@ def test_rigctl_get_mode_old_gqrx_versions():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
     rigctl._send_message = create_autospec(rigctl._send_message)
     rigctl._send_message.return_value = "FM\n"
     assert rigctl.get_mode() == "FM"
+
 
 def test_rigctl_send_message_connection_error():
     """Test connection error handling in _send_message."""
@@ -269,7 +272,7 @@ def test_rigctl_send_message_connection_error():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
 
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.connect.side_effect = ConnectionRefusedError()
@@ -283,7 +286,7 @@ def test_rigctl_send_message_socket_error():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
 
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.sendall.side_effect = OSError()
@@ -297,7 +300,7 @@ def test_rigctl_send_message_receive_error():
     port = 8080
     number = 1
     rig_endpoint = RigEndpoint(hostname=hostname, port=port, number=number)
-    rigctl = RigCtl(target=rig_endpoint)
+    rigctl = RigCtl(endpoint=rig_endpoint)
 
     with patch("socket.socket") as mock_socket:
         mock_socket.return_value.recv.side_effect = OSError()
@@ -305,10 +308,9 @@ def test_rigctl_send_message_receive_error():
             rigctl._send_message("tests")
 
 
-
 @pytest.fixture
 def mock_socket():
-    with patch('socket.socket') as mock:
+    with patch("socket.socket") as mock:
         socket_instance = mock.return_value
         socket_instance.send.return_value = None
         socket_instance.recv.return_value = b"OK\n"

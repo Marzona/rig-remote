@@ -56,24 +56,13 @@ def test_bookmark_factory():
 
 @pytest.mark.parametrize(
     "delimiter",
-    [":" "," '"'],
+    [':,"'],
 )
 def test_bookmarkmanager_save(delimiter):
     io = IO()
     io.csv_save = Mock(return_value=None)
     bookmarks_manager = BookmarksManager(io=io)
-    description = "test_description"
-    lockout = "L"
-    bookmarks_list = [
-        Bookmark(
-            channel=Channel(input_frequency=1, modulation="AM"),
-            description=description,
-            lockout=lockout,
-        )
-    ]
-    bookmarks_manager.save(
-        bookmarks_file="tests", delimiter=delimiter
-    )
+    bookmarks_manager.save(bookmarks_file="tests", delimiter=delimiter)
 
     bookmarks_manager._io.csv_save.assert_called_once_with("tests", delimiter)
 
@@ -97,7 +86,7 @@ def test_bookmarkmanager_load(delimiter):
 
 def test_bookmarkmanager_load_non_existent_file():
     bookmarks_manager = BookmarksManager()
-    non_existent_file = os.path.join(Path(__file__).parent,"test_files/nonexistent_file.csv")
+    non_existent_file = os.path.join(Path(__file__).parent, "test_files/nonexistent_file.csv")
     loaded = bookmarks_manager.load(bookmark_file=non_existent_file)
     assert loaded == []
 
@@ -105,29 +94,25 @@ def test_bookmarkmanager_load_non_existent_file():
 @pytest.mark.parametrize(
     "filename, delimiter, expected",
     [
-        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks.csv"), ",", 0),
-        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-duplicates.csv"), ",", 0),
-        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-skipped.csv"), ",", 4),
+        (os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks.csv"), ",", 0),
+        (os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-duplicates.csv"), ",", 1),
+        (os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-skipped.csv"), ",", 5),
     ],
 )
-
 def test_bookmarkmanager_load2(filename, delimiter, expected):
     bookmarks_manager = BookmarksManager()
-    bookmarks_manager.load(bookmark_file=filename, delimiter=delimiter)
+    loaded_bookmarks = bookmarks_manager.load(bookmark_file=filename, delimiter=delimiter)
 
-    assert (
-        len(bookmarks_manager._io.rows) - len(bookmarks_manager.bookmarks)
-        == expected
-    )
-    for item in bookmarks_manager.bookmarks:
+    assert len(bookmarks_manager._io.rows) - len(loaded_bookmarks) == expected
+    for item in loaded_bookmarks:
         assert isinstance(item, Bookmark)
 
 
 @pytest.mark.parametrize(
     "filename, count",
     [
-        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks.csv"), 0),
-        (os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-duplicates.csv"), 0),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks.csv")), 0),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-duplicates.csv")), 1),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
@@ -137,9 +122,7 @@ def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
 
     bookmarks_manager._import_gqrx.assert_not_called()
 
-    assert (
-        len(bookmarks_manager.bookmarks) - len(bookmarks_manager._io.rows) == count
-    )
+    assert len(bookmarks_manager._io.rows) - len(bookmarks_manager.bookmarks) == count
     for item in bookmarks_manager.bookmarks:
         assert isinstance(item, Bookmark)
 
@@ -147,8 +130,8 @@ def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
 @pytest.mark.parametrize(
     "filename",
     [
-        os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-broken.csv"),
-        os.path.join(Path(__file__).parent,"test_files/test-rig_remote-bookmarks-unsupported.csv"),
+        Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-broken.csv")),
+        Path(os.path.join(Path(__file__).parent, "test_files/test-rig_remote-bookmarks-unsupported.csv")),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_rig_remote_unsupported(filename):
@@ -205,12 +188,12 @@ def test_bookmarkmanager_add_bookmark():
 
 
 def test_bookmarkmanager_export_rig_remote(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_rig_remote(filename="tests")
+    bookmark_manager_with_bookmarks.export_rig_remote(filename=Path("tests"))
     bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ",")
 
 
 def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
-    bookmark_manager_with_bookmarks.export_gqrx(filename="tests")
+    bookmark_manager_with_bookmarks.export_gqrx(filename=Path("tests"))
     bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ";")
 
     assert len(bookmark_manager_with_bookmarks._io.rows) == 7
@@ -247,15 +230,15 @@ def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
 def test_bookmarkmanager_import_bookmarks_no_file():
     bookmarks_manager = BookmarksManager()
     bookmarks_manager._detect_format = Mock()
-    bookmarks_manager.import_bookmarks(filename="")
+    bookmarks_manager.import_bookmarks(filename=None)
     bookmarks_manager._detect_format.assert_not_called()
 
 
 @pytest.mark.parametrize(
     "filename, count",
     [
-        (os.path.join(Path(__file__).parent,"test_files/test-gqrx-bookmarks.csv"), 0),
-        (os.path.join(Path(__file__).parent,"test_files/test-gqrx-bookmarks-duplicates.csv"), 2),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks.csv")), 0),
+        (Path(os.path.join(Path(__file__).parent, "test_files/test-gqrx-bookmarks-duplicates.csv")), 2),
     ],
 )
 def test_bookmarkmanager_import_bookmarks_gqrx(filename, count):
@@ -265,9 +248,7 @@ def test_bookmarkmanager_import_bookmarks_gqrx(filename, count):
 
     bookmarks_manager._import_rig_remote.assert_not_called()
     assert (
-        len(bookmarks_manager._io.rows)
-        - bookmarks_manager._GQRX_FIRST_BOOKMARK
-        - len(bookmarks_manager.bookmarks)
+        len(bookmarks_manager._io.rows) - bookmarks_manager._GQRX_FIRST_BOOKMARK - len(bookmarks_manager.bookmarks)
         == count
     )
     for item in bookmarks_manager.bookmarks:

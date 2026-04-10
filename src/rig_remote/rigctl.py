@@ -109,14 +109,14 @@ class RigCtl:
         "RX",
     ]
 
-    def __init__(self, target: RigEndpoint):
+    def __init__(self, endpoint: RigEndpoint):
         """Basic rigctl client implementation.
 
-        :param target: rig uri data
-        :raises TypeError: if the target is not a dict of 3 keys
+        :param endpoint: rig uri data
+        :raises TypeError: if the endpoint is not a dict of 3 keys
         """
 
-        self.target = target
+        self.endpoint = endpoint
 
     def _send_message(self, request: str) -> str:
         """sends messages through the socket
@@ -127,41 +127,41 @@ class RigCtl:
         rig_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         logger.info(
-            "sending : %s to target %s, %i",
+            "sending : %s to endpoint %s, %i",
             request,
-            self.target.hostname,
-            self.target.port,
+            self.endpoint.hostname,
+            self.endpoint.port,
         )
         request = f"{request}\n"
 
         try:
-            rig_socket.connect((self.target.hostname, self.target.port))
+            rig_socket.connect((self.endpoint.hostname, self.endpoint.port))
             rig_socket.sendall(bytearray(request.encode()))
             response = rig_socket.recv(1024)
             rig_socket.close()
         except TimeoutError:
             logger.error(
                 "Time out while connecting to %s %s",
-                self.target.hostname,
-                self.target.port,
+                self.endpoint.hostname,
+                self.endpoint.port,
             )
             raise
         except OSError:
             logger.exception(
                 "Connection refused on %s %s",
-                self.target.hostname,
-                self.target.port,
+                self.endpoint.hostname,
+                self.endpoint.port,
             )
             raise
         logger.info(
-            "received %s from target %s %s",
+            "received %s from endpoint %s %s",
             response,
-            self.target.hostname,
-            self.target.port,
+            self.endpoint.hostname,
+            self.endpoint.port,
         )
         return str(response.decode())
 
-    def set_frequency(self, frequency: float)->None:
+    def set_frequency(self, frequency: float) -> None:
         """Wrapper around _request. It configures the command for setting
         a frequency.
 
@@ -181,22 +181,16 @@ class RigCtl:
         """
         output = self._send_message("f")
         if not isinstance(output, str):
-            logger.error(
-                "Expected unicode string while getting radio frequency, got %s", output
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return float(output)
 
-    def set_mode(self, mode: str)->None:
+    def set_mode(self, mode: str) -> None:
         """Wrapper around _request. It configures the command for setting
         the mode.
 
         """
         if not isinstance(mode, str):
-            logger.error(
-                "Expected unicode string while setting modulation mode, got %s", mode
-            )
+            logger.error("Expected unicode string while setting modulation mode, got %s", mode)  # type: ignore[unreachable]
             raise ValueError
         self._send_message(request=f"M {mode}")
 
@@ -208,12 +202,9 @@ class RigCtl:
         # older versions of gqrx replies with only the mode (u'WFM_ST' as an example)
         # newer versions replies with something like u'WFM_ST\n160000'
         output_message = self._send_message(request="m")
+        if not isinstance(output_message, str):
+            raise ValueError(f"Expected string response, got {type(output_message)}")
         output = output_message
-        if not isinstance(output, str):
-            logger.error(
-                "Expected unicode string while getting radio frequency, got %s", output
-            )
-            raise ValueError
         if "\n" in output_message:
             output = output_message.split("\n")[0]
 
@@ -243,12 +234,7 @@ class RigCtl:
 
         output = self._send_message(request="l")
         if not isinstance(output, str):
-            logger.error(
-                "Expected unicode string while getting radio signal level, got %s",
-                output,
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return float(output.strip())
 
     def set_vfo(self, vfo: str) -> str:
@@ -274,9 +260,7 @@ class RigCtl:
 
         output = self._send_message("v")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting VFO, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_rit(self, rit: int) -> str:
@@ -286,9 +270,8 @@ class RigCtl:
         """
 
         if not isinstance(rit, int):
-            logger.error("RIT value must be an int, got %s", type(rit))
+            logger.error("RIT value must be an int, got %s", type(rit))  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"J {rit}")
 
     def get_rit(self) -> str:
@@ -299,9 +282,7 @@ class RigCtl:
 
         output = self._send_message("j")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting RIT, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_xit(self, xit: str) -> str:
@@ -311,9 +292,8 @@ class RigCtl:
         """
 
         if not isinstance(xit, str):
-            logger.error("XIT value must be a string, got %s", type(xit))
+            logger.error("XIT value must be a string, got %s", type(xit))  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"J {xit}")
 
     def get_xit(self) -> str:
@@ -324,11 +304,7 @@ class RigCtl:
 
         output = self._send_message("j")
         if not isinstance(output, str):
-            logger.error(
-                "Expected unicode string while getting XIT, got %s", type(output)
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_split_freq(self, split_freq: int) -> str:
@@ -338,7 +314,7 @@ class RigCtl:
         """
 
         if not isinstance(split_freq, int):
-            logger.error("XIT value must be an integer, got %s", type(split_freq))
+            logger.error("XIT value must be an integer, got %s", type(split_freq))  # type: ignore[unreachable]
             raise ValueError
         return self._send_message(f"I {split_freq}")
 
@@ -347,15 +323,14 @@ class RigCtl:
         XIT.
 
         """
+        try:
+            output = self._send_message("i")
+            int_output = int(output)
+        except (ValueError, TypeError):
+            logger.error("Expected int while getting split_frequency, got %s", type(output))
+            raise
 
-        output = self._send_message("i")
-        if not isinstance(output, int):
-            logger.error(
-                "Expected int while getting split_frequency, got %s", type(output)
-            )
-            raise ValueError
-
-        return output
+        return int_output
 
     def set_split_mode(self, split_mode: str) -> str:
         """Wrapper around _request. It configures the command for setting
@@ -381,12 +356,7 @@ class RigCtl:
 
         output = self._send_message("x")
         if not isinstance(output, str):
-            logger.error(
-                "Expected string while getting split_frequency_mode, got %s",
-                type(output),
-            )
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_func(self, func: str) -> str:
@@ -413,8 +383,7 @@ class RigCtl:
 
         output = self._send_message("u")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting func, got %s", output)
-            raise ValueError
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_parm(self, parm: str) -> str:
@@ -440,9 +409,7 @@ class RigCtl:
 
         output = self._send_message("p")
         if not isinstance(output, str):
-            logger.error("Expected unicode string while getting parm, got %s", output)
-            raise ValueError
-
+            raise ValueError(f"Expected string response, got {type(output)}")
         return output
 
     def set_antenna(self, antenna: int) -> str:
@@ -452,21 +419,22 @@ class RigCtl:
         """
 
         if not isinstance(antenna, int):
-            logger.error("antenna value must be an int, got %s", antenna)
+            logger.error("antenna value must be an int, got %s", antenna)  # type: ignore[unreachable]
             raise ValueError
-
         return self._send_message(f"Y {antenna}")
 
-    def get_antenna(self) -> str:
+    def get_antenna(self) -> int:
         """Wrapper around _request. It configures the command for getting
         the antenna in use.
 
         """
 
         output = self._send_message("y")
-        if not isinstance(output, int):
+        try:
+            return int(output)
+        except ValueError:
             logger.error("Expected integer while getting radio antenna, got %s", output)
-            raise ValueError
+            raise
 
     def rig_reset(self, reset_signal: str) -> str:
         """Wrapper around _request. It configures the command for resetting

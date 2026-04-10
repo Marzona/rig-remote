@@ -20,44 +20,44 @@ TAS - Tim Sweeney - mainetim@gmail.com
 """
 
 from queue import Queue, Empty, Full
+from typing import Union
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class QueueComms:
+    """Handle inter-thread queue communication for parent and child processes."""
+
     _QUEUE_MAX_SIZE = 10
 
-    def __init__(self):
+    def __init__(self, queue_max_size: int = _QUEUE_MAX_SIZE) -> None:
         """Queue instantiation. The queues are used for handling the
         communication between threads.
         We don't want to have unlimited queue size, 10 seems a value that
         if we reach it we are in big trouble..
         """
-
+        self._queue_max_size = queue_max_size
         self._queue_init()
 
-    def _queue_init(self)->None:
-        self.parent_queue:Queue[str] = Queue(maxsize=self._QUEUE_MAX_SIZE)
-        logger.info(
-            "Initialized parent queue with max size %i", self.parent_queue.maxsize
-        )
-        self.child_queue:Queue[str] = Queue(maxsize=self._QUEUE_MAX_SIZE)
-        logger.info(
-            "Initialized child queue with max size %i", self.child_queue.maxsize
-        )
+    def _queue_init(self) -> None:
+        self.parent_queue: Queue[tuple[str, str]] = Queue(maxsize=self._queue_max_size)
+        logger.info("Initialized parent queue with max size %i", self.parent_queue.maxsize)
+        self.child_queue: Queue[tuple[str, str]] = Queue(maxsize=self._queue_max_size)
+        logger.info("Initialized child queue with max size %i", self.child_queue.maxsize)
 
     def queued_for_child(self) -> bool:
         """wrapper on self._queue_for()"""
 
         return self._queued_for(self.child_queue)
 
-    def queued_for_parent(self)-> bool:
+    def queued_for_parent(self) -> bool:
         """wrapper on self._queued_for"""
 
         return self._queued_for(self.parent_queue)
 
     @staticmethod
-    def _queued_for(queue_name: Queue[str]) -> bool:
+    def _queued_for(queue_name: Queue[tuple[str, str]]) -> bool:
         """Check if item is waiting on a queue.
 
         :returns: True if item waiting
@@ -65,7 +65,7 @@ class QueueComms:
         return not queue_name.empty()
 
     @staticmethod
-    def _get_from_queue(queue: Queue[str]) -> tuple[str, str]:
+    def _get_from_queue(queue: Queue[tuple[str, str]]) -> Union[tuple[str, str], None]:
         """retrieve an item from the queue. Wrapped by get_from_child and
         get_from_parent.
 
@@ -74,63 +74,56 @@ class QueueComms:
         """
 
         try:
-            row_item = queue.get(block=False)
-            logger.error("getting item from queue: {}".format(row_item))
-            item_split = row_item.split("'")
-            item = (item_split[1], item_split[3])
+            item = queue.get(block=False)
+            logger.info("getting item from queue: %s", item)
             return item
         except Empty:
             logger.info("Queue empty while getting from %s", queue)
-            return None # type: ignore
+            return None
 
-    def get_from_parent(self) -> tuple[str, str]:
+    def get_from_parent(self) -> Union[tuple[str, str], None]:
         """wrapper on _get_from_queue"""
-        return self._get_from_queue(self.parent_queue)
+        return self._get_from_queue(queue=self.parent_queue)
 
-    def get_from_child(self) -> tuple[str, str]:
+    def get_from_child(self) -> Union[tuple[str, str], None]:
         """wrapper on _get_from_queue"""
 
-        return self._get_from_queue(self.child_queue)
+        return self._get_from_queue(queue=self.child_queue)
 
     @staticmethod
-    def _send_to_queue(queue: Queue[str], item:tuple[str])->None:
+    def _send_to_queue(queue: Queue[tuple[str, str]], item: tuple[str, str]) -> None:
         """place an item on the queue. Wrapped by send_to_child.
 
         :param queue: queue to put item on.
 
         """
-        logger.error("item to send to queue:{}".format( item))
+        logger.error("item to send to queue:%s", item)
         try:
-            queue.put(item, False)  # type: ignore
+            queue.put(item, False)
         except Full:
             logger.warning("Queue %s is full.", queue)
             raise
 
-    def send_to_child(self, item: tuple[str])->None:
+    def send_to_child(self, item: tuple[str, str]) -> None:
         """Wrapper for _send_to_queue"""
         self._send_to_queue(self.child_queue, item)
         logger.info("child queue size %i", self.child_queue.qsize())
 
     @staticmethod
-    def _signal(queue: Queue[str], signal: tuple[str, str])->None:
-        """Place a signal number on the queue
+    def _signal(queue: Queue[tuple[str, str]], signal: tuple[str, str]) -> None:
+        """Place a signal tuple on the queue.
 
-        :param signal: value of the signal
+        :param signal: tuple of (signal_name, signal_value)
         :param queue: Queue to insert signal in
-
+        :raises ValueError: if signal is not a tuple or queue is not a Queue
         """
+        if not isinstance(queue, Queue):
+            raise ValueError(f"queue must be a Queue instance, got {type(queue)}")
+        if not isinstance(signal, tuple):
+            raise ValueError(f"signal must be a tuple, got {type(signal)}")
+        queue.put(signal, False)
 
-        if not isinstance(signal,tuple) or not isinstance(queue, Queue):
-            logger.error(
-                "Value error while inserting a signal into a queue. Value type: %s ",
-                type(signal),
-            )
-            raise ValueError()
-
-        queue.put(str(signal), False)
-
-    def signal_parent(self, signal: tuple[str, str])->None:
+    def signal_parent(self, signal: tuple[str, str]) -> None:
         """wrapper for _signal()"""
-
         self._signal(self.parent_queue, signal)
         logger.info("parent queue size %s", self.parent_queue.qsize())

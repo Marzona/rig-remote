@@ -32,16 +32,12 @@ class Bookmark:
     lockout: str = ""
     id: str = str(uuid4())
 
-    def __eq__(self, other):
-        if self.channel == other.channel and self.description == other.description:
-            return True
-        else:
-            logger.info(
-                "channel or description are different, bookmarks are not the same."
-            )
-            return False
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Bookmark):
+            raise NotImplementedError
+        return self.channel == other.channel and self.description == other.description
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.lockout.upper() not in self._LOCKOUTS:
             message = (
                 "Provided lockout value %s is not supported, supported values are %s",

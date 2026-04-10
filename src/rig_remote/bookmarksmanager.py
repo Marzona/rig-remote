@@ -16,6 +16,10 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+import logging
+from pathlib import Path
+from typing import Callable, Union
+
 from rig_remote.exceptions import (
     InvalidPathError,
     BookmarkFormatError,
@@ -23,39 +27,45 @@ from rig_remote.exceptions import (
 from rig_remote.models.channel import Channel
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.modulation_modes import ModulationModes
-import logging
-
 from rig_remote.disk_io import IO
-
-from typing import Union, Callable
 
 logger = logging.getLogger(__name__)
 
+
 def bookmark_factory(
-    input_frequency: int, modulation: str, description: str, lockout: str = ""
+    input_frequency: int, modulation: str, description: str, lockout: str = "", bookmark_id: str = ""
 ) -> Bookmark:
+    """Create a Bookmark instance from the provided parameters.
+
+    :param input_frequency: The frequency for the bookmark
+    :param modulation: The modulation mode
+    :param description: The bookmark description
+    :param lockout: The lockout status, defaults to empty string
+    :returns: A new Bookmark instance
+    """
     return Bookmark(
         channel=Channel(input_frequency=input_frequency, modulation=modulation),
         description=description,
         lockout=lockout,
+        id=bookmark_id,
     )
 
 
 class BookmarksManager:
     """Implements the bookmarks management."""
 
-    _BOOKMARK_ENTRY_FIELDS = 4
+    _BOOKMARK_ENTRY_FIELDS = 5
 
     def __init__(
         self,
         io: IO = IO(),
-        bookmark_factory:Callable= bookmark_factory,
-    ):
+        factory: Callable[..., Bookmark] = bookmark_factory,
+    ) -> None:
         self._io = io
         self.bookmarks: list[Bookmark] = []
-        self._bookmark_factory = bookmark_factory
+        self._factory = factory
         self._modulation_modes = ModulationModes
-        self._IMPORTERS_MAP = {
+        self._importers_map = {
             "gqrx": self._import_gqrx,
             "rig-remote": self._import_rig_remote,
         }
@@ -78,14 +88,12 @@ class BookmarksManager:
         ],
     ]
 
-    def save(self, bookmarks_file: str, delimiter: str = ",")->None:
+    def save(self, bookmarks_file: str, delimiter: str = ",") -> None:
         """Bookmarks handling. Saves the bookmarks as a csv file.
 
-        :param bookmarks_file: filename to load, with full path
+        :param bookmarks_file: filename to save, with full path
         :param delimiter: delimiter to use for creating the csv file,
         defaults to ','
-        :raises : none
-        :returns : none
         """
         self._io.rows = []
 
@@ -96,6 +104,7 @@ class BookmarksManager:
                     bookmark.channel.modulation,
                     bookmark.description,
                     bookmark.lockout,
+                    bookmark.id,
                 ]
             )
 
@@ -117,36 +126,42 @@ class BookmarksManager:
             logger.info("No bookmarks file found, skipping.")
             return []
         skipped_count = 0
-
+        id_list = []
         for entry in self._io.rows:
             if len(entry) != self._BOOKMARK_ENTRY_FIELDS:
                 logger.info(
-                    "skipping line %s as invalid, not enough fields, expecting 4", entry
+                    "skipping line %s as invalid, not enough fields, expecting %i", entry, self._BOOKMARK_ENTRY_FIELDS
                 )
                 skipped_count += 1
                 continue
-            bookmark = self._bookmark_factory(
+            if entry[4] in id_list:
+                logger.info("skipping line %s as duplicate", entry)
+                skipped_count += 1
+                continue
+            id_list.append(entry[4])
+
+            bookmark = self._factory(
                 input_frequency=entry[0],
                 modulation=entry[1],
                 description=entry[2],
                 lockout=entry[3],
+                bookmark_id=entry[4],
             )
-
             self.bookmarks.append(bookmark)
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename: str)->Union[list[Bookmark], None]:
+    def import_bookmarks(self, filename: Path) -> Union[list[Bookmark], None]:
         """handles the import of the bookmarks. It is a
-        Wrapper around the import funtions and the requester function.
+        Wrapper around the import functions and the requester function.
 
         """
         if not filename:
             logger.info("no filename provided, nothing to import.")
             return None
-        return self._IMPORTERS_MAP[self._detect_format(filename)](filename)
+        return self._importers_map[self._detect_format(filename)](filename)
 
-    def _detect_format(self, filename: str)->str:
+    def _detect_format(self, filename: Path) -> str:
         """Method for detecting the bookmark type. Only two types are supported.
 
         :param filename: file path to read
@@ -155,29 +170,31 @@ class BookmarksManager:
         with open(filename, "r") as fn:
             line = fn.readline()
         if self._GQRX_BOOKMARK_FIRST_LINE == line:
+            logger.info("detected gqrx bookmark format for file %s", filename)
             return "gqrx"
-        if len(line.split(",")) == 4:
+        if len(line.split(",")) == 5:
+            logger.info("detected rig-remote bookmark format for file %s", filename)
             return "rig-remote"
         message = f"No parser found for filename {filename}"
         logger.error(message)
         raise BookmarkFormatError(message)
 
-    def _import_rig_remote(self, file_path:str)->list[Bookmark]:
+    def _import_rig_remote(self, file_path: Path) -> list[Bookmark]:
         """Imports the bookmarks using rig-remote format. It wraps around
         the load method.
 
-        :param file_path: path o fhte file to import
+        :param file_path: path of the file to import
         """
 
-        return self.load(file_path, ",")
+        return self.load(str(file_path), ",")
 
-    def _import_gqrx(self, file_path:str)->list[Bookmark]:
+    def _import_gqrx(self, file_path: Path) -> list[Bookmark]:
         """Method for importing gqrx bookmarks.
 
         :param file_path: path of the file to be loaded
         """
 
-        self._io.csv_load(file_path, ";")
+        self._io.csv_load(str(file_path), ";")
 
         count = 0
         bookmarks = []
@@ -185,16 +202,22 @@ class BookmarksManager:
             count += 1
             if count < self._GQRX_FIRST_BOOKMARK + 1:
                 continue
-            bookmark = self._bookmark_factory(
+            bookmark = self._factory(
                 input_frequency=row[0].strip(),
                 modulation=self._modulation_modes[row[2].strip().upper()].value,
                 description="gqrx_import",
+                lockout="",
             )
             self.add_bookmark(bookmark)
             bookmarks.append(bookmark)
         return bookmarks
 
     def delete_bookmark(self, bookmark: Bookmark) -> bool:
+        """Deletes a bookmark from the list if it exists.
+
+        :param bookmark: The bookmark to delete
+        :returns: True if the operation was attempted
+        """
         try:
             self.bookmarks.pop(self.bookmarks.index(bookmark))
         except ValueError:
@@ -203,32 +226,41 @@ class BookmarksManager:
         return True
 
     def add_bookmark(self, bookmark: Bookmark) -> bool:
+        """Adds a bookmark to the list if it's not already present.
+
+        :param bookmark: The bookmark to add
+        :returns: True if added, False if already exists
+        """
         if bookmark not in self.bookmarks:
             self.bookmarks.append(bookmark)
             return True
         logger.info("bookmark %s added", bookmark)
         return False
 
-    def export_rig_remote(self, filename: str)->None:
+    def export_rig_remote(self, filename: Path) -> None:
         """Wrapper method for exporting using rig remote csv format.
-        it wraps around the save method used when "save on exit" is selected.
+        It wraps around the save method used when "save on exit" is selected.
+
+        :param filename: destination path for the exported bookmarks
         """
 
         self.save(
-            bookmarks_file=filename,
+            bookmarks_file=str(filename),
             delimiter=",",
         )
 
-    def export_gqrx(self, filename: str)->None:
-        """Wrapper method for exporting using rig remote csv format.
+    def export_gqrx(self, filename: Path) -> None:
+        """Wrapper method for exporting using gqrx bookmark format.
         It wraps around the save method used when "save on exit" is selected
         and around a function that provides the format/data conversion.
+
+        :param filename: destination path for the exported bookmarks
         """
 
         self._io.rows = self._GQRX_BOOKMARK_HEADER
-        self._save_gqrx(filename)
+        self._save_gqrx(str(filename))
 
-    def _save_gqrx(self, filename: str)->None:
+    def _save_gqrx(self, filename: str) -> None:
         """Private method for saving the bookmarks file in csv compatible
         with gqrx bookmark format. It wraps around csv_save method of disk_io
         module.

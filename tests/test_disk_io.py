@@ -35,9 +35,12 @@ def test_disk_io_csv_load_happy_path(io):
     assert len(io.rows) == 25
 
 
-@pytest.mark.parametrize("filename", [
-    os.path.join(Path(__file__).parent, "test_files/no_file"),
-])
+@pytest.mark.parametrize(
+    "filename",
+    [
+        os.path.join(Path(__file__).parent, "test_files/no_file"),
+    ],
+)
 def test_disk_io_csv_load_non_existing_file(io, filename):
     with pytest.raises(InvalidPathError):
         io.csv_load(csv_file=filename, delimiter=",")
@@ -45,14 +48,14 @@ def test_disk_io_csv_load_non_existing_file(io, filename):
 
 
 def test_disk_io_csv_load_permission_error(io):
-    with patch('builtins.open', side_effect=PermissionError):
+    with patch("builtins.open", side_effect=PermissionError):
         with pytest.raises(InvalidPathError):
             io.csv_load("tests.csv", ",")
     assert len(io.rows) == 0
 
 
 def test_disk_io_csv_load_encoding_error(io):
-    with patch('builtins.open', side_effect=UnicodeDecodeError('utf-8', b'', 0, 1, 'invalid')):
+    with patch("builtins.open", side_effect=UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")):
         with pytest.raises(InvalidPathError):
             io.csv_load("tests.csv", ",")
     assert len(io.rows) == 0
@@ -109,7 +112,7 @@ def test_disk_io_write_with_signal(log_file, tmp_path, mock_bookmark):
     log_file.write(record_type="F", record=mock_bookmark, signal=["-50", "-60"])
     log_file.close()
 
-    with open(log_path, 'r') as f:
+    with open(log_path, "r", encoding="utf-8") as f:
         content = f.read().strip()
         # Verify core elements in space-separated format
         assert content.startswith("F")  # Type
@@ -124,7 +127,7 @@ def test_disk_io_write_bookmark(log_file, tmp_path, mock_bookmark):
     log_file.write(record_type="B", record=mock_bookmark, signal=None)
     log_file.close()
 
-    with open(log_path, 'r') as f:
+    with open(log_path, "r", encoding="utf-8") as f:
         content = f.read().strip()
         # Verify core elements in space-separated format
         assert content.startswith("B")  # Type
@@ -133,16 +136,16 @@ def test_disk_io_write_bookmark(log_file, tmp_path, mock_bookmark):
         assert "None" in content  # Signal (None)
 
 
-@pytest.mark.parametrize("exception_type,mock_type",
-                         [
-                             (IndexError, Mock(side_effect=IndexError("Write failed"))),
-                             (AttributeError, Mock(side_effect=AttributeError("Write failed"))),
-                             (TypeError, Mock(side_effect=TypeError("Write failed"))),
-                             (OSError, Mock(side_effect=OSError("Write failed"))),
-                             (IOError, Mock(side_effect=IOError("Write failed"))),
-
-                         ]
-                         )
+@pytest.mark.parametrize(
+    "exception_type,mock_type",
+    [
+        (IndexError, Mock(side_effect=IndexError("Write failed"))),
+        (AttributeError, Mock(side_effect=AttributeError("Write failed"))),
+        (TypeError, Mock(side_effect=TypeError("Write failed"))),
+        (OSError, Mock(side_effect=OSError("Write failed"))),
+        (IOError, Mock(side_effect=IOError("Write failed"))),
+    ],
+)
 def test_disk_io_write_bookmark_exception(log_file, tmp_path, mock_bookmark, exception_type, mock_type):
     log_path = os.path.join(tmp_path, "tests.log")
     log_file.open(log_path)
@@ -152,14 +155,14 @@ def test_disk_io_write_bookmark_exception(log_file, tmp_path, mock_bookmark, exc
 
 
 def test_disk_io_close_log_file(log_file):
-    with patch('builtins.open', mock_open()) as mock_file:
+    with patch("builtins.open", mock_open()) as mock_file:
         log_file.open("tests.log")
         log_file.close()
         mock_file().close.assert_called_once()
 
 
 def test_disk_io_open_makedirs_error(log_file):
-    with patch('os.makedirs', side_effect=IOError("Failed to create directory")):
+    with patch("os.makedirs", side_effect=IOError("Failed to create directory")):
         log_file.open("/nonexistent/path/tests.log")
         # Test passes if no exception is raised, as error is logged but not raised
 

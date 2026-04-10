@@ -19,6 +19,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
+from typing import Any, Union
+
 from rig_remote.queue_comms import QueueComms
 import logging
 
@@ -26,24 +28,26 @@ logger = logging.getLogger(__name__)
 
 
 class STMessenger:
-    END_OF_SCAN_SIGNAL=("end_of_scan", "1")
-    END_OF_SCAN_SYNC=("end_of_SYNC", "1")
+    """Messenger class for handling communication with scanning threads via queue-based events."""
 
-    def __init__(self, queuecomms: QueueComms):
-        self.mqueue = queuecomms
+    END_OF_SCAN_SIGNAL = ("end_of_scan", "1")
+    END_OF_SCAN_SYNC = ("end_of_SYNC", "1")
 
-    def send_event_update(self, event_list: tuple[str])->None:
+    def __init__(self, queue_comms: QueueComms):
+        self.queue_comms = queue_comms
+
+    def send_event_update(self, event: tuple[str, Any]) -> None:
         """Send an event update to the scanning thread.
 
-        :param event_list: tuple of event name and state
+        :param event: tuple of event name and state
 
-        :raises: ValueError if event_list is mal-formed.
+        :raises: ValueError if event is mal-formed.
         """
 
-        if isinstance(event_list, tuple) and len(event_list) == 2:
-            self.mqueue.send_to_child(event_list)
+        if isinstance(event, tuple) and len(event) == 2:
+            self.queue_comms.send_to_child(event)
         else:
-            logger.error("Event list: %s", event_list)
+            logger.error("Event : %s", event)  # type: ignore[unreachable]
             raise ValueError("Bad event update attempt.")
 
     def update_queued(self) -> bool:
@@ -52,36 +56,38 @@ class STMessenger:
         :returns: True if event waiting
         """
 
-        return self.mqueue.queued_for_child()
+        return self.queue_comms.queued_for_child()
 
-    def get_event_update(self)->tuple[str,str]:
+    def get_event_update(self) -> Union[tuple[str, str], None]:
         """Get the next event waiting to be processed.
 
-        :returns: event_list (may be empty)
+        :returns: event (may be empty)
         """
 
-        event_list:tuple[str,str] = ("","",)
-        try:
-            event_list = self.mqueue.get_from_child()
-        except Exception:
-            logger.error("Exception while accessing a child queue.")
-        logger.info("retrieved event %s", event_list)
-        return event_list
+        event = self.queue_comms.get_from_child()
+        if not event or not isinstance(event, tuple) or len(event) != 2:
+            return None
+        logger.info("retrieved event %s", event)
+        return event
 
-    def notify_end_of_scan(self)->None:
+    def notify_end_of_scan(self) -> None:
         """Notify main thread that scanning thread has terminated."""
 
-        self.mqueue.signal_parent(self.END_OF_SCAN_SIGNAL)
+        self.queue_comms.signal_parent(self.END_OF_SCAN_SIGNAL)
 
-    def check_end_of_scan(self) ->  bool:
+    def check_end_of_scan(self) -> bool:
         """Check to see if the scanning thread as notified us of its
         termination.
 
         :returns: True if termination signal sent.
         """
-        check = self.mqueue.get_from_parent()
+        check = self.queue_comms.get_from_parent()
         logger.error("check_end_of_scan: %s", check)
         return check == self.END_OF_SCAN_SIGNAL
 
-    def check_end_of_sync(self) ->  bool:
-        return self.mqueue.get_from_parent() == self.END_OF_SCAN_SYNC
+    def check_end_of_sync(self) -> bool:
+        """Check to see if the scanning thread has notified us of sync completion.
+
+        :returns: True if sync completion signal sent.
+        """
+        return self.queue_comms.get_from_parent() == self.END_OF_SCAN_SYNC

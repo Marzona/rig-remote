@@ -29,14 +29,11 @@ from rig_remote.app_config import AppConfig
 logger = logging.getLogger(__name__)
 
 
-def input_arguments()->argparse.Namespace:
-    """Argument parser.
-
-    """
+def input_arguments() -> argparse.Namespace:
+    """Argument parser."""
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Utility to check the configuration files and collect system's information"),
+        description=("Utility to check the configuration files and collect system's information"),
         epilog="""Please refer to:
         https://github.com/Marzona/rig-remote/wiki
         http://gqrx.dk/,
@@ -47,26 +44,28 @@ def input_arguments()->argparse.Namespace:
 
         License: MIT License
 
-        Copyright (c) 2017 Simone Marzona""")
+        Copyright (c) 2017 Simone Marzona""",
+    )
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--check_config",
-                       "-cc",
-                       type=str,
-                       dest="check_config",
-                       help="Path of the config folder we want to " \
-                            "check, example ~/.rig-remote/",
-                       )
-    group.add_argument("--dump",
-                       "-d",
-                       dest="dump",
-                       action="store_true",
-                       help="Dump system info for debugging.",
-                       )
+    group.add_argument(
+        "--check_config",
+        "-cc",
+        type=str,
+        dest="check_config",
+        help="Path of the config folder we want to check, example ~/.rig-remote/",
+    )
+    group.add_argument(
+        "--dump",
+        "-d",
+        dest="dump",
+        action="store_true",
+        help="Dump system info for debugging.",
+    )
     return parser.parse_args()
 
 
-def dump_info()->None:
+def dump_info() -> None:
     """Dumps some info regarding the environment we are running in.
     The intended use is to ask the user to paste this info for
     troubleshooting steps.
@@ -87,37 +86,35 @@ def dump_info()->None:
     print("\n   ")
     print("System/OS name: {}".format(platform.system()))
 
-def check_config(config:str)->bool:
+
+def check_config(config: str) -> bool:
     config_file = os.path.join(config, "rig-remote.conf")
 
-    with open(config_file, "r") as cf:
+    with open(config_file, "r", encoding="utf-8") as cf:
         print("Using config file:{}".format(config_file))
         count = 0
         config_data = []
+        bookmark_file = None
         for row in cf:
             row = row.rstrip("\n")
             if "bookmark_filename" in row:
                 bookmark_file = row.split("=")[1].rstrip("'").strip()
-            if any(["[" in row,
-                    "#" in row,
-                    "\n" == row,
-                    "" == row]):
+            if any(["[" in row, "#" in row, "\n" == row, "" == row]):
                 continue
-            count += 1
             if len(row.split("=")) == 2:
                 config_data.append(row)
+                count += 1
             else:
                 print("Error in config file, line: {}".format(row))
         if count < 19:
-            print("The configuration is " \
-                  "missing some keyword")
+            print("The configuration is missing some keyword")
         print("\n   ")
         print("Config dump:")
         pprint.pprint(config_data)
         print("\n   ")
         print("Bookmarks info:")
         if bookmark_file:
-            with open(bookmark_file, "r") as bf:
+            with open(bookmark_file, "r", encoding="utf-8") as bf:
                 row_list = []
                 reader = csv.reader(bf, delimiter=",")
                 for line in reader:
@@ -128,7 +125,7 @@ def check_config(config:str)->bool:
             pprint.pprint(row_list)
 
         print("Parsing configuration file: {}".format(config_file))
-        ac=AppConfig(config_file=config_file)
+        ac = AppConfig(config_file=config_file)
         try:
             ac.read_conf()
             print("Configuration file is valid.")
@@ -141,12 +138,12 @@ def check_config(config:str)->bool:
             print("Unexpected error: {}".format(e))
             return False
 
+
 # entry point
-def cli():
+def cli() -> None:
     args = input_arguments()
     if not any([args.check_config, args.dump]):
-        print("At least one option is required, try " \
-              "config_checker --help")
+        print("At least one option is required, try config_checker --help")
 
     if args.dump:
         dump_info()

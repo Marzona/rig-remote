@@ -39,11 +39,7 @@ class SyncTask:
     error: str = ""
     id: str = str(uuid4())
 
-    def __eq__(self, other):
-        if self.src_rig == other.src_rig and self.dst_rig == other.dst_rig:
-            return True
-        else:
-            logger.info(
-                "channel or description are different, bookmarks are not the same."
-            )
-            return False
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SyncTask):
+            raise NotImplementedError
+        return self.src_rig == other.src_rig and self.dst_rig == other.dst_rig

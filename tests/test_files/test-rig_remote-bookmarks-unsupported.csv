@@ -1,25 +1,25 @@
-118600000,AM,Dublin airport Tower,O,1
-118700000,AM,Shannon airport Tower,O
-119300000,AM,Cork airport Tower,O
-119900000,AM,Cork airport Approach,O
-120925000,AM,Cork airport ATIS,O
-121100000,AM,Dublin airport approach,O
-121800000,AM,Dublin airport Ground,O
-121850000,AM,Cork airport Ground,O
-121870000,AM,Dublin airport Clearance,O
-124525000,AM,Dublin airport ATIS,O
-130950000,AM,Shannon airport ATIS,O
-156000000,AM,Ireland Costguard rescque,O
-156800000,AM,Ireland Coastguard Helicopter 2,O
-161775000,AM,Belfast Coastguard Helicopter,O
-88900000,FM,CBUX-FM Ici Musique,0
-90100000,FM,NPR Northwest Public Radio,0
-90500000,FM,CBU-FM CBC2,0
-92100000,FM,CBC Radio 2,0
-97800000,AM,activity on Mon May 08 20:34 2017,O
-99700000,FM,CBUF-FM Radio Canada 1,0
-100300000,FM,CKKQ-FM TheQ,0
-107300000,FM,CHBE-FM Kool.fm,0
-107900000,FM,CILS-FM Columbie-Britannique,0
-454375000,FM,Victoria Airport Weather,0
-162080000,AM,Irish ferries,O
+118600000,AM,Dublin airport Tower,O,1,e07cc169-ba5e-4bff-8bb5-d605fd0a9c96
+118700000,AM,Shannon airport Tower,O,f67ce9bf-23c7-46f6-a726-505157ccae09
+119300000,AM,Cork airport Tower,O,15d070cb-7d32-4fed-a48b-05b76af014ff
+119900000,AM,Cork airport Approach,O,0a655ecb-7156-4249-8e0c-0ac87ef8b011
+120925000,AM,Cork airport ATIS,O,9daf16c4-c102-44ad-b379-76d7285d77b0
+121100000,AM,Dublin airport approach,O,6ca4f776-5e34-4164-a596-245371da1349
+121800000,AM,Dublin airport Ground,O,98aaccbf-8100-429b-aee4-37caa2504952
+121850000,AM,Cork airport Ground,O,07d45880-6784-49d0-92d1-a8af1ffde05a
+121870000,AM,Dublin airport Clearance,O,d862f0ec-529b-453d-895b-776f80deb602
+124525000,AM,Dublin airport ATIS,O,414ed4b5-ddb7-44e0-bd83-9e041abc9dab
+130950000,AM,Shannon airport ATIS,O,f439ec8b-5f1f-49b9-ac30-c3d24f7b1e6a
+156000000,AM,Ireland Costguard rescque,O,47e9b422-0f3d-4bfd-9097-1e0dbfff08be
+156800000,AM,Ireland Coastguard Helicopter 2,O,5c5018ee-888e-4053-bafc-dd8c7250435c
+161775000,AM,Belfast Coastguard Helicopter,O,523c3fe9-7bf9-44e6-9317-d80fa61d0663
+88900000,FM,CBUX-FM Ici Musique,0,19078cf9-b81f-4616-b9d8-8d9e18e07e18
+90100000,FM,NPR Northwest Public Radio,0,d124ec21-e2e7-44ff-a85a-1150d29ac17a
+90500000,FM,CBU-FM CBC2,0,878da40d-65fa-47e5-888e-c21d70b14064
+92100000,FM,CBC Radio 2,0,84b103a4-d5b6-40cb-8f42-b6abf833684b
+97800000,AM,activity on Mon May 08 20:34 2017,O,5a08a919-63e6-4181-ab2e-9bb1b44a6b35
+99700000,FM,CBUF-FM Radio Canada 1,0,52f2a172-f7b5-424d-b6da-508a35137c0c
+100300000,FM,CKKQ-FM TheQ,0,b26ce30b-5dc1-4829-bb95-de027d2cb43f
+107300000,FM,CHBE-FM Kool.fm,0,797e42da-ff3c-4788-8b60-31bff57c0f14
+107900000,FM,CILS-FM Columbie-Britannique,0,fb3f47d2-f8df-4a69-ae2e-79c4196d0ef2
+454375000,FM,Victoria Airport Weather,0,92c903fe-2084-48ea-8f9d-65d711910597
+162080000,AM,Irish ferries,O,fee9cd25-6a0f-4c86-a234-365102901325
