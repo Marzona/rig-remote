@@ -121,6 +121,7 @@ class Scanning2:
 
         if task.log:
             self._log.close()
+            logger.info("Scan log closed.")
 
 
 # ---------------------------------------------------------------------------

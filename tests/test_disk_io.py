@@ -167,6 +167,13 @@ def test_disk_io_open_makedirs_error(log_file):
         # Test passes if no exception is raised, as error is logged but not raised
 
 
+def test_disk_io_write_handler_none_raises_attribute_error(log_file, mock_bookmark):
+    """write() with a valid record but no prior open() hits the None-guard (lines 145-146)."""
+    # log_file_handler is None by default; lstr is built successfully before the check
+    with pytest.raises(AttributeError):
+        log_file.write(record_type="B", record=mock_bookmark, signal=[1.0])
+
+
 def test_disk_io_close_error(log_file, tmp_path):
     log_path = tmp_path / "tests.log"
     log_file.open(str(log_path))

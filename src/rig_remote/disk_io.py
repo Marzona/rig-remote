@@ -113,6 +113,7 @@ class LogFile:
             logger.info("Error while trying to create log file path as %s already exists", self.log_filename)
         try:
             self.log_file_handler = open(self.log_filename, "a")
+            logger.info("Log file opened: %s", self.log_filename)
         except (IOError, OSError):
             logger.error("Error while trying to open log file: %s", self.log_filename)
 
@@ -167,5 +168,6 @@ class LogFile:
         if self.log_file_handler is not None:
             try:
                 self.log_file_handler.close()
+                logger.info("Log file closed: %s", self.log_filename)
             except (IOError, OSError):
                 logger.error("Error while trying to close log file: %s", self.log_filename)

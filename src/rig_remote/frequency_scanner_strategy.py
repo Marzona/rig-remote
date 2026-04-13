@@ -65,6 +65,7 @@ class FrequencyScannerStrategy:
         self._prev_level = level
         self._prev_freq = freq
         self._hold_bookmark = True
+        logger.info("Stored candidate peak at %d Hz (level %s)", freq, level)
 
     def _erase_prev_bookmark(self) -> None:
         """Clear the stored candidate peak, resetting auto-bookmark state."""

@@ -1,10 +1,10 @@
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
-from PySide6.QtWidgets import QApplication, QLineEdit, QTreeWidgetItem, QMessageBox
+from PySide6.QtWidgets import QApplication, QLineEdit, QTreeWidget, QTreeWidgetItem, QMessageBox
 from PySide6.QtCore import Qt
 
-from rig_remote.ui_qt import RigRemote
+from rig_remote.ui_qt import RigRemote, _BookmarkTreeItem
 from rig_remote.app_config import AppConfig
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
@@ -1108,3 +1108,43 @@ def test_close_event_yes_with_active_threads(rig_remote_app):
     event.accept.assert_called_once()
     rig_remote_app.scan_thread = None
     rig_remote_app.sync_thread = None
+
+
+# ---------------------------------------------------------------------------
+# _BookmarkTreeItem — sort comparison
+# ---------------------------------------------------------------------------
+
+def test_bookmark_tree_item_sort_text_column_alphabetical(qapp):
+    """Sorting on a non-numeric column goes directly to the string-compare path (line 62)."""
+    tree = QTreeWidget()
+    tree.setColumnCount(3)
+    tree.setSortingEnabled(True)
+    tree.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+
+    alpha = _BookmarkTreeItem(tree)
+    alpha.setText(0, "100000000")
+    alpha.setText(1, "AM")
+    alpha.setText(2, "Alpha")
+
+    beta = _BookmarkTreeItem(tree)
+    beta.setText(0, "200000000")
+    beta.setText(1, "FM")
+    beta.setText(2, "Beta")
+
+    # col 1 is not numeric → goes to line 62 (string compare)
+    assert alpha.__lt__(beta)   # "am" < "fm"
+    assert not beta.__lt__(alpha)
+
+
+def test_bookmark_tree_item_sort_numeric_column_non_numeric_fallback(qapp):
+    """Non-numeric text in col 0 triggers ValueError (lines 60-61) then falls back to string compare (line 62)."""
+    # Items not added to a tree → treeWidget() is None → col defaults to 0
+    item_a = _BookmarkTreeItem()
+    item_a.setText(0, "abc")
+
+    item_b = _BookmarkTreeItem()
+    item_b.setText(0, "xyz")
+
+    # int("abc") raises ValueError → caught and ignored → string fallback
+    assert item_a.__lt__(item_b)   # "abc" < "xyz"
+    assert not item_b.__lt__(item_a)

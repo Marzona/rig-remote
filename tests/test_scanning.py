@@ -1386,3 +1386,16 @@ def test_scanning_factory_sets_log_filename():
         "bookmarks", _queue(), "/var/log/rig.log", _rigctl()
     )
     assert facade._log_filename == "/var/log/rig.log"
+
+
+# ---------------------------------------------------------------------------
+# ScannerCore.process_queue — unknown converter key (lines 156-160)
+# ---------------------------------------------------------------------------
+
+def test_scanning_core_process_queue_unknown_converter_key_returns_false():
+    """param_name passes the whitelist but its key has no converter — hits else branch."""
+    from rig_remote.scanning_config import ScanningConfig
+    cfg = _cfg()
+    cfg.valid_scan_update_event_names = ["txt_unknown"]
+    core = _core(queue=_queue(events=[("txt_unknown", "value")]), config=cfg)
+    assert core.process_queue(_bm_task()) is False

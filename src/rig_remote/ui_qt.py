@@ -418,6 +418,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
         # Initialize rig control
         self.rigctl = [RigCtl(self.ac.rig_endpoints[i]) for i in range(RIG_COUNT)]
+        logger.info("Initialized %d rig controls", RIG_COUNT)
 
         # Save current params content
         for key, widget in self.params.items():
@@ -471,6 +472,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
             self.sync_thread = threading.Thread(target=self.syncing.sync, args=(task,))
             self.sync_thread.start()
+            logger.info("Sync thread started.")
             QTimer.singleShot(0, self.check_sync_thread)
 
     def bookmark_toggle(self) -> None:
@@ -493,6 +495,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         lockout = current_item.data(0, Qt.ItemDataRole.UserRole)
         new_lockout = "O" if lockout == "L" else "L"
         current_item.setData(0, Qt.ItemDataRole.UserRole, new_lockout)
+        logger.info("Bookmark lockout toggled: %s → %s", lockout, new_lockout)
 
         if new_lockout == "L":
             current_item.setBackground(0, QBrush(QColor("red")))
@@ -630,6 +633,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
             self.params[txt_frequency].setText(str(frequency))
             cbb_mode = f"cbb_mode{rig_endpoint.number}"
             self.params[cbb_mode].setCurrentText(mode)
+            logger.info("Got frequency %s mode %s from rig %d", frequency, mode, rig_endpoint.number)
         except (OSError, TimeoutError, ValueError) as err:
             if not silent:
                 QMessageBox.critical(self, "Error", f"Could not connect to rig.\n{err}")
@@ -644,6 +648,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         try:
             self.rigctl[0].set_frequency(int(frequency))
             self.rigctl[0].set_mode(mode)
+            logger.info("Set frequency %s mode %s on rig 1", frequency, mode)
         except (OSError, TimeoutError, ValueError) as err:
             if not silent and (frequency != "" or mode != ""):
                 QMessageBox.critical(self, "Error", f"Could not set frequency.\n{err}")
@@ -733,6 +738,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.bookmarks.add_bookmark(bookmark)
         # Save bookmarks
         self.bookmarks.save(bookmarks_file=self.bookmarks_file)
+        logger.info("Bookmark saved: %s at %s Hz", bookmark.description, bookmark.channel.frequency)
 
     def _extract_bookmarks(self) -> list[Bookmark]:
         """Extract bookmarks from tree"""
