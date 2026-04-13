@@ -49,12 +49,14 @@ rig_remote = "rig_remote.rig_remote:cli"
 # ---------------------------------------------------------------------------
 [dependency-groups]
 dev = [
+    "build>=1.2",
+    "coverage>=7.6",
     "mypy>=1.13",
     "pytest>=8.3",
     "pytest-cov>=6.0",
     "pytest-xdist>=3.6",
     "ruff>=0.8",
-    "coverage>=7.6",
+    "twine>=6.0",
 ]
 
 [tool.setuptools]
