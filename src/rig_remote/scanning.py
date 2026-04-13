@@ -127,7 +127,7 @@ class Scanning2:
 # Factory
 # ---------------------------------------------------------------------------
 
-_SCANNER_REGISTRY = {
+_SCANNER_REGISTRY: dict[str, Callable[[ScannerCore], ScannerStrategy]] = {
     "bookmarks": BookmarkScannerStrategy,
     "frequency": FrequencyScannerStrategy,
 }

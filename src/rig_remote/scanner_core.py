@@ -8,7 +8,7 @@ scanner strategies are composed with a ScannerCore instance.
 
 import logging
 import time
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from rig_remote.models.channel import Channel
 from rig_remote.models.scanning_task import ScanningTask
@@ -36,7 +36,7 @@ class ScannerCore:
     # from bypassing ScanningTask's validation and makes the allowed mutations
     # self-documenting.  range_min / range_max are handled separately because
     # they require a kHz→Hz conversion before assignment.
-    _QUEUE_EVENT_CONVERTERS: dict[str, Callable] = {
+    _QUEUE_EVENT_CONVERTERS: dict[str, Callable[[Any], Any]] = {
         "wait": bool,
         "record": bool,
         "sgn_level": int,

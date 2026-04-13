@@ -150,11 +150,11 @@ class LogFile:
                 + str(signal)
                 + "\n"
             )
+        if self.log_file_handler is None:
+            logger.error("No log file provided, but log feature selected.")
+            raise AttributeError("log_file_handler is not open")
         try:
             self.log_file_handler.write(lstr)
-        except AttributeError:
-            logger.exception("No log file provided, but log feature selected.")
-            raise
         except (IOError, OSError):
             logger.exception("Error while trying to write log file: %s", self.log_filename)
             raise
