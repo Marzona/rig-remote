@@ -46,7 +46,7 @@ class BookmarkScannerStrategy:
         pass_count = task.passes
         logger.info("Starting bookmark scan")
 
-        while self._core._scan_active:
+        while not self._core.should_stop():
             for bookmark in task.bookmarks:
                 logger.info("Processing bookmark %s", bookmark.id)
 
@@ -74,12 +74,12 @@ class BookmarkScannerStrategy:
                     log.write(record_type="B", record=bookmark, signal=[])
 
                 while task.wait:
-                    if self._core.signal_check(sgn_level=task.sgn_level) and self._core._scan_active:
+                    if self._core.signal_check(sgn_level=task.sgn_level) and not self._core.should_stop():
                         self._core.process_queue(task)
                     else:
                         break
 
-                if self._core._scan_active:
+                if not self._core.should_stop():
                     self._core.queue_sleep(task)
 
                 if task.record:

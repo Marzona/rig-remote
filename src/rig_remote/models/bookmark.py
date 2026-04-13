@@ -16,7 +16,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import uuid4
 import logging
 from rig_remote.models.channel import Channel
@@ -30,7 +30,7 @@ class Bookmark:
     channel: Channel
     description: str
     lockout: str = ""
-    id: str = str(uuid4())
+    id: str = field(default_factory=lambda: str(uuid4()), compare=False)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Bookmark):
@@ -40,9 +40,8 @@ class Bookmark:
     def __post_init__(self) -> None:
         if self.lockout.upper() not in self._LOCKOUTS:
             message = (
-                "Provided lockout value %s is not supported, supported values are %s",
-                self.lockout,
-                self._LOCKOUTS,
+                f"Provided lockout value {self.lockout!r} is not supported, "
+                f"supported values are {self._LOCKOUTS}"
             )
             logger.error(message)
             raise ValueError(message)

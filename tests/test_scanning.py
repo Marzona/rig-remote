@@ -443,10 +443,10 @@ def test_scanning_core_process_queue_invalid_event_name_returns_false():
 @pytest.mark.parametrize("event,attr,expected_value", [
     (("txt_range_min", "88000"),  "range_min", khertz_to_hertz(88000)),
     (("txt_range_max", "108000"), "range_max", khertz_to_hertz(108000)),
-    (("txt_delay",     "7"),      "delay",     "7"),
-    (("txt_passes",    "3"),      "passes",    "3"),
-    (("txt_interval",  "500"),    "interval",  "500"),
-    (("txt_sgn_level", "-50"),    "sgn_level", "-50"),
+    (("txt_delay",     "7"),      "delay",     7),
+    (("txt_passes",    "3"),      "passes",    3),
+    (("txt_interval",  "500"),    "interval",  500),
+    (("txt_sgn_level", "-50"),    "sgn_level", -50),
     (("ckb_wait",      True),     "wait",      True),
     (("ckb_record",    False),    "record",    False),
 ])
@@ -477,8 +477,8 @@ def test_scanning_core_process_queue_multiple_events_all_applied():
     task = _bm_task()
     result = core.process_queue(task)
     assert result is True
-    assert task.delay == "3"
-    assert task.passes == "5"
+    assert task.delay == 3
+    assert task.passes == 5
 
 
 # ---------------------------------------------------------------------------
@@ -504,7 +504,7 @@ def test_scanning_core_queue_sleep_processes_queued_events():
     core = _core(queue=queue)
     task = _bm_task(delay=0)
     core.queue_sleep(task)
-    assert task.delay == "5"
+    assert task.delay == 5
 
 
 def test_scanning_core_queue_sleep_checks_queue_each_iteration():

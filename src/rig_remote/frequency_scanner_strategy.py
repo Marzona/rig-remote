@@ -182,7 +182,7 @@ class FrequencyScannerStrategy:
         pass_count = task.passes
         logger.info("Starting frequency scan")
 
-        while self._core._scan_active:
+        while not self._core.should_stop():
             freq = task.range_min
             logger.info("Scan pass %d, interval %d Hz", pass_count, task.interval)
 
@@ -225,7 +225,7 @@ class FrequencyScannerStrategy:
                         new_bm = self._create_new_bookmark(freq)
                         log.write(record_type="F", record=new_bm, signal=[])
 
-                    if self._core._scan_active:
+                    if not self._core.should_stop():
                         self._core.queue_sleep(task)
 
                     if task.record:

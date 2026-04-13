@@ -17,7 +17,6 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 import logging
-from typing import List
 
 from rig_remote.models.bookmark import Bookmark
 
@@ -39,7 +38,7 @@ class ScanningTask:
         self,
         frequency_modulation: str,
         scan_mode: str,
-        new_bookmarks_list: List[Bookmark],
+        new_bookmarks_list: list[Bookmark],
         range_min: int,
         range_max: int,
         interval: int,
@@ -50,7 +49,7 @@ class ScanningTask:
         record: bool,
         auto_bookmark: bool,
         log: bool,
-        bookmarks: List[Bookmark],
+        bookmarks: list[Bookmark],
         inner_band: int = 0,
         inner_interval: int = 0,
     ):
@@ -125,7 +124,7 @@ class ScanningTask:
             )
             logger.error(message)
             raise ValueError(message)
-        self.scan_mode = self.scan_mode
+        self.scan_mode = self.scan_mode.lower()
         if self.scan_mode == "frequency":
             self._check_interval()
             self._check_range()

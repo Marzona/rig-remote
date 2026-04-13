@@ -3,7 +3,6 @@ ScanningConfig dataclass — all tunable constants for a scanning session.
 """
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -33,7 +32,7 @@ class ScanningConfig:
     no_signal_delay: float = 0.2
 
     # Queue event names that are allowed to mutate the running ScanningTask.
-    valid_scan_update_event_names: List[str] = field(
+    valid_scan_update_event_names: list[str] = field(
         default_factory=lambda: [
             "ckb_wait",
             "ckb_record",

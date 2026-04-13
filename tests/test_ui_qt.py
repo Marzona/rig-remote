@@ -196,7 +196,7 @@ def test_export_rig_remote_success(rig_remote_app):
 
 
 def test_export_rig_remote_error(rig_remote_app):
-    rig_remote_app.bookmarks.export_rig_remote = Mock(side_effect=Exception("fail"))
+    rig_remote_app.bookmarks.export_rig_remote = Mock(side_effect=OSError("fail"))
     with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app._export_rig_remote()
@@ -218,7 +218,7 @@ def test_export_gqrx_success(rig_remote_app):
 
 
 def test_export_gqrx_error(rig_remote_app):
-    rig_remote_app.bookmarks.export_gqrx = Mock(side_effect=Exception("fail"))
+    rig_remote_app.bookmarks.export_gqrx = Mock(side_effect=OSError("fail"))
     with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app._export_gqrx()
@@ -951,7 +951,7 @@ def test_get_frequency_success(rig_remote_app):
 
 def test_get_frequency_error(rig_remote_app):
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
-        rig_remote_app.rigctl[0].get_frequency = Mock(side_effect=Exception("conn err"))
+        rig_remote_app.rigctl[0].get_frequency = Mock(side_effect=OSError("conn err"))
         ep = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.cb_get_frequency(ep, silent=False)
@@ -971,7 +971,7 @@ def test_set_frequency_error(rig_remote_app):
     rig_remote_app.params["txt_frequency1"].setText("145500000")
     rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
-        rig_remote_app.rigctl[0].set_frequency = Mock(side_effect=Exception("conn err"))
+        rig_remote_app.rigctl[0].set_frequency = Mock(side_effect=OSError("conn err"))
         ep = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.cb_set_frequency(ep, silent=False)

@@ -32,7 +32,15 @@ from rig_remote.queue_comms import QueueComms
 from rig_remote.stmessenger import STMessenger
 from rig_remote.app_config import AppConfig
 from rig_remote.ui_renderer import RigRemoteUIBuilder
-from typing import Any, Optional, cast
+from typing import Any, NamedTuple, Optional, cast
+
+
+class _WidgetEvent(NamedTuple):
+    """Carries a widget reference and its parameter name to ``_process_entry``."""
+
+    widget: Any
+    widget_name: str
+
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +143,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         path = Path(filename)
         try:
             self.bookmarks.export_rig_remote(path)
-        except Exception as err:
+        except OSError as err:
             QMessageBox.critical(self, "Export error", f"Could not export bookmarks:\n{err}")
 
     def _export_gqrx(self) -> None:
@@ -153,7 +161,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         path = Path(filename)
         try:
             self.bookmarks.export_gqrx(path)
-        except Exception as err:
+        except OSError as err:
             QMessageBox.critical(self, "Export error", f"Could not export bookmarks:\n{err}")
 
     def _insert_bookmarks(self, bookmarks: list[Bookmark], silent: bool = False) -> None:
@@ -175,12 +183,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         """Wrapper for process_entry to work with Qt signals"""
         widget = self.params[widget_name]
 
-        class event_listMock:
-            def __init__(self, w: Any, n: Any) -> None:
-                self.widget = w
-                self.widget_name = n
-
-        event_list = event_listMock(widget, widget_name)
+        event_list = _WidgetEvent(widget=widget, widget_name=widget_name)
         self._process_entry(event_list)
 
     def _process_entry(self, event_list: Any, silent: bool = False) -> None:
@@ -188,7 +191,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         widget = event_list.widget
         widget_name = event_list.widget_name if hasattr(event_list, "widget_name") else str(widget.objectName())
         event_list_value = widget.text() if hasattr(widget, "text") else widget.currentText()
-        logger.warning("Processing entry %s with value %s", widget_name, event_list_value)
+        logger.debug("Processing entry %s with value %s", widget_name, event_list_value)
         # Extract key from widget name
         parts = widget_name.split("_", 1)
         if len(parts) > 1:
@@ -608,7 +611,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
             self.params[txt_frequency].setText(str(frequency))
             cbb_mode = f"cbb_mode{rig_endpoint.number}"
             self.params[cbb_mode].setCurrentText(mode)
-        except Exception as err:
+        except (OSError, TimeoutError, ValueError) as err:
             if not silent:
                 QMessageBox.critical(self, "Error", f"Could not connect to rig.\n{err}")
 
@@ -622,7 +625,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         try:
             self.rigctl[0].set_frequency(int(frequency))
             self.rigctl[0].set_mode(mode)
-        except Exception as err:
+        except (OSError, TimeoutError, ValueError) as err:
             if not silent and (frequency != "" or mode != ""):
                 QMessageBox.critical(self, "Error", f"Could not set frequency.\n{err}")
             if not silent and (frequency == "" or mode == ""):

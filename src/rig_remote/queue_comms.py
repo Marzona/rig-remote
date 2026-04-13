@@ -97,7 +97,7 @@ class QueueComms:
         :param queue: queue to put item on.
 
         """
-        logger.error("item to send to queue:%s", item)
+        logger.debug("item to send to queue: %s", item)
         try:
             queue.put(item, False)
         except Full:

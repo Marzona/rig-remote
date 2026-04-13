@@ -16,7 +16,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from uuid import uuid4
 import logging
@@ -30,7 +30,7 @@ class RigEndpoint:
     hostname: str
     port: int
     number: int
-    id: str = str(uuid4())
+    id: str = field(default_factory=lambda: str(uuid4()), compare=False)
     name: str = ""
 
     def __post_init__(self) -> None:
@@ -38,14 +38,14 @@ class RigEndpoint:
         self._is_valid_hostname(hostname=self.hostname)
         self._is_valid_number()
 
-    def _is_valid_number(self)->None:
+    def _is_valid_number(self) -> None:
         self.number = int(self.number)
         if self.number < 0:
             logger.error("rig number must be >0, got %i", self.number)
             raise ValueError
 
     @staticmethod
-    def _is_valid_port(port: int)->None:
+    def _is_valid_port(port: int) -> None:
         """Checks if the provided port is a valid one.
 
         :param: port to connect to
@@ -58,7 +58,7 @@ class RigEndpoint:
             raise ValueError(message)
 
     @staticmethod
-    def _is_valid_hostname(hostname: str)->None:
+    def _is_valid_hostname(hostname: str) -> None:
         """Checks if hostname is truly a valid FQDN, or IP address.
 
         :param hostname: hostname to validate.
@@ -72,14 +72,14 @@ class RigEndpoint:
             logger.error("Hostname error: %s", e)
             raise ValueError
 
-    def set_port(self, port: int)->None:
+    def set_port(self, port: int) -> None:
         self._is_valid_port(port=port)
         self.port = port
 
-    def set_hostname(self, hostname: str)->None:
+    def set_hostname(self, hostname: str) -> None:
         try:
             self._is_valid_hostname(hostname=hostname)
             self.hostname = hostname
         except ValueError:
-            logger.error("invalid port provided %s", str(hostname))
+            logger.error("invalid hostname provided %s", str(hostname))
             raise

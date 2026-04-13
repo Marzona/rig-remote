@@ -8,7 +8,7 @@ http://sourceforge.net/apps/mediawiki/hamlib/index.php?title=Documentation
 
 
 Author: Simone Marzona
-form
+
 License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
@@ -216,14 +216,15 @@ class BookmarksManager:
         """Deletes a bookmark from the list if it exists.
 
         :param bookmark: The bookmark to delete
-        :returns: True if the operation was attempted
+        :returns: True if deleted, False if not found
         """
         try:
             self.bookmarks.pop(self.bookmarks.index(bookmark))
+            logger.info("bookmark %s deleted", bookmark)
+            return True
         except ValueError:
-            pass
-        logger.info("bookmark %s deleted", bookmark)
-        return True
+            logger.info("bookmark %s not found — nothing to delete", bookmark)
+            return False
 
     def add_bookmark(self, bookmark: Bookmark) -> bool:
         """Adds a bookmark to the list if it's not already present.
@@ -233,8 +234,9 @@ class BookmarksManager:
         """
         if bookmark not in self.bookmarks:
             self.bookmarks.append(bookmark)
+            logger.info("bookmark %s added", bookmark)
             return True
-        logger.info("bookmark %s added", bookmark)
+        logger.info("bookmark %s already exists — skipping", bookmark)
         return False
 
     def export_rig_remote(self, filename: Path) -> None:

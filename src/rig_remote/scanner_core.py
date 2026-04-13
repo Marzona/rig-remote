@@ -31,6 +31,20 @@ class ScannerCore:
       - the sleep indirection (injectable for tests)
     """
 
+    # Explicit converters for every mutable ScanningTask field that can arrive
+    # via the scan queue.  Using a whitelist prevents arbitrary string values
+    # from bypassing ScanningTask's validation and makes the allowed mutations
+    # self-documenting.  range_min / range_max are handled separately because
+    # they require a kHz→Hz conversion before assignment.
+    _QUEUE_EVENT_CONVERTERS: dict[str, Callable] = {
+        "wait": bool,
+        "record": bool,
+        "sgn_level": int,
+        "passes": int,
+        "interval": int,
+        "delay": int,
+    }
+
     def __init__(
         self,
         scan_queue: STMessenger,
@@ -118,7 +132,7 @@ class ScannerCore:
                 break
 
             param_name, param_value = event
-            logger.warning("Retrieved event %s %s", param_name, param_value)
+            logger.info("Retrieved event %s %s", param_name, param_value)
 
             if param_name not in self.config.valid_scan_update_event_names:
                 logger.warning(
@@ -135,9 +149,16 @@ class ScannerCore:
                     task.range_min = khertz_to_hertz(int(param_value))
                 elif key == "range_max":
                     task.range_max = khertz_to_hertz(int(param_value))
+                elif key in self._QUEUE_EVENT_CONVERTERS:
+                    converter = self._QUEUE_EVENT_CONVERTERS[key]
+                    setattr(task, key, converter(param_value))
                 else:
-                    setattr(task, key, param_value)
-            except Exception as exc:
+                    logger.warning(
+                        "Queue event key %r has no registered converter — skipping",
+                        key,
+                    )
+                    break
+            except (ValueError, TypeError) as exc:
                 logger.warning("Queue event update failed: %s — event: %s %s", exc, param_name, param_value)
                 break
 
@@ -207,9 +228,9 @@ class ScannerCore:
         level: float = 0.0
 
         for i in range(self.config.signal_checks):
-            logger.info("Signal checks remaining: %d", self.config.signal_checks - i)
+            logger.debug("Signal check %d/%d: level threshold=%f", i + 1, self.config.signal_checks, threshold)
             level = self.rigctl.get_level()
-            logger.info("Level: %f  threshold: %f", level, threshold)
+            logger.debug("Signal check result: level=%f  threshold=%f", level, threshold)
             if level >= threshold:
                 signal_found += 1
             self._sleep(self.config.no_signal_delay)

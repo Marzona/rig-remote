@@ -16,7 +16,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from rig_remote.models.modulation_modes import ModulationModes
 from uuid import uuid4
 import logging
@@ -34,7 +34,7 @@ class Channel:
     input_frequency: int
     modulation: str
     frequency_as_string: Optional[str] = None
-    id: str = str(uuid4())
+    id: str = field(default_factory=lambda: str(uuid4()), compare=False)
     frequency: int = 0
 
     def __eq__(self, other: object) -> bool:
@@ -45,9 +45,8 @@ class Channel:
     def __post_init__(self) -> None:
         if self.modulation.upper() not in self._MODULATIONS:
             message = (
-                "Provided modulation %s is not supported, supported modulations are %s",
-                self.modulation,
-                self._MODULATIONS,
+                f"Provided modulation {self.modulation!r} is not supported, "
+                f"supported modulations are {self._MODULATIONS}"
             )
             logger.error(message)
             raise ValueError(message)

@@ -13,7 +13,7 @@ License: MIT License
 
 Copyright (c) 2014 Rafael Marmelo
 Copyright (c) 2015 Simone Marzona
-Copyright (c) 2106 Tim Sweeney
+Copyright (c) 2016 Tim Sweeney
 
 TAS - Tim Sweeney - mainetim@gmail.com
 
@@ -82,7 +82,7 @@ class STMessenger:
         :returns: True if termination signal sent.
         """
         check = self.queue_comms.get_from_parent()
-        logger.error("check_end_of_scan: %s", check)
+        logger.debug("check_end_of_scan: %s", check)
         return check == self.END_OF_SCAN_SIGNAL
 
     def check_end_of_sync(self) -> bool:

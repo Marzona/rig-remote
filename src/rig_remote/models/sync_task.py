@@ -16,7 +16,7 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import uuid4
 import logging
 
@@ -37,7 +37,7 @@ class SyncTask:
     src_rig: RigCtl
     dst_rig: RigCtl
     error: str = ""
-    id: str = str(uuid4())
+    id: str = field(default_factory=lambda: str(uuid4()), compare=False)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SyncTask):

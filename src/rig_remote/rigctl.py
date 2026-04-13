@@ -125,6 +125,7 @@ class RigCtl:
         :return: response from the rig endpoint
         """
         rig_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        rig_socket.settimeout(5.0)
 
         logger.info(
             "sending : %s to endpoint %s, %i",

@@ -22,7 +22,7 @@ import csv
 import datetime
 import logging
 import os.path
-from typing import Any, TextIO
+from typing import Any, Optional, TextIO
 
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.models.bookmark import Bookmark
@@ -96,7 +96,7 @@ class LogFile:
         """
 
         self.log_filename = ""
-        self.log_file_handler: TextIO
+        self.log_file_handler: Optional[TextIO] = None
 
     def open(self, name: str = "") -> None:
         """Opens a log file.
