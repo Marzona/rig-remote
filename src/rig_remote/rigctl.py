@@ -18,8 +18,9 @@ Copyright (c) 2015 Simone Marzona
 import logging
 import socket
 from logging import Logger
-from rig_remote.models.rig_endpoint import RigEndpoint
+
 from rig_remote.models.modulation_modes import ModulationModes
+from rig_remote.models.rig_endpoint import RigEndpoint
 
 logger: Logger = logging.getLogger(__name__)
 

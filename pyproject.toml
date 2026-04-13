@@ -1,40 +1,6 @@
-[tool.ruff]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-]
-
-# Same as Black.
-line-length = 120
-indent-width = 4
-
-# Assume Python 3.13
-target-version = "py313"
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
 
 [project]
 name = "rig-remote"
@@ -43,49 +9,26 @@ authors = [
   { name="Simone Marzona", email="marzona@knoway.info" },
 ]
 maintainers = [
-   { name="Simone Marzona", email="marzona@knoway.info" }
+  { name="Simone Marzona", email="marzona@knoway.info" },
 ]
-keywords = ['rigctl', 'ham', 'radio', 'bookmarks', 'scanner']
+keywords = ["rigctl", "ham", "radio", "bookmarks", "scanner"]
 classifiers = [
     "Programming Language :: Python",
     "Topic :: Communications",
     "Development Status :: 4 - Beta",
-    "Intended Audience :: Information Technology",
+    "Intended Audience :: End Users/Desktop",
 ]
-
-dependencies = [
-        "setuptools==80.8.0",
-        "datetime==5.5",
-        "logging==0.4.9.6",
-        "astroid==3.3.6",
-        "configparser==7.1.0",
-        "coverage==7.6.9",
-        "dill==0.3.9",
-        "execnet==2.1.1",
-        "iniconfig==2.0.0",
-        "isort==5.13.2",
-        "mccabe==0.7.0",
-        "mock==5.1.0",
-        "mypy==1.13.0",
-        "mypy-extensions==1.0.0",
-        "packaging==24.2",
-        "platformdirs==4.3.6",
-        "pluggy==1.5.0",
-        "pylint==3.3.2",
-        "pytest==8.3.4",
-        "pytest-cov==6.0.0",
-        "pytest-xdist==3.6.1",
-        "pytz==2025.2",
-        "ruff==0.8.4",
-        "tomlkit==0.13.2",
-        "typing-extensions==4.12.2",
-        "zope-interface==7.2",
-]
-description = "A tool for remotely control a radio transceiver using RigCtl protocol over TCP/IP. Rig Remote provides frequency scanning and monitoring, frequency bookmarks."
+description = "A tool for remotely controlling a radio transceiver using RigCtl protocol over TCP/IP. Rig Remote provides frequency scanning, monitoring, and frequency bookmarks."
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+
+# Runtime-only third-party dependencies.
+# stdlib modules (configparser, datetime, logging, etc.) must NOT appear here.
+dependencies = [
+    "PySide6>=6.6",
+]
 
 [project.urls]
 Homepage = "https://github.com/Marzona/rig-remote"
@@ -93,17 +36,36 @@ Issues = "https://github.com/Marzona/rig-remote/issues"
 
 [project.scripts]
 config_checker = "config_checker.config_checker:cli"
+
 [project.gui-scripts]
 rig_remote = "rig_remote.rig_remote:cli"
+
 [project.entry-points."rig_remote"]
 rig_remote = "rig_remote.rig_remote:cli"
+
+# ---------------------------------------------------------------------------
+# Dev dependency group (PEP 735 — native to uv).
+# Install with: uv sync --group dev
+# ---------------------------------------------------------------------------
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "pytest-xdist>=3.6",
+    "ruff>=0.8",
+    "coverage>=7.6",
+]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
-
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-ra -q -n auto"
 testpaths = [
     "tests",
     "integration",
@@ -113,7 +75,9 @@ log_cli = "True"
 pythonpath = "src"
 required_plugins = ["pytest-xdist>=3.6.1"]
 
-
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
 [tool.mypy]
 python_version = "3.13"
 strict = true
@@ -137,3 +101,22 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 exclude = ["docs"]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg",
+    ".ipynb_checkpoints", ".mypy_cache", ".nox", ".pants.d", ".pyenv",
+    ".pytest_cache", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv",
+    ".vscode", "__pypackages__", "_build", "buck-out", "build", "dist",
+    "node_modules", "site-packages", "venv",
+]
+line-length = 120
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+# E/W: pycodestyle  F: pyflakes  I: isort  UP: pyupgrade  B: flake8-bugbear
+select = ["E", "W", "F", "I", "UP", "B"]

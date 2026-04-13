@@ -20,7 +20,8 @@ Design:
 """
 
 import logging
-from typing import Callable, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
 from rig_remote.bookmark_scanner_strategy import BookmarkScannerStrategy
 from rig_remote.disk_io import LogFile
@@ -112,7 +113,7 @@ class Scanning2:
             logger.info("Opening scan log: %s", self._log_filename)
             try:
                 self._log.open(self._log_filename)
-            except IOError:
+            except OSError:
                 logger.exception("Could not open log file.")
                 raise
 
@@ -139,9 +140,9 @@ def create_scanner(
     scan_queue: STMessenger,
     log_filename: str,
     rigctl: RigCtl,
-    config: Optional[ScanningConfig] = None,
-    log: Optional[LogFile] = None,
-    sleep_fn: Optional[Callable[[float], None]] = None,
+    config: ScanningConfig | None = None,
+    log: LogFile | None = None,
+    sleep_fn: Callable[[float], None] | None = None,
 ) -> Scanning2:
     """Factory — returns a fully composed Scanning2 for *scan_mode*.
 

@@ -16,14 +16,13 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+import logging
+import re
 from dataclasses import dataclass, field
+from uuid import uuid4
+
 from rig_remote.constants import MAX_FREQUENCY_HZ
 from rig_remote.models.modulation_modes import ModulationModes
-from uuid import uuid4
-import logging
-
-import re
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class Channel:
 
     input_frequency: int
     modulation: str
-    frequency_as_string: Optional[str] = None
+    frequency_as_string: str | None = None
     id: str = field(default_factory=lambda: str(uuid4()), compare=False)
     frequency: int = 0
 
@@ -63,8 +62,8 @@ class Channel:
             raise
 
         if frequency_int < 1 or frequency_int > MAX_FREQUENCY_HZ:
-            message = "invalid frequency %s" % self.input_frequency
+            message = f"invalid frequency {self.input_frequency}"
             raise ValueError(message)
 
-        self.frequency_as_string = "{:,}".format(frequency_int)
+        self.frequency_as_string = f"{frequency_int:,}"
         self.frequency = frequency_int

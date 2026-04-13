@@ -6,26 +6,25 @@ It is designed as a mixin class to be used with the main RigRemote class.
 """
 
 import logging
+from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
+    QCheckBox,
+    QComboBox,
     QGridLayout,
+    QGroupBox,
     QLabel,
     QLineEdit,
     QPushButton,
-    QComboBox,
-    QCheckBox,
     QTreeWidget,
-    QGroupBox,
+    QWidget,
 )
 
 from rig_remote.constants import RIG_COUNT
+from rig_remote.models.modulation_modes import ModulationModes
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rigctl import RigCtl
-
-from rig_remote.models.modulation_modes import ModulationModes
-from typing import Any
 
 logger = logging.getLogger(__name__)
 

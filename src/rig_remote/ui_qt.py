@@ -1,38 +1,36 @@
 import logging
 import threading
 from pathlib import Path
+from typing import Any, NamedTuple, cast
 
+from PySide6.QtCore import QEvent, Qt, QTimer
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QMainWindow,
-    QLineEdit,
     QCheckBox,
-    QTreeWidgetItem,
-    QMessageBox,
     QFileDialog,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QTreeWidgetItem,
 )
-from PySide6.QtCore import Qt, QTimer, QEvent
-from PySide6.QtGui import QColor, QBrush
-from typing_extensions import Union
 
+from rig_remote.app_config import AppConfig
+from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
 from rig_remote.constants import RIG_COUNT
 from rig_remote.exceptions import (
     UnsupportedScanningConfigError,
     UnsupportedSyncConfigError,
 )
-from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
+from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
+from rig_remote.models.scanning_task import ScanningTask
+from rig_remote.models.sync_task import SyncTask
+from rig_remote.queue_comms import QueueComms
 from rig_remote.rigctl import RigCtl
 from rig_remote.scanning import Scanning2, create_scanner
-from rig_remote.syncing import Syncing
-from rig_remote.models.sync_task import SyncTask
-from rig_remote.models.scanning_task import ScanningTask
-from rig_remote.models.bookmark import Bookmark
-from rig_remote.queue_comms import QueueComms
-
 from rig_remote.stmessenger import STMessenger
-from rig_remote.app_config import AppConfig
+from rig_remote.syncing import Syncing
 from rig_remote.ui_renderer import RigRemoteUIBuilder
-from typing import Any, NamedTuple, Optional, cast
 
 
 class _WidgetEvent(NamedTuple):
@@ -92,11 +90,11 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.params: dict[str, Any] = {}
         self.params_last_content: dict[str, Any] = {}
         self.bookmarks = BookmarksManager()
-        self.scan_thread: Optional[threading.Thread] = None
-        self.sync_thread: Optional[threading.Thread] = None
-        self.scan_mode: Optional[str] = None
-        self.scanning: Optional[Scanning2] = None
-        self.syncing: Optional[Syncing] = None
+        self.scan_thread: threading.Thread | None = None
+        self.sync_thread: threading.Thread | None = None
+        self.scan_mode: str | None = None
+        self.scanning: Scanning2 | None = None
+        self.syncing: Syncing | None = None
         self.selected_bookmark = None
         self.scan_queue = STMessenger(queue_comms=QueueComms())
         self.sync_queue = STMessenger(queue_comms=QueueComms())
@@ -317,7 +315,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         event_list = ("ckb_auto_bookmark", state == Qt.CheckState.Checked.value)
         self._process_checkbutton(event_list)
 
-    def _process_checkbutton(self, event_list: tuple[str, Union[str, bool]]) -> None:
+    def _process_checkbutton(self, event_list: tuple[str, str | bool]) -> None:
         """Process checkbox state changes"""
         if self.scan_thread is not None:
             self.scan_queue.send_event_update(event_list)
@@ -488,7 +486,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
     def bookmark_lockout(self) -> None:
         """Toggle lockout of selected bookmark"""
-        current_item = cast(Optional[QTreeWidgetItem], self.tree.currentItem())
+        current_item = cast(QTreeWidgetItem | None, self.tree.currentItem())
         if current_item is None:
             return
 
@@ -657,7 +655,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
     def cb_autofill_form(self, rig_number: int) -> None:
         """Auto-fill bookmark fields with selected entry"""
-        current_item = cast(Optional[QTreeWidgetItem], self.tree.currentItem())
+        current_item = cast(QTreeWidgetItem | None, self.tree.currentItem())
         if current_item is None:
             return
 
@@ -671,7 +669,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         self.params[txt_frequency].setText(current_item.text(0))
         self.params[txt_description].setText(current_item.text(2))
 
-    def build_control_source(self, number: int, silent: bool = False) -> Optional[dict[str, Any]]:
+    def build_control_source(self, number: int, silent: bool = False) -> dict[str, Any] | None:
         """Build control source dictionary"""
         if number not in (1, 2):
             logger.error("The rig number %s is not supported", number)

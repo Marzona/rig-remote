@@ -24,9 +24,10 @@ import sys
 import textwrap
 from logging import Logger
 
-from rig_remote.ui_qt import RigRemote
-from rig_remote.app_config import AppConfig
 from PySide6 import QtWidgets
+
+from rig_remote.app_config import AppConfig
+from rig_remote.ui_qt import RigRemote
 
 
 # helper functions

@@ -16,12 +16,12 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+import logging
 from dataclasses import dataclass, field
 from uuid import uuid4
-import logging
 
-from rig_remote.stmessenger import STMessenger
 from rig_remote.rigctl import RigCtl
+from rig_remote.stmessenger import STMessenger
 
 logger = logging.getLogger(__name__)
 

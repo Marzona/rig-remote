@@ -17,6 +17,7 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -27,12 +28,12 @@ import os
 import sys
 
 from rig_remote.constants import (
+    CONFIG_SECTIONS,
+    MAIN_CONFIG,
+    MONITOR_CONFIG,
     RIG_COUNT,
     RIG_URI_CONFIG,
-    MONITOR_CONFIG,
     SCANNING_CONFIG,
-    MAIN_CONFIG,
-    CONFIG_SECTIONS,
 )
 from rig_remote.disk_io import IO
 from rig_remote.models.rig_endpoint import RigEndpoint
@@ -157,7 +158,7 @@ class AppConfig:
         self._io.csv_rows = []
         try:
             os.makedirs(os.path.dirname(self.config_file))
-        except IOError:
+        except OSError:
             logger.info("skip create config path as %s, already exists?", self.config_file)
         config = configparser.RawConfigParser()
         for section in CONFIG_SECTIONS:

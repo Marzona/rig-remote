@@ -8,7 +8,8 @@ scanner strategies are composed with a ScannerCore instance.
 
 import logging
 import time
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from rig_remote.models.channel import Channel
 from rig_remote.models.scanning_task import ScanningTask
@@ -50,7 +51,7 @@ class ScannerCore:
         scan_queue: STMessenger,
         rigctl: RigCtl,
         config: ScanningConfig,
-        sleep_fn: Optional[Callable[[float], None]] = None,
+        sleep_fn: Callable[[float], None] | None = None,
     ) -> None:
         """Initialise the core with all required dependencies.
 

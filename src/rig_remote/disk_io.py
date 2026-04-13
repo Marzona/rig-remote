@@ -22,7 +22,7 @@ import csv
 import datetime
 import logging
 import os.path
-from typing import Any, Optional, TextIO
+from typing import Any, TextIO
 
 from rig_remote.constants import LOG_RECORD_BOOKMARK, LOG_RECORD_FREQUENCY
 from rig_remote.exceptions import InvalidPathError
@@ -60,7 +60,7 @@ class IO:
         """
         self._path_check(csv_file)
         logger.info("reading csv file %s with delimiter %s.", csv_file, delimiter)
-        with open(csv_file, "r", encoding="utf-8") as data_file:
+        with open(csv_file, encoding="utf-8") as data_file:
             self.csv_rows = []
             reader = csv.reader(data_file, delimiter=delimiter)
             for line in reader:
@@ -82,7 +82,7 @@ class IO:
                 for entry in self.csv_rows:
                     count += 1
                     writer.writerow(entry)
-        except (IOError, OSError):
+        except OSError:
             logger.error("Error while trying to write the file: %s", csv_file)
         self.csv_rows = []
         logger.info("saved %i rows", count)
@@ -99,7 +99,7 @@ class LogFile:
         """
 
         self.log_filename = ""
-        self.log_file_handler: Optional[TextIO] = None
+        self.log_file_handler: TextIO | None = None
 
     def open(self, name: str = "") -> None:
         """Opens a log file.
@@ -109,12 +109,12 @@ class LogFile:
         self.log_filename = name
         try:
             os.makedirs(os.path.dirname(self.log_filename))
-        except IOError:
+        except OSError:
             logger.info("Error while trying to create log file path as %s already exists", self.log_filename)
         try:
             self.log_file_handler = open(self.log_filename, "a")
             logger.info("Log file opened: %s", self.log_filename)
-        except (IOError, OSError):
+        except OSError:
             logger.error("Error while trying to open log file: %s", self.log_filename)
 
     def write(self, record_type: str, record: Bookmark, signal: list[float]) -> None:
@@ -147,7 +147,7 @@ class LogFile:
             raise AttributeError("log_file_handler is not open")
         try:
             self.log_file_handler.write(lstr)
-        except (IOError, OSError):
+        except OSError:
             logger.exception("Error while trying to write log file: %s", self.log_filename)
             raise
         except (TypeError, IndexError):
@@ -169,5 +169,5 @@ class LogFile:
             try:
                 self.log_file_handler.close()
                 logger.info("Log file closed: %s", self.log_filename)
-            except (IOError, OSError):
+            except OSError:
                 logger.error("Error while trying to close log file: %s", self.log_filename)

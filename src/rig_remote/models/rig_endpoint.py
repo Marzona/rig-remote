@@ -16,11 +16,10 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
-from dataclasses import dataclass, field
-
-from uuid import uuid4
 import logging
-from socket import gethostbyname, gaierror
+from dataclasses import dataclass, field
+from socket import gaierror, gethostbyname
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class RigEndpoint:
             _ = gethostbyname(hostname)
         except gaierror as e:
             logger.error("Hostname error: %s", e)
-            raise ValueError
+            raise ValueError(str(e)) from e
 
     def set_port(self, port: int) -> None:
         self._is_valid_port(port=port)

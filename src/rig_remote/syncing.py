@@ -15,8 +15,8 @@ Copyright (c) 2015 Simone Marzona
 
 import logging
 import time
-from rig_remote.models.sync_task import SyncTask
 
+from rig_remote.models.sync_task import SyncTask
 
 logger = logging.getLogger(__name__)
 

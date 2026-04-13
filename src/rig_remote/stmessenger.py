@@ -19,10 +19,10 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-from typing import Any, Union
+import logging
+from typing import Any
 
 from rig_remote.queue_comms import QueueComms
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class STMessenger:
 
         return self.queue_comms.queued_for_child()
 
-    def get_event_update(self) -> Union[tuple[str, str], None]:
+    def get_event_update(self) -> tuple[str, str] | None:
         """Get the next event waiting to be processed.
 
         :returns: event (may be empty)

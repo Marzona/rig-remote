@@ -17,17 +17,17 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Union
 
-from rig_remote.exceptions import (
-    InvalidPathError,
-    BookmarkFormatError,
-)
-from rig_remote.models.channel import Channel
-from rig_remote.models.bookmark import Bookmark
-from rig_remote.models.modulation_modes import ModulationModes
 from rig_remote.disk_io import IO
+from rig_remote.exceptions import (
+    BookmarkFormatError,
+    InvalidPathError,
+)
+from rig_remote.models.bookmark import Bookmark
+from rig_remote.models.channel import Channel
+from rig_remote.models.modulation_modes import ModulationModes
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +58,10 @@ class BookmarksManager:
 
     def __init__(
         self,
-        io: IO = IO(),
+        io: IO | None = None,
         factory: Callable[..., Bookmark] = bookmark_factory,
     ) -> None:
-        self._io = io
+        self._io = io if io is not None else IO()
         self.bookmarks: list[Bookmark] = []
         self._factory = factory
         self._modulation_modes = ModulationModes
@@ -151,7 +151,7 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename: Path) -> Optional[list[Bookmark]]:
+    def import_bookmarks(self, filename: Path) -> list[Bookmark] | None:
         """handles the import of the bookmarks. It is a
         Wrapper around the import functions and the requester function.
 
@@ -167,7 +167,7 @@ class BookmarksManager:
         :param filename: file path to read
         """
 
-        with open(filename, "r") as fn:
+        with open(filename) as fn:
             line = fn.readline()
         if self._GQRX_BOOKMARK_HEADER_LINE == line:
             logger.info("detected gqrx bookmark format for file %s", filename)

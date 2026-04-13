@@ -16,9 +16,10 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+import logging
 from dataclasses import dataclass, field
 from uuid import uuid4
-import logging
+
 from rig_remote.models.channel import Channel
 
 logger = logging.getLogger(__name__)

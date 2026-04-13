@@ -19,9 +19,8 @@ TAS - Tim Sweeney - mainetim@gmail.com
 
 """
 
-from queue import Queue, Empty, Full
-from typing import Union
 import logging
+from queue import Empty, Full, Queue
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +64,7 @@ class QueueComms:
         return not queue_name.empty()
 
     @staticmethod
-    def _get_from_queue(queue: Queue[tuple[str, str]]) -> Union[tuple[str, str], None]:
+    def _get_from_queue(queue: Queue[tuple[str, str]]) -> tuple[str, str] | None:
         """retrieve an item from the queue. Wrapped by get_from_child and
         get_from_parent.
 
@@ -81,11 +80,11 @@ class QueueComms:
             logger.info("Queue empty while getting from %s", queue)
             return None
 
-    def get_from_parent(self) -> Union[tuple[str, str], None]:
+    def get_from_parent(self) -> tuple[str, str] | None:
         """wrapper on _get_from_queue"""
         return self._get_from_queue(queue=self.parent_queue)
 
-    def get_from_child(self) -> Union[tuple[str, str], None]:
+    def get_from_child(self) -> tuple[str, str] | None:
         """wrapper on _get_from_queue"""
 
         return self._get_from_queue(queue=self.child_queue)
