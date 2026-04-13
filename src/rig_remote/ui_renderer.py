@@ -7,6 +7,7 @@ It is designed as a mixin class to be used with the main RigRemote class.
 
 import logging
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
@@ -95,6 +96,9 @@ class RigRemoteUIBuilder:
         self.tree.setColumnWidth(0, 100)
         self.tree.setColumnWidth(1, 70)
         self.tree.setToolTip("Your bookmark list")
+        self.tree.setSortingEnabled(True)
+        self.tree.header().setSectionsClickable(True)
+        self.tree.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         layout.addWidget(self.tree, 0, 0, 6, 1)
 
     def _build_rig(self, layout: QGridLayout, rig_number: int) -> None:

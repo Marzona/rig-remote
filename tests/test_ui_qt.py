@@ -811,8 +811,8 @@ def test_add_bookmark_from_rig_empty_description_not_silent(rig_remote_app):
 # _add_new_bookmark (insertion sort)
 # ---------------------------------------------------------------------------
 
-def test_add_new_bookmark_insertion_sort(rig_remote_app):
-    """New bookmark with lower freq is inserted before existing higher-freq one."""
+def test_add_new_bookmark_sorted_by_frequency(rig_remote_app):
+    """Tree keeps bookmarks sorted by frequency ascending regardless of insertion order."""
     rig_remote_app.tree.clear()
     high = bookmark_factory(input_frequency=200000000, modulation="FM",
                             description="High", lockout="O")

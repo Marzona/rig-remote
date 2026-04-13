@@ -45,6 +45,8 @@ SCANNING_CONFIG = [
     "record",
     "aggr_scan",
     "passes",
+    "inner_band",
+    "inner_interval",
 ]
 MAIN_CONFIG = ["always_on_top", "save_exit", "bookmark_filename", "log", "log_filename"]
 MONITOR_CONFIG = ["monitor_mode_loops"]

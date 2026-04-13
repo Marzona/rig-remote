@@ -304,6 +304,8 @@ def test_appconfig_get_conf_populates_from_window():
     assert ac.config["interval"] == "10"
     assert ac.config["delay"] == "3"
     assert ac.config["passes"] == "5"
+    assert ac.config["inner_band"] == "0"
+    assert ac.config["inner_interval"] == "0"
     assert ac.config["sgn_level"] == "-20"
     assert ac.config["range_min"] == "24000"
     assert ac.config["range_max"] == "1800000"
@@ -331,22 +333,25 @@ def test_appconfig_read_conf_with_empty_config_file(tmp_path):
     assert len(ac.rig_endpoints) == RIG_COUNT
 
 
-def test_appconfig_write_conf_includes_aggr_scan(tmp_path):
-    """_write_conf correctly writes the aggr_scan key to the Scanning section."""
+@pytest.mark.parametrize("key,value", [
+    ("aggr_scan", "true"),
+    ("inner_band", "5000"),
+    ("inner_interval", "1000"),
+])
+def test_appconfig_write_conf_includes_scanning_keys(tmp_path, key, value):
+    """_write_conf writes scanning keys to the [Scanning] section."""
     cfg_path = tmp_path / "test-config.ini"
     ac = AppConfig(config_file=str(cfg_path))
 
-    # Set up config with aggr_scan
     ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
-    ac.config["aggr_scan"] = "true"
+    ac.config[key] = value
 
     ac._write_conf()
     assert cfg_path.exists()
 
-    # Read back and verify aggr_scan is in Scanning section
     loaded_config = configparser.ConfigParser()
     loaded_config.read(cfg_path)
-    assert loaded_config["Scanning"]["aggr_scan"] == "true"
+    assert loaded_config["Scanning"][key] == value
 
 
 def test_appconfig_store_conf_calls_get_conf_and_write_conf():
@@ -412,6 +417,8 @@ def test_appconfig_store_conf_calls_get_conf_and_write_conf():
         assert ac.config["interval"] == "10"
         assert ac.config["delay"] == "3"
         assert ac.config["passes"] == "5"
+        assert ac.config["inner_band"] == "0"
+        assert ac.config["inner_interval"] == "0"
         assert ac.config["sgn_level"] == "-20"
         assert ac.config["range_min"] == "24000"
         assert ac.config["range_max"] == "1800000"

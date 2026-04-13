@@ -42,6 +42,26 @@ class _WidgetEvent(NamedTuple):
     widget_name: str
 
 
+class _BookmarkTreeItem(QTreeWidgetItem):
+    """QTreeWidgetItem with column-aware sorting for the bookmarks table.
+
+    Column 0 (Frequency) is compared numerically; columns 1 and 2
+    (Mode, Description) are compared case-insensitively as strings.
+    """
+
+    _NUMERIC_COLUMNS = {0}
+
+    def __lt__(self, other: QTreeWidgetItem) -> bool:
+        tree = self.treeWidget()
+        col = tree.sortColumn() if tree is not None else 0
+        if col in self._NUMERIC_COLUMNS:
+            try:
+                return int(self.text(col)) < int(other.text(col))
+            except ValueError:
+                pass
+        return self.text(col).lower() < other.text(col).lower()
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -169,7 +189,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         """Insert bookmarks into tree view"""
         logger.info("adding %i bookmarks", len(bookmarks))
         for entry in bookmarks:
-            item = QTreeWidgetItem(self.tree)
+            item = _BookmarkTreeItem(self.tree)
             item.setText(0, str(entry.channel.frequency))
             item.setText(1, entry.channel.modulation)
             item.setText(2, entry.description)
@@ -699,24 +719,13 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         Args:
             bookmark (Bookmark): bookmark object to add
         """
-        # Find insertion point (insertion sort)
-        idx = self.tree.topLevelItemCount()
-        for i in range(self.tree.topLevelItemCount()):
-            item = self.tree.topLevelItem(i)
-            if item is None:
-                continue
-            curr_freq = int(item.text(0))
-            if int(bookmark.channel.frequency) < curr_freq:
-                idx = i
-                break
-
-        item = QTreeWidgetItem()
+        item = _BookmarkTreeItem()
         if self.bookmarks.add_bookmark(bookmark):
             item.setText(0, str(bookmark.channel.frequency))
             item.setText(1, bookmark.channel.modulation)
             item.setText(2, bookmark.description)
             item.setData(0, Qt.ItemDataRole.UserRole, bookmark.lockout)
-            self.tree.insertTopLevelItem(idx, item)
+            self.tree.addTopLevelItem(item)
 
         self.tree.setCurrentItem(item)
         self.tree.scrollToItem(item)
