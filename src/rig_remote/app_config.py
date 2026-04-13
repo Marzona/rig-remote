@@ -54,6 +54,8 @@ class AppConfig:
         "interval": "1",
         "delay": "5",
         "passes": "0",
+        "inner_band": "0",
+        "inner_interval": "0",
         "sgn_level": "-30",
         "range_min": "24,000",
         "range_max": "1800,000",
@@ -188,6 +190,8 @@ class AppConfig:
         self.config["interval"] = window.params["txt_interval"].text()
         self.config["delay"] = window.params["txt_delay"].text()
         self.config["passes"] = window.params["txt_passes"].text()
+        self.config["inner_band"] = window.params["txt_inner_band"].text()
+        self.config["inner_interval"] = window.params["txt_inner_interval"].text()
         self.config["sgn_level"] = window.params["txt_sgn_level"].text()
         self.config["range_min"] = window.params["txt_range_min"].text()
         self.config["range_max"] = window.params["txt_range_max"].text()

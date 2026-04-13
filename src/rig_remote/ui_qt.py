@@ -358,7 +358,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
         # Test positive integer values
         keys = [f"port{r}" for r in range(1, RIG_COUNT + 1)]
-        keys.extend(["interval", "delay", "passes", "range_min", "range_max"])
+        keys.extend(["interval", "delay", "passes", "range_min", "range_max",
+                     "inner_band", "inner_interval"])
         for key in keys:
             ekey = f"txt_{key}"
             config_key_val = str(ac.config[key] or "")
@@ -570,6 +571,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                     log=self.params["ckb_log"].isChecked(),
                     auto_bookmark=self.params["ckb_auto_bookmark"].isChecked(),
                     bookmarks=self.new_bookmarks_list,
+                    inner_band=int(self.params["txt_inner_band"].text().replace(",", "")),
+                    inner_interval=int(self.params["txt_inner_interval"].text().replace(",", "")),
                 )
                 self.scanning = create_scanner(
                     scan_mode=scan_mode,

@@ -97,6 +97,65 @@ class FrequencyScannerStrategy:
             self._store_prev_bookmark(level=level, freq=freq)
 
     # ------------------------------------------------------------------
+    # Inner refinement scan
+    # ------------------------------------------------------------------
+
+    def _inner_scan(self, freq_start: int, task: ScanningTask) -> tuple[int, float]:
+        """Sweep [freq_start, freq_start + task.inner_band) at task.inner_interval
+        steps and return the frequency with the highest signal level.
+
+        The number of samples is task.inner_band // task.inner_interval (integer
+        steps that fit before the upper bound, matching the exclusive convention
+        of the outer scan loop).
+
+        Tune errors at individual steps are logged and skipped; if every step
+        fails the method returns (freq_start, -inf) so the caller can still
+        create a bookmark at the trigger frequency.
+
+        :param freq_start: Frequency in Hz where the outer scan detected a
+            signal above the threshold — the lower bound of the inner sweep.
+        :param task: Active ScanningTask supplying inner_band, inner_interval,
+            and frequency_modulation.
+        :returns: ``(peak_freq, peak_level)`` — the frequency inside the inner
+            band that produced the strongest signal.
+        """
+        peak_freq: int = freq_start
+        peak_level: float = float("-inf")
+        freq: int = freq_start
+        inner_end: int = freq_start + task.inner_band
+
+        logger.info(
+            "Inner scan: [%d, %d) Hz step %d Hz",
+            freq_start,
+            inner_end,
+            task.inner_interval,
+        )
+
+        while freq < inner_end:
+            try:
+                self._core.channel_tune(
+                    Channel(modulation=task.frequency_modulation, input_frequency=freq)
+                )
+            except (OSError, TimeoutError, ValueError):
+                logger.warning("Inner scan tune error at %d Hz — skipping step.", freq)
+                freq += task.inner_interval
+                continue
+
+            level = self._core.rigctl.get_level()
+            logger.info("Inner scan: freq=%d Hz  level=%f", freq, level)
+
+            if level > peak_level:
+                peak_level = level
+                peak_freq = freq
+
+            freq += task.inner_interval
+
+        logger.info(
+            "Inner scan complete: peak at %d Hz (level=%f)", peak_freq, peak_level
+        )
+        return peak_freq, peak_level
+
+    # ------------------------------------------------------------------
     # Main scan loop
     # ------------------------------------------------------------------
 
@@ -152,7 +211,15 @@ class FrequencyScannerStrategy:
                         logger.info("Recording started.")
 
                     if task.auto_bookmark:
-                        self._autobookmark(level=task.sgn_level, freq=freq, task=task)
+                        if task.inner_band > 0 and task.inner_interval > 0:
+                            peak_freq, _ = self._inner_scan(freq, task)
+                            new_bm = self._create_new_bookmark(peak_freq)
+                            task.new_bookmarks_list.append(new_bm)
+                            logger.info(
+                                "Inner scan bookmark at %d Hz", peak_freq
+                            )
+                        else:
+                            self._autobookmark(level=task.sgn_level, freq=freq, task=task)
 
                     if task.log:
                         new_bm = self._create_new_bookmark(freq)

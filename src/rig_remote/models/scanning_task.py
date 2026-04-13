@@ -30,7 +30,7 @@ class ScanningTask:
 
     """
 
-    # we can can trhgou a frequency range or through the bookmarks only
+    # we can can through a frequency range or through the bookmarks only
     _SUPPORTED_SCANNING_MODES = ("bookmarks", "frequency")
     # minimum interval in hertz
     _MIN_INTERVAL: int = 1000
@@ -51,12 +51,21 @@ class ScanningTask:
         auto_bookmark: bool,
         log: bool,
         bookmarks: List[Bookmark],
+        inner_band: int = 0,
+        inner_interval: int = 0,
     ):
         """We do some checks to see if we are good to go with the scan.
 
         :param scan_mode: scanning mode, either bookmark or frequency
-        :raises: InvalidScanModeError if action or mode are not
-        allowed
+        :param inner_band: Width in Hz of the inner refinement scan triggered
+            when a signal is found during auto-bookmark mode.  Once a signal is
+            detected at frequency A the strategy sweeps [A, A+inner_band) at
+            ``inner_interval`` steps to locate the peak.  Set to 0 (default)
+            to disable inner scanning.
+        :param inner_interval: Step size in Hz for the inner refinement scan.
+            Must be >= ``_MIN_INTERVAL`` when enabled.  Set to 0 (default) to
+            disable inner scanning.
+        :raises: InvalidScanModeError if action or mode are not allowed
         :raises: ValueError if the pass_params dictionary contains invalid data
 
         """
@@ -75,6 +84,8 @@ class ScanningTask:
         self.record = record
         self.auto_bookmark = auto_bookmark
         self.scan_mode = scan_mode
+        self.inner_band = inner_band
+        self.inner_interval = inner_interval
         self._post_init()
 
     def _post_init(self) -> None:
@@ -82,6 +93,7 @@ class ScanningTask:
         self._check_scan_mode()
         self._check_range_min()
         self._check_range_max()
+        self._check_inner_scan_params()
 
     def _check_range_min(self) -> None:
         """Checks for a sane range_min. We don't want to search for signals
@@ -142,3 +154,51 @@ class ScanningTask:
         if self.passes < 1:
             logger.error("scan passes must be >=1, got %i, updated to 1", self.passes)
             self.passes = 1
+
+    def _check_inner_scan_params(self) -> None:
+        """Validate and normalise inner_band / inner_interval.
+
+        Rules applied in order:
+        1. Negative values are clamped to 0.
+        2. A non-zero inner_interval below _MIN_INTERVAL is clamped up.
+        3. If exactly one of the two is zero the pair is disabled (both set
+           to 0) because a partial configuration is meaningless.
+        4. inner_band < inner_interval produces only one sample; this is
+           allowed but logged as a warning.
+        """
+        if self.inner_band < 0:
+            logger.error("Negative inner_band %i provided, overriding with 0", self.inner_band)
+            self.inner_band = 0
+
+        if self.inner_interval < 0:
+            logger.error(
+                "Negative inner_interval %i provided, overriding with 0",
+                self.inner_interval,
+            )
+            self.inner_interval = 0
+
+        if 0 < self.inner_interval < self._MIN_INTERVAL:
+            logger.error(
+                "inner_interval %i is below minimum %i, overriding",
+                self.inner_interval,
+                self._MIN_INTERVAL,
+            )
+            self.inner_interval = self._MIN_INTERVAL
+
+        # One set, other not — disable both.
+        if (self.inner_band == 0) != (self.inner_interval == 0):
+            logger.error(
+                "inner_band (%i) and inner_interval (%i) must both be set or both be 0 — disabling inner scan",
+                self.inner_band,
+                self.inner_interval,
+            )
+            self.inner_band = 0
+            self.inner_interval = 0
+            return
+
+        if self.inner_band > 0 and self.inner_band < self.inner_interval:
+            logger.warning(
+                "inner_band (%i Hz) is smaller than inner_interval (%i Hz); only one sample will be taken",
+                self.inner_band,
+                self.inner_interval,
+            )

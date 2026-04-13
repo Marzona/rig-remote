@@ -49,6 +49,8 @@ def _bm_task(**kw) -> ScanningTask:
         auto_bookmark=False,
         log=False,
         bookmarks=[],
+        inner_band=0,
+        inner_interval=0,
     )
     defaults.update(kw)
     return ScanningTask(**defaults)
@@ -71,6 +73,8 @@ def _freq_task(**kw) -> ScanningTask:
         auto_bookmark=False,
         log=False,
         bookmarks=[],
+        inner_band=0,
+        inner_interval=0,
     )
     defaults.update(kw)
     return ScanningTask(**defaults)
@@ -1012,6 +1016,230 @@ def test_scanning_freq_scanner_scan_hold_bookmark_adds_to_list():
     # After second freq (no signal): elif self._hold_bookmark → _create_new_bookmark
     # new_bookmarks_list should have at least one entry
     assert len(task.new_bookmarks_list) >= 1
+
+
+# ---------------------------------------------------------------------------
+# ScanningTask — inner_band / inner_interval validation
+# ---------------------------------------------------------------------------
+
+def test_scanning_task_inner_scan_disabled_by_default():
+    task = _freq_task()
+    assert task.inner_band == 0
+    assert task.inner_interval == 0
+
+
+@pytest.mark.parametrize("inner_band,inner_interval", [
+    (500_000, 10_000),   # both valid and enabled
+    (0, 0),              # both zero — disabled
+])
+def test_scanning_task_inner_scan_valid_pairs(inner_band, inner_interval):
+    task = _freq_task(inner_band=inner_band, inner_interval=inner_interval)
+    assert task.inner_band == inner_band
+    assert task.inner_interval == inner_interval
+
+
+@pytest.mark.parametrize("inner_band,inner_interval", [
+    (500_000, 0),   # band set, interval missing
+    (0, 10_000),    # interval set, band missing
+])
+def test_scanning_task_inner_scan_partial_config_disabled(inner_band, inner_interval):
+    """One field set without the other → both clamped to 0."""
+    task = _freq_task(inner_band=inner_band, inner_interval=inner_interval)
+    assert task.inner_band == 0
+    assert task.inner_interval == 0
+
+
+@pytest.mark.parametrize("inner_band,inner_interval", [
+    (-100_000, 10_000),   # negative band
+    (500_000, -10_000),   # negative interval
+    (-500_000, -10_000),  # both negative
+])
+def test_scanning_task_inner_scan_negative_values_clamped(inner_band, inner_interval):
+    """Negative values are clamped to 0; the pair is then disabled."""
+    task = _freq_task(inner_band=inner_band, inner_interval=inner_interval)
+    assert task.inner_band == 0
+    assert task.inner_interval == 0
+
+
+def test_scanning_task_inner_interval_below_minimum_clamped():
+    """inner_interval < _MIN_INTERVAL is clamped up to _MIN_INTERVAL."""
+    task = _freq_task(inner_band=500_000, inner_interval=100)
+    assert task.inner_interval == ScanningTask._MIN_INTERVAL
+    assert task.inner_band == 500_000
+
+
+def test_scanning_task_inner_band_smaller_than_interval_allowed():
+    """inner_band < inner_interval is allowed (one sample); no exception raised."""
+    task = _freq_task(inner_band=5_000, inner_interval=10_000)
+    assert task.inner_band == 5_000
+    assert task.inner_interval == 10_000
+
+
+# ---------------------------------------------------------------------------
+# FrequencyScannerStrategy — _inner_scan
+# ---------------------------------------------------------------------------
+
+def test_scanning_freq_inner_scan_returns_peak_frequency():
+    """_inner_scan returns the frequency where get_level was highest."""
+    # inner range: [100M, 100.5M) step 100k → 5 steps
+    # peak at 100.2M (level = -10)
+    rigctl = _rigctl(mode="FM")
+    rigctl.get_level.side_effect = [-50.0, -40.0, -10.0, -30.0, -60.0] + [-600.0] * 50
+    core = _core(rigctl=rigctl)
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(inner_band=500_000, inner_interval=100_000)
+
+    peak_freq, peak_level = scanner._inner_scan(100_000_000, task)
+
+    assert peak_freq == 100_200_000
+    assert peak_level == -10.0
+
+
+def test_scanning_freq_inner_scan_single_step_returns_start():
+    """inner_band == inner_interval → exactly one sample at freq_start."""
+    rigctl = _rigctl(mode="FM")
+    rigctl.get_level.return_value = -25.0
+    core = _core(rigctl=rigctl)
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(inner_band=100_000, inner_interval=100_000)
+
+    peak_freq, peak_level = scanner._inner_scan(100_000_000, task)
+
+    assert peak_freq == 100_000_000
+    assert peak_level == -25.0
+    assert rigctl.set_frequency.call_count == 1
+
+
+def test_scanning_freq_inner_scan_skips_tune_errors():
+    """Steps that raise OSError/TimeoutError/ValueError are skipped; the best
+    surviving step is returned."""
+    rigctl = _rigctl(mode="FM")
+    # 3 steps: first raises, second ok (level -20), third ok (level -30)
+    rigctl.set_frequency.side_effect = [OSError("fail"), None, None] + [None] * 50
+    rigctl.get_level.side_effect = [-20.0, -30.0] + [-600.0] * 50
+    core = _core(rigctl=rigctl)
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(inner_band=300_000, inner_interval=100_000)
+
+    peak_freq, peak_level = scanner._inner_scan(100_000_000, task)
+
+    # First step skipped → checked 100.1M (-20) and 100.2M (-30)
+    assert peak_freq == 100_100_000
+    assert peak_level == -20.0
+
+
+def test_scanning_freq_inner_scan_all_steps_fail_returns_start():
+    """If every step raises, the method returns (freq_start, -inf)."""
+    rigctl = _rigctl(mode="FM")
+    rigctl.set_frequency.side_effect = OSError("all fail")
+    core = _core(rigctl=rigctl)
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(inner_band=300_000, inner_interval=100_000)
+
+    peak_freq, peak_level = scanner._inner_scan(100_000_000, task)
+
+    assert peak_freq == 100_000_000
+    assert peak_level == float("-inf")
+
+
+def test_scanning_freq_inner_scan_step_count():
+    """Number of set_frequency calls equals inner_band // inner_interval."""
+    rigctl = _rigctl(mode="FM")
+    core = _core(rigctl=rigctl)
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(inner_band=500_000, inner_interval=100_000)  # 5 steps
+
+    scanner._inner_scan(100_000_000, task)
+
+    assert rigctl.set_frequency.call_count == 5
+
+
+# ---------------------------------------------------------------------------
+# FrequencyScannerStrategy — scan: inner scan integration
+# ---------------------------------------------------------------------------
+
+def test_scanning_freq_scan_inner_scan_bookmarks_peak_not_trigger():
+    """When inner scan is configured and a signal is found at freq A, the
+    bookmark is created at the inner-scan peak rather than A."""
+    # Outer range: 100M, 100.1M (2 steps, signal on both)
+    # Inner range from each trigger: [A, A+200k) step 100k → 2 inner steps
+    # Peak inner level always at first inner step (A itself)
+    rigctl = _rigctl(mode="FM")
+    # Outer signal check calls return above-threshold level.
+    # Inner scan get_level: for each trigger, first step highest.
+    # Sequence of get_level calls:
+    #   outer signal_check for 100M → -300 (above threshold −40*10=−400)
+    #   inner step 100M   → -10   (peak)
+    #   inner step 100.1M → -30
+    #   outer signal_check for 100.1M → -300
+    #   inner step 100.1M → -10  (peak)
+    #   inner step 100.2M → -30
+    rigctl.get_level.side_effect = (
+        [-300.0, -10.0, -30.0,
+         -300.0, -10.0, -30.0]
+        + [-600.0] * 50
+    )
+    core = _core(rigctl=rigctl, config=_cfg(signal_checks=1))
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(
+        auto_bookmark=True,
+        new_bookmarks_list=[],
+        inner_band=200_000,
+        inner_interval=100_000,
+    )
+
+    scanner.scan(task, _log())
+
+    # Each of the 2 outer triggers should add one bookmark
+    assert len(task.new_bookmarks_list) == 2
+    freqs = [bm.channel.frequency for bm in task.new_bookmarks_list]
+    # Both peaks were at the trigger frequency itself (first inner step)
+    assert freqs == [100_000_000, 100_100_000]
+
+
+def test_scanning_freq_scan_inner_scan_disabled_uses_autobookmark():
+    """With inner_band=0 the old _autobookmark state machine is used."""
+    rigctl = _rigctl(level=-300.0, mode="FM")
+    core = _core(rigctl=rigctl, config=_cfg(signal_checks=1))
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(auto_bookmark=True, new_bookmarks_list=[],
+                      inner_band=0, inner_interval=0)
+
+    scanner.scan(task, _log())
+
+    # _autobookmark state machine: first freq stores prev, second freq
+    # compares — no bookmark emitted yet (level not falling between steps
+    # when both return constant -300). State is held, not yet emitted.
+    # The important check: no exception and inner_scan was NOT called
+    # (set_frequency call count equals outer steps only: 2).
+    assert rigctl.set_frequency.call_count == 2
+
+
+def test_scanning_freq_scan_inner_scan_does_not_affect_outer_step():
+    """After an inner scan the outer loop resumes at freq + interval, not
+    at freq + inner_band."""
+    rigctl = _rigctl(mode="FM")
+    # signal_checks=1; outer step 100M triggers inner scan, 100.1M no signal
+    rigctl.get_level.side_effect = (
+        [-300.0,          # outer check at 100M → signal
+         -10.0, -30.0,    # inner steps 100M, 100.1M
+         -600.0]          # outer check at 100.1M → no signal
+        + [-600.0] * 50
+    )
+    core = _core(rigctl=rigctl, config=_cfg(signal_checks=1))
+    scanner = FrequencyScannerStrategy(core)
+    task = _freq_task(
+        auto_bookmark=True,
+        new_bookmarks_list=[],
+        inner_band=200_000,
+        inner_interval=100_000,
+    )
+
+    scanner.scan(task, _log())
+
+    # Outer tunes: 100M, 100.1M = 2 calls.  Inner tunes: 100M, 100.1M = 2.
+    # Total set_frequency calls = 4.
+    assert rigctl.set_frequency.call_count == 4
 
 
 # ---------------------------------------------------------------------------

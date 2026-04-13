@@ -73,6 +73,8 @@ def mock_app_config():
         "interval": "10",
         "delay": "2",
         "passes": "0",
+        "inner_band": "0",
+        "inner_interval": "0",
         "range_min": "88000",
         "range_max": "108000",
         "sgn_level": "-40",

@@ -245,21 +245,45 @@ class RigRemoteUIBuilder:
         grid.addWidget(self.params["txt_interval"], 1, 1)
         grid.addWidget(QLabel("Khz"), 1, 2)
 
-        grid.addWidget(QLabel("Scan mode:"), 2, 0)
+        grid.addWidget(QLabel("Inner band:"), 2, 0)
+        self.params["txt_inner_band"] = QLineEdit()
+        self.params["txt_inner_band"].setToolTip(
+            "Width in Hz of the inner refinement scan when a signal is found. "
+            "Set to 0 to disable. Both Inner band and Inner interval must be set together."
+        )
+        self.params["txt_inner_band"].editingFinished.connect(
+            lambda: self.process_entry_wrapper("txt_inner_band")
+        )
+        grid.addWidget(self.params["txt_inner_band"], 2, 1)
+        grid.addWidget(QLabel("Hz"), 2, 2)
+
+        grid.addWidget(QLabel("Inner interval:"), 3, 0)
+        self.params["txt_inner_interval"] = QLineEdit()
+        self.params["txt_inner_interval"].setToolTip(
+            "Step size in Hz for the inner refinement scan. "
+            "Set to 0 to disable. Both Inner band and Inner interval must be set together."
+        )
+        self.params["txt_inner_interval"].editingFinished.connect(
+            lambda: self.process_entry_wrapper("txt_inner_interval")
+        )
+        grid.addWidget(self.params["txt_inner_interval"], 3, 1)
+        grid.addWidget(QLabel("Hz"), 3, 2)
+
+        grid.addWidget(QLabel("Scan mode:"), 4, 0)
         self.params["cbb_freq_modulation"] = QComboBox()
         self.params["cbb_freq_modulation"].addItems([mode.value for mode in ModulationModes])
         self.params["cbb_freq_modulation"].setToolTip("Mode to use for the frequency scan.")
-        grid.addWidget(self.params["cbb_freq_modulation"], 2, 1)
+        grid.addWidget(self.params["cbb_freq_modulation"], 4, 1)
 
         self.params["ckb_auto_bookmark"] = QCheckBox("auto bookmark")
         self.params["ckb_auto_bookmark"].setToolTip("Bookmark any active frequency found.")
         self.params["ckb_auto_bookmark"].stateChanged.connect(self.process_auto_bookmark)
-        grid.addWidget(self.params["ckb_auto_bookmark"], 3, 0)
+        grid.addWidget(self.params["ckb_auto_bookmark"], 5, 0)
 
         self.freq_scan_toggle = QPushButton("Start")
         self.freq_scan_toggle.setToolTip("Starts a frequency scan.")
         self.freq_scan_toggle.clicked.connect(self.frequency_toggle)
-        grid.addWidget(self.freq_scan_toggle, 3, 2)
+        grid.addWidget(self.freq_scan_toggle, 5, 2)
 
         group.setLayout(grid)
         layout.addWidget(group, 3, 3)
