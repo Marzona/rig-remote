@@ -50,10 +50,16 @@ BOOKMARK_FILE = (
 # Module-level availability guard
 # ---------------------------------------------------------------------------
 
-pytestmark = pytest.mark.skipif(
-    not _gqrx_reachable(),
-    reason=f"gqrx not available at {_GQRX_HOST}:{_GQRX_PORT} — skipping hardware tests",
-)
+pytestmark = [
+    pytest.mark.skipif(
+        not _gqrx_reachable(),
+        reason=f"gqrx not available at {_GQRX_HOST}:{_GQRX_PORT} — skipping hardware tests",
+    ),
+    # All gqrx tests share a single TCP port.  xdist_group forces every test
+    # in this group to run in the same worker process, preventing concurrent
+    # connections that overwhelm gqrx and cause ConnectionResetError.
+    pytest.mark.xdist_group("gqrx_serial"),
+]
 
 
 # ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication, QLineEdit, QTreeWidget, QTreeWidgetI
 from PySide6.QtCore import Qt
 
 from rig_remote.ui_qt import RigRemote, _BookmarkTreeItem
+from rig_remote.ui_handlers import RigRemoteHandlersMixin
 from rig_remote.app_config import AppConfig
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
@@ -69,7 +70,7 @@ def mock_app_config():
 def rig_remote_app(qapp, mock_app_config):
     with patch("rig_remote.ui_qt.BookmarksManager"):
         with patch("rig_remote.ui_qt.RigCtl"):
-            with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):
+            with patch("rig_remote.ui_handlers.QMessageBox.question", return_value=1):
                 app = RigRemote(mock_app_config)
                 app.closeEvent = Mock()
                 yield app
@@ -143,7 +144,7 @@ def test_supported_actions(rig_remote_app):
 # ---------------------------------------------------------------------------
 
 def test_pop_up_about(rig_remote_app):
-    with patch("rig_remote.ui_qt.QMessageBox.about"):
+    with patch("rig_remote.ui_handlers.QMessageBox.about"):
         rig_remote_app.pop_up_about()
 
 
@@ -152,12 +153,12 @@ def test_pop_up_about(rig_remote_app):
 # ---------------------------------------------------------------------------
 
 def test_import_bookmarks_dialog_no_filename(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getOpenFileName", return_value=("", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getOpenFileName", return_value=("", "")):
         rig_remote_app._import_bookmarks_dialog()  # returns early, no error
 
 
 def test_import_bookmarks_dialog_with_filename(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getOpenFileName", return_value=("/tmp/bm.csv", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getOpenFileName", return_value=("/tmp/bm.csv", "")):
         with patch.object(rig_remote_app, "_import_bookmarks") as mock_import:
             rig_remote_app._import_bookmarks_dialog()
     mock_import.assert_called_once_with(Path("/tmp/bm.csv"))
@@ -185,20 +186,20 @@ def test_import_bookmarks_with_entries(rig_remote_app, mock_bookmark):
 # ---------------------------------------------------------------------------
 
 def test_export_rig_remote_no_filename(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("", "")):
         rig_remote_app._export_rig_remote()  # returns early
 
 
 def test_export_rig_remote_success(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
         rig_remote_app._export_rig_remote()
     rig_remote_app.bookmarks.export_rig_remote.assert_called_once_with(Path("/tmp/out.csv"))
 
 
 def test_export_rig_remote_error(rig_remote_app):
     rig_remote_app.bookmarks.export_rig_remote = Mock(side_effect=OSError("fail"))
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
-        with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
             rig_remote_app._export_rig_remote()
 
 
@@ -207,20 +208,20 @@ def test_export_rig_remote_error(rig_remote_app):
 # ---------------------------------------------------------------------------
 
 def test_export_gqrx_no_filename(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("", "")):
         rig_remote_app._export_gqrx()
 
 
 def test_export_gqrx_success(rig_remote_app):
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
         rig_remote_app._export_gqrx()
     rig_remote_app.bookmarks.export_gqrx.assert_called_once_with(Path("/tmp/out.csv"))
 
 
 def test_export_gqrx_error(rig_remote_app):
     rig_remote_app.bookmarks.export_gqrx = Mock(side_effect=OSError("fail"))
-    with patch("rig_remote.ui_qt.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
-        with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QFileDialog.getSaveFileName", return_value=("/tmp/out.csv", "")):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
             rig_remote_app._export_gqrx()
 
 
@@ -264,7 +265,7 @@ def test_process_entry_valid_updates_last_content(rig_remote_app, widget_name, v
 def test_process_entry_invalid_shows_error(rig_remote_app, widget_name, value):
     rig_remote_app.params[widget_name].setText(value)
     event = _make_event(rig_remote_app.params[widget_name], widget_name)
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QMessageBox.critical"):
         rig_remote_app._process_entry(event)
 
 
@@ -289,7 +290,7 @@ def test_process_entry_empty_not_silent_yes_restores_default(rig_remote_app):
     """Empty value, user answers Yes → default inserted (lines 208-210)."""
     rig_remote_app.params["txt_delay"].setText("")
     event = _make_event(rig_remote_app.params["txt_delay"], "txt_delay")
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.Yes):
         rig_remote_app._process_entry(event)
     assert rig_remote_app.params["txt_delay"].text() == rig_remote_app.ac.DEFAULT_CONFIG["delay"]
@@ -300,7 +301,7 @@ def test_process_entry_empty_not_silent_no_with_last_content(rig_remote_app):
     rig_remote_app.params_last_content["txt_delay"] = "7"
     rig_remote_app.params["txt_delay"].setText("")
     event = _make_event(rig_remote_app.params["txt_delay"], "txt_delay")
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.No):
         rig_remote_app._process_entry(event)
     assert rig_remote_app.params["txt_delay"].text() == "7"
@@ -311,7 +312,7 @@ def test_process_entry_empty_not_silent_no_no_last_content(rig_remote_app):
     rig_remote_app.params_last_content.pop("txt_delay", None)
     rig_remote_app.params["txt_delay"].setText("")
     event = _make_event(rig_remote_app.params["txt_delay"], "txt_delay")
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.No):
         rig_remote_app._process_entry(event)  # should not raise
 
@@ -373,7 +374,7 @@ def test_process_hostname_entry_valid(rig_remote_app, hostname, rig_number):
 ])
 def test_process_hostname_entry_invalid(rig_remote_app, hostname, rig_number):
     rig_remote_app.params[f"txt_hostname{rig_number}"].setText(hostname)
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QMessageBox.critical"):
         rig_remote_app._process_hostname_entry(hostname, rig_number, silent=False)
 
 
@@ -391,7 +392,7 @@ def test_process_port_entry_valid(rig_remote_app, port, rig_number):
 @pytest.mark.parametrize("port,rig_number", [("invalid", 1), ("-1", 2)])
 def test_process_port_entry_invalid(rig_remote_app, port, rig_number):
     rig_remote_app.params[f"txt_hostname{rig_number}"].setText("localhost")
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QMessageBox.critical"):
         rig_remote_app._process_port_entry(port, rig_number, silent=False)
 
 
@@ -549,10 +550,10 @@ def test_sync_stop_when_no_thread(rig_remote_app):
 
 def test_sync_start_success(rig_remote_app):
     rig_remote_app.sync_thread = None
-    with patch("rig_remote.ui_qt.SyncTask") as mock_task:
-        with patch("rig_remote.ui_qt.Syncing"):
-            with patch("rig_remote.ui_qt.threading.Thread") as mock_thread_cls:
-                with patch("rig_remote.ui_qt.QTimer.singleShot"):
+    with patch("rig_remote.ui_handlers.SyncTask") as mock_task:
+        with patch("rig_remote.ui_handlers.Syncing"):
+            with patch("rig_remote.ui_handlers.threading.Thread") as mock_thread_cls:
+                with patch("rig_remote.ui_handlers.QTimer.singleShot"):
                     rig_remote_app._sync("start")
     assert rig_remote_app.sync_thread is not None
     rig_remote_app.sync_thread = None
@@ -560,9 +561,9 @@ def test_sync_start_success(rig_remote_app):
 
 def test_sync_start_task_error_toggles_back(rig_remote_app):
     rig_remote_app.sync_thread = None
-    with patch("rig_remote.ui_qt.SyncTask", side_effect=UnsupportedSyncConfigError):
-        with patch("rig_remote.ui_qt.Syncing"):
-            with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.SyncTask", side_effect=UnsupportedSyncConfigError):
+        with patch("rig_remote.ui_handlers.Syncing"):
+            with patch("rig_remote.ui_handlers.QMessageBox.critical"):
                 with patch.object(rig_remote_app, "sync_toggle") as mock_toggle:
                     rig_remote_app._sync("start")
     mock_toggle.assert_called_once()
@@ -591,7 +592,7 @@ def test_bookmark_toggle_skips_when_wrong_scan_mode(rig_remote_app):
 def test_frequency_toggle_no_modulation(rig_remote_app):
     # setCurrentIndex(-1) deselects all items so currentText() returns ""
     rig_remote_app.params["cbb_freq_modulation"].setCurrentIndex(-1)
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as mock_crit:
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
         rig_remote_app.frequency_toggle()
     mock_crit.assert_called_once()
 
@@ -639,7 +640,7 @@ def test_check_scan_thread_done_bookmark_mode(rig_remote_app):
 def test_check_scan_thread_still_running(rig_remote_app):
     rig_remote_app.scan_thread = Mock()
     with patch.object(rig_remote_app.scan_queue, "check_end_of_scan", return_value=False):
-        with patch("rig_remote.ui_qt.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_scan_thread()
     mock_timer.assert_called_once()
     rig_remote_app.scan_thread = None
@@ -648,7 +649,7 @@ def test_check_scan_thread_still_running(rig_remote_app):
 def test_check_sync_thread_still_running(rig_remote_app):
     rig_remote_app.sync_thread = Mock()
     with patch.object(rig_remote_app.sync_queue, "check_end_of_sync", return_value=False):
-        with patch("rig_remote.ui_qt.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_sync_thread()
     mock_timer.assert_called_once()
     rig_remote_app.sync_thread = None
@@ -657,7 +658,7 @@ def test_check_sync_thread_still_running(rig_remote_app):
 def test_check_sync_thread_done(rig_remote_app):
     rig_remote_app.sync_thread = None
     with patch.object(rig_remote_app.sync_queue, "check_end_of_sync", return_value=True):
-        with patch("rig_remote.ui_qt.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_sync_thread()
     mock_timer.assert_not_called()
 
@@ -723,7 +724,7 @@ def test_scan_stop_when_no_thread(rig_remote_app):
 def test_scan_start_bookmarks_empty_tree(rig_remote_app):
     rig_remote_app.tree.clear()
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QMessageBox.critical"):
         with patch.object(rig_remote_app, "bookmark_toggle"):
             rig_remote_app._scan("bookmarks", "start", "FM")
 
@@ -732,9 +733,9 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
     rig_remote_app.tree.clear()
     rig_remote_app._insert_bookmarks([mock_bookmark])
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_qt.create_scanner"):
-        with patch("rig_remote.ui_qt.threading.Thread") as mock_thread_cls:
-            with patch("rig_remote.ui_qt.QTimer.singleShot"):
+    with patch("rig_remote.ui_handlers.create_scanner"):
+        with patch("rig_remote.ui_handlers.threading.Thread") as mock_thread_cls:
+            with patch("rig_remote.ui_handlers.QTimer.singleShot"):
                 rig_remote_app._scan("bookmarks", "start", "FM")
     assert rig_remote_app.scan_thread is not None
     rig_remote_app.scan_thread = None
@@ -743,9 +744,9 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
 
 def test_scan_start_frequency_mode(rig_remote_app):
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_qt.create_scanner"):
-        with patch("rig_remote.ui_qt.threading.Thread"):
-            with patch("rig_remote.ui_qt.QTimer.singleShot"):
+    with patch("rig_remote.ui_handlers.create_scanner"):
+        with patch("rig_remote.ui_handlers.threading.Thread"):
+            with patch("rig_remote.ui_handlers.QTimer.singleShot"):
                 rig_remote_app._scan("frequency", "start", "FM")
     rig_remote_app.scan_thread = None
 
@@ -766,7 +767,7 @@ def test_build_control_source_valid(rig_remote_app, rig_number):
 
 def test_build_control_source_invalid_frequency(rig_remote_app):
     rig_remote_app.params["txt_frequency1"].setText("invalid")
-    with patch("rig_remote.ui_qt.QMessageBox.critical"):
+    with patch("rig_remote.ui_handlers.QMessageBox.critical"):
         result = rig_remote_app.build_control_source(1, silent=False)
     assert result is None
 
@@ -792,7 +793,7 @@ def test_add_bookmark_from_rig_success(rig_remote_app):
 def test_add_bookmark_from_rig_no_control_source_not_silent(rig_remote_app):
     """build_control_source returns None → show error (lines 673-675)."""
     rig_remote_app.params["txt_frequency1"].setText("invalid")
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as mock_crit:
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
         rig_remote_app.add_bookmark_from_rig(1, silent=False)
     mock_crit.assert_called()
 
@@ -802,7 +803,7 @@ def test_add_bookmark_from_rig_empty_description_not_silent(rig_remote_app):
     rig_remote_app.params["txt_frequency1"].setText("145500000")
     rig_remote_app.params["cbb_mode1"].setCurrentText("FM")
     rig_remote_app.params["txt_description1"].setText("")
-    with patch("rig_remote.ui_qt.QMessageBox.critical") as mock_crit:
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
         rig_remote_app.add_bookmark_from_rig(1, silent=False)
     mock_crit.assert_called()
 
@@ -953,7 +954,7 @@ def test_get_frequency_error(rig_remote_app):
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
         rig_remote_app.rigctl[0].get_frequency = Mock(side_effect=OSError("conn err"))
         ep = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
-        with patch("rig_remote.ui_qt.QMessageBox.critical"):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
             rig_remote_app.cb_get_frequency(ep, silent=False)
 
 
@@ -973,7 +974,7 @@ def test_set_frequency_error(rig_remote_app):
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
         rig_remote_app.rigctl[0].set_frequency = Mock(side_effect=OSError("conn err"))
         ep = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
-        with patch("rig_remote.ui_qt.QMessageBox.critical"):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
             rig_remote_app.cb_set_frequency(ep, silent=False)
 
 
@@ -983,7 +984,7 @@ def test_set_frequency_empty_fields(rig_remote_app):
     with patch.object(rig_remote_app, "rigctl", [Mock() for _ in range(4)]):
         rig_remote_app.rigctl[0].set_frequency = Mock(side_effect=Exception("conn err"))
         ep = RigEndpoint(hostname="localhost", port=4532, number=1, name="rig_1")
-        with patch("rig_remote.ui_qt.QMessageBox.critical"):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
             rig_remote_app.cb_set_frequency(ep, silent=False)
 
 
@@ -1065,28 +1066,28 @@ def test_cb_delete_with_item(rig_remote_app, mock_bookmark):
 
 def test_close_event_no_ignores(rig_remote_app):
     event = Mock()
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.No):
-        RigRemote.closeEvent(rig_remote_app, event)
+        RigRemoteHandlersMixin.closeEvent(rig_remote_app, event)
     event.ignore.assert_called_once()
 
 
 def test_close_event_yes_without_save_accepts(rig_remote_app):
     rig_remote_app.ckb_save_exit.setChecked(False)
     event = Mock()
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.Yes):
-        RigRemote.closeEvent(rig_remote_app, event)
+        RigRemoteHandlersMixin.closeEvent(rig_remote_app, event)
     event.accept.assert_called_once()
 
 
 def test_close_event_yes_with_save_exit(rig_remote_app):
     rig_remote_app.ckb_save_exit.setChecked(True)
     event = Mock()
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.Yes):
         with patch.object(rig_remote_app.bookmarks, "save"):
-            RigRemote.closeEvent(rig_remote_app, event)
+            RigRemoteHandlersMixin.closeEvent(rig_remote_app, event)
     event.accept.assert_called_once()
     rig_remote_app.ac.store_conf.assert_called_once()
 
@@ -1102,9 +1103,9 @@ def test_close_event_yes_with_active_threads(rig_remote_app):
     rig_remote_app.sync_thread = mock_sync
     rig_remote_app.syncing = Mock()
     event = Mock()
-    with patch("rig_remote.ui_qt.QMessageBox.question",
+    with patch("rig_remote.ui_handlers.QMessageBox.question",
                return_value=QMessageBox.StandardButton.Yes):
-        RigRemote.closeEvent(rig_remote_app, event)
+        RigRemoteHandlersMixin.closeEvent(rig_remote_app, event)
     event.accept.assert_called_once()
     rig_remote_app.scan_thread = None
     rig_remote_app.sync_thread = None
