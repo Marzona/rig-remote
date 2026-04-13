@@ -24,6 +24,7 @@ import logging
 import os.path
 from typing import Any, Optional, TextIO
 
+from rig_remote.constants import LOG_RECORD_BOOKMARK, LOG_RECORD_FREQUENCY
 from rig_remote.exceptions import InvalidPathError
 from rig_remote.models.bookmark import Bookmark
 
@@ -34,7 +35,7 @@ class IO:
     """IO wrapper class"""
 
     def __init__(self) -> None:
-        self.rows: list[list[Any]] = []
+        self.csv_rows: list[list[Any]] = []
 
     @staticmethod
     def _path_check(csv_file: str) -> None:
@@ -60,11 +61,11 @@ class IO:
         self._path_check(csv_file)
         logger.info("reading csv file %s with delimiter %s.", csv_file, delimiter)
         with open(csv_file, "r", encoding="utf-8") as data_file:
-            self.rows = []
+            self.csv_rows = []
             reader = csv.reader(data_file, delimiter=delimiter)
             for line in reader:
-                self.rows.append(line)
-        logger.info("loaded %i rows from csv %s", len(self.rows), csv_file)
+                self.csv_rows.append(line)
+        logger.info("loaded %i rows from csv %s", len(self.csv_rows), csv_file)
 
     def csv_save(self, csv_file: str, delimiter: str) -> None:
         """Save current frequencies to disk.
@@ -78,12 +79,12 @@ class IO:
         try:
             with open(csv_file, "w", encoding="utf-8") as data_file:
                 writer = csv.writer(data_file, delimiter=delimiter)
-                for entry in self.rows:
+                for entry in self.csv_rows:
                     count += 1
                     writer.writerow(entry)
         except (IOError, OSError):
-            logger.error("Error while trying to write the file: %a", csv_file)
-        self.rows = []
+            logger.error("Error while trying to write the file: %s", csv_file)
+        self.csv_rows = []
         logger.info("saved %i rows", count)
 
 
@@ -91,8 +92,10 @@ class LogFile:
     """Handles the tasks of logging to a file."""
 
     def __init__(self) -> None:
-        """Defines the log file name and
-        sets the fhandler self.log_file to None.
+        """Initialise the LogFile handler.
+
+        Sets log_filename to empty string and log_file_handler to None until
+        open() is called.
         """
 
         self.log_filename = ""
@@ -122,34 +125,22 @@ class LogFile:
         :raises IOError or OSError for any issue that happens while writing.
         """
 
-        if record_type not in ["B", "F"]:
-            logger.error("Record type not supported, must be 'B' or 'F'got %s", record_type)
+        if record_type not in [LOG_RECORD_BOOKMARK, LOG_RECORD_FREQUENCY]:
+            logger.error("Record type not supported, must be 'B' or 'F', got %s", record_type)
             raise TypeError
 
-        if record_type == "B":
-            lstr = (
-                "B "
-                + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
-                + " "
-                + str(record.channel.frequency)
-                + " "
-                + record.channel.modulation
-                + " "
-                + str(signal)
-                + "\n"
-            )
-        else:
-            lstr = (
-                "F "
-                + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
-                + " "
-                + str(record.channel.frequency)
-                + " "
-                + record.channel.modulation
-                + " "
-                + str(signal)
-                + "\n"
-            )
+        lstr = (
+            record_type
+            + " "
+            + str(datetime.datetime.today().strftime("%a %Y-%b-%d %H:%M:%S"))
+            + " "
+            + str(record.channel.frequency)
+            + " "
+            + record.channel.modulation
+            + " "
+            + str(signal)
+            + "\n"
+        )
         if self.log_file_handler is None:
             logger.error("No log file provided, but log feature selected.")
             raise AttributeError("log_file_handler is not open")

@@ -32,11 +32,11 @@ class Syncing:
     def __init__(self)-> None:
         self.sync_active = True
 
-    def terminate(self)->None:
+    def terminate(self) -> None:
         logger.info("Terminating sync task")
         self.sync_active = False
 
-    def sync(self, task: SyncTask, once: bool = False)->SyncTask:
+    def sync(self, task: SyncTask, once: bool = False) -> SyncTask:
         """Wrapper method around _frequency and _bookmarks. It calls one
         of the wrapped functions matching the task.mode value
 
@@ -51,7 +51,7 @@ class Syncing:
             task.dst_rig.set_frequency(task.src_rig.get_frequency())
             task.dst_rig.set_mode(task.src_rig.get_mode())
             time.sleep(self._SYNC_INTERVAL)
-            if  once:
+            if once:
                 self.terminate()
         task.syncq.notify_end_of_scan()
         self.terminate()

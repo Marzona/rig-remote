@@ -18,6 +18,7 @@ Copyright (c) 2016 Tim Sweeney
 
 import logging
 
+from rig_remote.constants import MAX_FREQUENCY_HZ
 from rig_remote.models.bookmark import Bookmark
 
 logger = logging.getLogger(__name__)
@@ -106,15 +107,15 @@ class ScanningTask:
             self.range_min = 0
 
     def _check_range_max(self) -> None:
-        """Checks for a sane range_max. We don't want to search for signals
-        with range_max lower than 0, if there is such a low range_max we overwrite and log an error.
+        """Checks for a sane range_max. Clamps to 500 MHz if the provided
+        value exceeds the supported upper bound.
         """
-        if self.range_max > 500000000:
+        if self.range_max > MAX_FREQUENCY_HZ:
             logger.error(
-                "Low range_max provided %i, overriding with 0",
+                "range_max %i exceeds 500 MHz maximum, clamping to 500 MHz",
                 self.range_max,
             )
-            self.range_max = 500000000
+            self.range_max = MAX_FREQUENCY_HZ
 
     def _check_scan_mode(self) -> None:
         if self.scan_mode.lower() not in self._SUPPORTED_SCANNING_MODES:
@@ -130,9 +131,9 @@ class ScanningTask:
             self._check_range()
 
     def _check_interval(self) -> None:
-        """Checks for a sane interval. We don't want to search for signals
-        with bandwidth lower than self._MIN_INTERVAL, if there is such a low intervalInvalidScanModeError
-        we overwrite and log an error.
+        """Ensure interval is at least _MIN_INTERVAL Hz.
+
+        If a lower value is provided it is clamped up and an error is logged.
         """
 
         if self.interval < self._MIN_INTERVAL:
@@ -185,7 +186,8 @@ class ScanningTask:
             self.inner_interval = self._MIN_INTERVAL
 
         # One set, other not — disable both.
-        if (self.inner_band == 0) != (self.inner_interval == 0):
+        only_one_set = (self.inner_band == 0) ^ (self.inner_interval == 0)
+        if only_one_set:
             logger.error(
                 "inner_band (%i) and inner_interval (%i) must both be set or both be 0 — disabling inner scan",
                 self.inner_band,

@@ -103,7 +103,7 @@ def test_bookmarkmanager_load2(filename, delimiter, expected):
     bookmarks_manager = BookmarksManager()
     loaded_bookmarks = bookmarks_manager.load(bookmark_file=filename, delimiter=delimiter)
 
-    assert len(bookmarks_manager._io.rows) - len(loaded_bookmarks) == expected
+    assert len(bookmarks_manager._io.csv_rows) - len(loaded_bookmarks) == expected
     for item in loaded_bookmarks:
         assert isinstance(item, Bookmark)
 
@@ -122,7 +122,7 @@ def test_bookmarkmanager_import_bookmarks_rig_remote(filename, count):
 
     bookmarks_manager._import_gqrx.assert_not_called()
 
-    assert len(bookmarks_manager._io.rows) - len(bookmarks_manager.bookmarks) == count
+    assert len(bookmarks_manager._io.csv_rows) - len(bookmarks_manager.bookmarks) == count
     for item in bookmarks_manager.bookmarks:
         assert isinstance(item, Bookmark)
 
@@ -196,22 +196,22 @@ def test_bookmarkmanager_export_gqrx(bookmark_manager_with_bookmarks):
     bookmark_manager_with_bookmarks.export_gqrx(filename=Path("tests"))
     bookmark_manager_with_bookmarks._io.csv_save.assert_called_once_with("tests", ";")
 
-    assert len(bookmark_manager_with_bookmarks._io.rows) == 7
-    assert bookmark_manager_with_bookmarks._io.rows[0] == [
+    assert len(bookmark_manager_with_bookmarks._io.csv_rows) == 7
+    assert bookmark_manager_with_bookmarks._io.csv_rows[0] == [
         1,
         "test_description",
         "FM",
         "",
         "Untagged",
     ]
-    assert bookmark_manager_with_bookmarks._io.rows[1] == [
+    assert bookmark_manager_with_bookmarks._io.csv_rows[1] == [
         1,
         "test_description",
         "AM",
         "",
         "Untagged",
     ]
-    assert bookmark_manager_with_bookmarks._io.rows[1:] == [
+    assert bookmark_manager_with_bookmarks._io.csv_rows[1:] == [
         [1, "test_description", "AM", "", "Untagged"],
         [
             "# Frequency ",
@@ -248,7 +248,7 @@ def test_bookmarkmanager_import_bookmarks_gqrx(filename, count):
 
     bookmarks_manager._import_rig_remote.assert_not_called()
     assert (
-        len(bookmarks_manager._io.rows) - bookmarks_manager._GQRX_FIRST_BOOKMARK - len(bookmarks_manager.bookmarks)
+        len(bookmarks_manager._io.csv_rows) - bookmarks_manager._GQRX_HEADER_ROWS - len(bookmarks_manager.bookmarks)
         == count
     )
     for item in bookmarks_manager.bookmarks:

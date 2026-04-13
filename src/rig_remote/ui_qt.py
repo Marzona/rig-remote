@@ -52,7 +52,7 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
 
     _SUPPORTED_SYNC_ACTIONS = ("start", "stop")
     _SUPPORTED_SCANNING_ACTIONS = ("start", "stop")
-    _UI_event_list_TIMER_DELAY = 1000
+    _UI_TIMER_INTERVAL_MS = 1000
     # If you want more rigs, add more ordinals here
     _ORDINAL_NUMBERS = ["First", "Second", "Third", "Fourth"]
 
@@ -126,7 +126,8 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         if not bookmark_list:
             return
         self._insert_bookmarks(bookmarks=bookmark_list)
-        [self.bookmarks.add_bookmark(bookmark) for bookmark in bookmark_list]
+        for bookmark in bookmark_list:
+            self.bookmarks.add_bookmark(bookmark)
 
     def _export_rig_remote(self) -> None:
         """Prompt the user for an export destination and export rig-remote bookmarks."""
@@ -192,12 +193,10 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
         widget_name = event_list.widget_name if hasattr(event_list, "widget_name") else str(widget.objectName())
         event_list_value = widget.text() if hasattr(widget, "text") else widget.currentText()
         logger.debug("Processing entry %s with value %s", widget_name, event_list_value)
-        # Extract key from widget name
-        parts = widget_name.split("_", 1)
-        if len(parts) > 1:
-            ekey = parts[1]
-        else:
+        # Widget names follow the "prefix_key" convention (e.g. "txt_range_min" → "range_min")
+        if "_" not in widget_name:
             return
+        ekey = widget_name.split("_", 1)[1]
 
         if not event_list_value or event_list_value.isspace():
             if not silent:
@@ -507,13 +506,13 @@ class RigRemote(QMainWindow, RigRemoteUIBuilder):
                 self.bookmark_toggle()
         else:
             if self.scan_thread is not None:
-                QTimer.singleShot(self._UI_event_list_TIMER_DELAY, self.check_scan_thread)
+                QTimer.singleShot(self._UI_TIMER_INTERVAL_MS, self.check_scan_thread)
 
     def check_sync_thread(self) -> None:
         """Check if sync thread has terminated"""
         if not self.sync_queue.check_end_of_sync():
             if self.sync_thread is not None:
-                QTimer.singleShot(self._UI_event_list_TIMER_DELAY, self.check_sync_thread)
+                QTimer.singleShot(self._UI_TIMER_INTERVAL_MS, self.check_sync_thread)
 
     def _scan(self, scan_mode: str, action: str, frequency_modulation: str, silent: bool = False) -> None:
         """Wrapper around scanning class"""

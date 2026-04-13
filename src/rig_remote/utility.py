@@ -13,12 +13,6 @@ Copyright (c) 2016 Tim Sweeney
 TAS - Tim Sweeney - mainetim@gmail.com
 """
 
-from __future__ import annotations
-from typing import TYPE_CHECKING  # pragma: no cover
-
-if TYPE_CHECKING:  # pragma: no cover
-    pass
-
 import logging
 
 

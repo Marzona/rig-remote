@@ -18,7 +18,7 @@ Copyright (c) 2016 Tim Sweeney
 
 import logging
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 from rig_remote.exceptions import (
     InvalidPathError,
@@ -70,9 +70,9 @@ class BookmarksManager:
             "rig-remote": self._import_rig_remote,
         }
 
-    _GQRX_BOOKMARK_FIRST_LINE = "# Tag name          ;  color\n"
+    _GQRX_BOOKMARK_HEADER_LINE = "# Tag name          ;  color\n"
     # gqrx bookmark file has 5 lines of header
-    _GQRX_FIRST_BOOKMARK = 5
+    _GQRX_HEADER_ROWS = 5
 
     _GQRX_BOOKMARK_HEADER = [
         ["# Tag name          ", "  color"],
@@ -95,10 +95,10 @@ class BookmarksManager:
         :param delimiter: delimiter to use for creating the csv file,
         defaults to ','
         """
-        self._io.rows = []
+        self._io.csv_rows = []
 
         for bookmark in self.bookmarks:
-            self._io.rows.append(
+            self._io.csv_rows.append(
                 [
                     str(bookmark.channel.frequency),
                     bookmark.channel.modulation,
@@ -127,7 +127,7 @@ class BookmarksManager:
             return []
         skipped_count = 0
         id_list = []
-        for entry in self._io.rows:
+        for entry in self._io.csv_rows:
             if len(entry) != self._BOOKMARK_ENTRY_FIELDS:
                 logger.info(
                     "skipping line %s as invalid, not enough fields, expecting %i", entry, self._BOOKMARK_ENTRY_FIELDS
@@ -151,7 +151,7 @@ class BookmarksManager:
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
 
-    def import_bookmarks(self, filename: Path) -> Union[list[Bookmark], None]:
+    def import_bookmarks(self, filename: Path) -> Optional[list[Bookmark]]:
         """handles the import of the bookmarks. It is a
         Wrapper around the import functions and the requester function.
 
@@ -169,7 +169,7 @@ class BookmarksManager:
 
         with open(filename, "r") as fn:
             line = fn.readline()
-        if self._GQRX_BOOKMARK_FIRST_LINE == line:
+        if self._GQRX_BOOKMARK_HEADER_LINE == line:
             logger.info("detected gqrx bookmark format for file %s", filename)
             return "gqrx"
         if len(line.split(",")) == 5:
@@ -198,9 +198,9 @@ class BookmarksManager:
 
         count = 0
         bookmarks = []
-        for row in self._io.rows:
+        for row in self._io.csv_rows:
             count += 1
-            if count < self._GQRX_FIRST_BOOKMARK + 1:
+            if count < self._GQRX_HEADER_ROWS + 1:
                 continue
             bookmark = self._factory(
                 input_frequency=row[0].strip(),
@@ -259,7 +259,7 @@ class BookmarksManager:
         :param filename: destination path for the exported bookmarks
         """
 
-        self._io.rows = self._GQRX_BOOKMARK_HEADER
+        self._io.csv_rows = self._GQRX_BOOKMARK_HEADER
         self._save_gqrx(str(filename))
 
     def _save_gqrx(self, filename: str) -> None:
@@ -278,9 +278,9 @@ class BookmarksManager:
                 "",
                 "Untagged",
             ]
-            self._io.rows.append(gqrx_bookmark)
+            self._io.csv_rows.append(gqrx_bookmark)
 
-        self._io.rows.reverse()
+        self._io.csv_rows.reverse()
 
-        logger.info("saving %i bookmarks", len(self._io.rows))
+        logger.info("saving %i bookmarks", len(self._io.csv_rows))
         self._io.csv_save(filename, ";")

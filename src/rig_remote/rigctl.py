@@ -265,10 +265,7 @@ class RigCtl:
         return output
 
     def set_rit(self, rit: int) -> str:
-        """Wrapper around _request. It configures the command for getting
-        RIT.
-
-        """
+        """Set the RIT (Receiver Incremental Tuning) offset."""
 
         if not isinstance(rit, int):
             logger.error("RIT value must be an int, got %s", type(rit))  # type: ignore[unreachable]
@@ -276,10 +273,7 @@ class RigCtl:
         return self._send_message(f"J {rit}")
 
     def get_rit(self) -> str:
-        """Wrapper around _request. It configures the command for getting
-        RIT.
-
-        """
+        """Get the RIT (Receiver Incremental Tuning) offset."""
 
         output = self._send_message("j")
         if not isinstance(output, str):
@@ -287,10 +281,7 @@ class RigCtl:
         return output
 
     def set_xit(self, xit: str) -> str:
-        """Wrapper around _request. It configures the command for getting
-        XIT.
-
-        """
+        """Set the XIT (Transmitter Incremental Tuning) offset."""
 
         if not isinstance(xit, str):
             logger.error("XIT value must be a string, got %s", type(xit))  # type: ignore[unreachable]
@@ -298,10 +289,7 @@ class RigCtl:
         return self._send_message(f"J {xit}")
 
     def get_xit(self) -> str:
-        """Wrapper around _request. It configures the command for getting
-        XIT.
-
-        """
+        """Get the XIT (Transmitter Incremental Tuning) offset."""
 
         output = self._send_message("j")
         if not isinstance(output, str):
@@ -315,15 +303,12 @@ class RigCtl:
         """
 
         if not isinstance(split_freq, int):
-            logger.error("XIT value must be an integer, got %s", type(split_freq))  # type: ignore[unreachable]
+            logger.error("split_freq must be an integer, got %s", type(split_freq))  # type: ignore[unreachable]
             raise ValueError
         return self._send_message(f"I {split_freq}")
 
     def get_split_freq(self) -> int:
-        """Wrapper around _request. It configures the command for getting
-        XIT.
-
-        """
+        """Get the split TX frequency offset."""
         try:
             output = self._send_message("i")
             int_output = int(output)
@@ -334,10 +319,7 @@ class RigCtl:
         return int_output
 
     def set_split_mode(self, split_mode: str) -> str:
-        """Wrapper around _request. It configures the command for setting
-        slit frequency.
-
-        """
+        """Set the split mode (separate RX and TX frequencies)."""
 
         if split_mode not in self._ALLOWED_SPLIT_MODES:
             logger.error(

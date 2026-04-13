@@ -17,7 +17,15 @@ Copyright (c) 2015 Simone Marzona
 Copyright (c) 2016 Tim Sweeney
 """
 
+# Number of fields in a bookmark record (frequency, modulation, description, lockout)
 LEN_BM = 4
+
+# Upper bound for valid rig frequencies (500 MHz)
+MAX_FREQUENCY_HZ = 500_000_000
+
+# Log record type identifiers used in activity log files
+LOG_RECORD_BOOKMARK = "B"
+LOG_RECORD_FREQUENCY = "F"
 
 
 class BM:

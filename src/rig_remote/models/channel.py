@@ -17,6 +17,7 @@ Copyright (c) 2016 Tim Sweeney
 """
 
 from dataclasses import dataclass, field
+from rig_remote.constants import MAX_FREQUENCY_HZ
 from rig_remote.models.modulation_modes import ModulationModes
 from uuid import uuid4
 import logging
@@ -61,7 +62,7 @@ class Channel:
             logger.error("error converting frequency %s", self.input_frequency)
             raise
 
-        if frequency_int < 1 or frequency_int > 500000000:
+        if frequency_int < 1 or frequency_int > MAX_FREQUENCY_HZ:
             message = "invalid frequency %s" % self.input_frequency
             raise ValueError(message)
 

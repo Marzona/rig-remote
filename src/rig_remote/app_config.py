@@ -154,7 +154,7 @@ class AppConfig:
         :raises: IOError, OSError if it is not possible to write the config
 
         """
-        self._io.rows = []
+        self._io.csv_rows = []
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except IOError:
