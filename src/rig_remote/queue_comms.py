@@ -74,10 +74,10 @@ class QueueComms:
 
         try:
             item = queue.get(block=False)
-            logger.info("getting item from queue: %s", item)
+            logger.debug("getting item from queue: %s", item)
             return item
         except Empty:
-            logger.info("Queue empty while getting from %s", queue)
+            logger.debug("Queue empty while getting from %s", queue)
             return None
 
     def get_from_parent(self) -> tuple[str, str] | None:
@@ -106,7 +106,7 @@ class QueueComms:
     def send_to_child(self, item: tuple[str, str]) -> None:
         """Wrapper for _send_to_queue"""
         self._send_to_queue(self.child_queue, item)
-        logger.info("child queue size %i", self.child_queue.qsize())
+        logger.debug("child queue size %i", self.child_queue.qsize())
 
     @staticmethod
     def _signal(queue: Queue[tuple[str, str]], signal: tuple[str, str]) -> None:
@@ -125,4 +125,4 @@ class QueueComms:
     def signal_parent(self, signal: tuple[str, str]) -> None:
         """wrapper for _signal()"""
         self._signal(self.parent_queue, signal)
-        logger.info("parent queue size %s", self.parent_queue.qsize())
+        logger.debug("parent queue size %s", self.parent_queue.qsize())

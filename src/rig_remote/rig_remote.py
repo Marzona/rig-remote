@@ -115,7 +115,7 @@ def log_configuration(verbose: bool) -> Logger:
     try:
         if hasattr(time, "tzset"):
             time.tzset()
-    except Exception:
+    except OSError:
         pass
 
     # Ensure at least one handler exists and synchronize handler levels
@@ -129,7 +129,7 @@ def log_configuration(verbose: bool) -> Logger:
         for h in logger.handlers:
             try:
                 h.setLevel(level)
-            except Exception:
+            except (AttributeError, ValueError):
                 pass
 
     return logger

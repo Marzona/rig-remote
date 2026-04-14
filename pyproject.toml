@@ -67,7 +67,7 @@ package-dir = {"" = "src"}
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q -n auto"
+addopts = "-ra -q"
 testpaths = [
     "tests",
     "integration",

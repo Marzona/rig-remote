@@ -361,7 +361,7 @@ def test_rig_remote_log_configuration_tzset_scenarios(patch_attr, tzset_scenario
     elif tzset_scenario == "raises_exception":
 
         def failing_tzset():
-            raise RuntimeError("tzset failed")
+            raise OSError("tzset failed")
 
         patch_attr(time, "tzset", failing_tzset)
 
@@ -394,7 +394,7 @@ def test_rig_remote_log_configuration_handles_handler_setlevel_exception(patch_a
 
     class FailingHandler(logging.Handler):
         def setLevel(self, level):
-            raise RuntimeError("setLevel failed")
+            raise AttributeError("setLevel failed")
 
     failing_handler = FailingHandler()
     root.addHandler(failing_handler)
