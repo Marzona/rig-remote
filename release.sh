@@ -62,9 +62,13 @@ TWINE="${VENV_BIN}/twine"
 # ---------------------------------------------------------------------------
 # 1. Tests
 # ---------------------------------------------------------------------------
-step "1/10 — Running tests (unit + functional)"
-"${PYTEST}" --tb=short
-ok "All tests passed."
+step "1/10 — Running unit tests (parallel)"
+"${PYTEST}" tests/ integration/ --tb=short
+ok "Unit tests passed."
+
+step "1/10 — Running functional tests (serial, -n 1)"
+"${PYTEST}" functional_tests/ --tb=short -n 1
+ok "Functional tests passed."
 
 # ---------------------------------------------------------------------------
 # 2. Static analysis
@@ -74,7 +78,7 @@ step "2/10 — Running mypy"
 ok "mypy: no issues."
 
 step "2/10 — Running ruff"
-"${RUFF}" check ./src/rig_remote/
+"${RUFF}" check --fix ./src/rig_remote/
 ok "ruff: no issues."
 
 # ---------------------------------------------------------------------------
