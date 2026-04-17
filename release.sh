@@ -66,7 +66,7 @@ step "1/10 — Running unit tests (parallel)"
 "${PYTEST}" tests/ integration/ --tb=short
 ok "Unit tests passed."
 
-step "1/10 — Running functional tests (serial, -n 1)"
+step "1/10b — Running functional tests (serial, -n 1)"
 "${PYTEST}" functional_tests/ --tb=short -n 1
 ok "Functional tests passed."
 

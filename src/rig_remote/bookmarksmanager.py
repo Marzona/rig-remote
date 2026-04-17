@@ -59,7 +59,7 @@ class BookmarksManager:
     def __init__(
         self,
         io: IO | None = None,
-        factory: Callable[..., Bookmark] = bookmark_factory,
+        factory: Callable[[int, str, str, str, str], Bookmark] = bookmark_factory,
     ) -> None:
         self._io = io if io is not None else IO()
         self.bookmarks: list[Bookmark] = []

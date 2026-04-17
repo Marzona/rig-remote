@@ -46,7 +46,7 @@ class ScanningTask:
         delay: int,
         passes: int,
         sgn_level: int,
-        wait: int,
+        wait: bool,
         record: bool,
         auto_bookmark: bool,
         log: bool,

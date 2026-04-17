@@ -53,9 +53,9 @@ class IO:
     def csv_load(self, csv_file: str, delimiter: str) -> None:
         """Read the frequency bookmarks file and populate the tree.
 
-        :param csv_file: path of the file to be written
+        :param csv_file: path of the file to be read
         :param delimiter: delimiter char
-        :raises: csv.Error if the data to be written as csv isn't valid
+        :raises: csv.Error if the data to be read as csv isn't valid
 
         """
         self._path_check(csv_file)

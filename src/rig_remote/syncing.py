@@ -29,7 +29,7 @@ class Syncing:
 
     _SYNC_INTERVAL = 0.1
 
-    def __init__(self)-> None:
+    def __init__(self) -> None:
         self.sync_active = True
 
     def terminate(self) -> None:

@@ -189,11 +189,7 @@ class RigCtl:
     def set_mode(self, mode: str) -> None:
         """Wrapper around _request. It configures the command for setting
         the mode.
-
         """
-        if not isinstance(mode, str):
-            logger.error("Expected unicode string while setting modulation mode, got %s", mode)  # type: ignore[unreachable]
-            raise ValueError
         self._send_message(request=f"M {mode}")
 
     def get_mode(self) -> str:
@@ -268,9 +264,6 @@ class RigCtl:
     def set_rit(self, rit: int) -> str:
         """Set the RIT (Receiver Incremental Tuning) offset."""
 
-        if not isinstance(rit, int):
-            logger.error("RIT value must be an int, got %s", type(rit))  # type: ignore[unreachable]
-            raise ValueError
         return self._send_message(f"J {rit}")
 
     def get_rit(self) -> str:
@@ -284,9 +277,6 @@ class RigCtl:
     def set_xit(self, xit: str) -> str:
         """Set the XIT (Transmitter Incremental Tuning) offset."""
 
-        if not isinstance(xit, str):
-            logger.error("XIT value must be a string, got %s", type(xit))  # type: ignore[unreachable]
-            raise ValueError
         return self._send_message(f"J {xit}")
 
     def get_xit(self) -> str:
@@ -303,9 +293,6 @@ class RigCtl:
 
         """
 
-        if not isinstance(split_freq, int):
-            logger.error("split_freq must be an integer, got %s", type(split_freq))  # type: ignore[unreachable]
-            raise ValueError
         return self._send_message(f"I {split_freq}")
 
     def get_split_freq(self) -> int:
@@ -402,9 +389,6 @@ class RigCtl:
 
         """
 
-        if not isinstance(antenna, int):
-            logger.error("antenna value must be an int, got %s", antenna)  # type: ignore[unreachable]
-            raise ValueError
         return self._send_message(f"Y {antenna}")
 
     def get_antenna(self) -> int:
