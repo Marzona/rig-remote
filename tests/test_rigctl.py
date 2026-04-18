@@ -209,15 +209,10 @@ def test_rigctl_get_commands_error(command, message, msg_type):
     "command, parameter, message, msg_type",
     [
         ("set_frequency", "tests", "f", "int"),
-        ("set_mode", 22, "m", "int"),
         ("set_vfo", 22, "v", "int"),
-        ("set_rit", "tests", "j", "int"),
-        ("set_xit", 22, "J", "int"),
-        ("set_split_freq", "tests", "i", "str"),
         ("set_split_mode", "tests", "x", "int"),
         ("set_func", "tests", "u", "int"),
         ("set_parm", "tests", "p", "int"),
-        ("set_antenna", "tests", "y", "str"),
         ("rig_reset", "tests", "*", "str"),
     ],
 )

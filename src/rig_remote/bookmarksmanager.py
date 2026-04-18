@@ -140,13 +140,7 @@ class BookmarksManager:
                 continue
             id_list.append(entry[4])
 
-            bookmark = self._factory(
-                input_frequency=entry[0],
-                modulation=entry[1],
-                description=entry[2],
-                lockout=entry[3],
-                bookmark_id=entry[4],
-            )
+            bookmark = self._factory(entry[0], entry[1], entry[2], entry[3], entry[4])
             self.bookmarks.append(bookmark)
         logger.info("Skipped %i entries", skipped_count)
         return self.bookmarks
@@ -203,10 +197,7 @@ class BookmarksManager:
             if count < self._GQRX_HEADER_ROWS + 1:
                 continue
             bookmark = self._factory(
-                input_frequency=row[0].strip(),
-                modulation=self._modulation_modes[row[2].strip().upper()].value,
-                description="gqrx_import",
-                lockout="",
+                row[0].strip(), self._modulation_modes[row[2].strip().upper()].value, "gqrx_import", "", ""
             )
             self.add_bookmark(bookmark)
             bookmarks.append(bookmark)
