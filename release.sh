@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # release.sh — automated release pipeline for rig-remote
 #
-# Usage:  ./release.sh [--publish|-p]
+# Usage:  ./release.sh [--test-publish|-t] [--publish|-p]
 #
-# Without --publish: runs tests, lints, mypy, TestPyPI upload,
-#                    local install/uninstall, and .deb generation.
-# With    --publish: also uploads to production PyPI.
+# (no flag)        : tests, lints, mypy, build, .deb, local install/uninstall.
+# --test-publish   : above + upload to TestPyPI.
+# --publish        : above + upload to TestPyPI + upload to production PyPI.
 
 set -euo pipefail
 
@@ -16,6 +16,7 @@ VENV_BIN=".venv/bin"
 PACKAGE_NAME="rig-remote"
 TESTPYPI_URL="https://test.pypi.org/project/rig-remote/"
 PYPI_URL="https://pypi.org/project/rig-remote/"
+TEST_PUBLISH=false
 PUBLISH=false
 
 # ---------------------------------------------------------------------------
@@ -47,8 +48,9 @@ confirm() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --publish|-p) PUBLISH=true ;;
-            *) die "Unknown argument: $1. Usage: $0 [--publish|-p]" ;;
+            --test-publish|-t) TEST_PUBLISH=true ;;
+            --publish|-p)      PUBLISH=true ;;
+            *) die "Unknown argument: $1. Usage: $0 [--test-publish|-t] [--publish|-p]" ;;
         esac
         shift
     done
@@ -71,7 +73,7 @@ run_tests() {
     ok "Unit tests passed."
 
     step "Tests — Running functional/integration tests (serial, -n 1)"
-    "${PYTEST}" integration/ --tb=short -n 1
+    "${PYTEST}" functional_tests/ --tb=short -n 1
     ok "Functional tests passed."
 }
 
@@ -85,24 +87,10 @@ run_static_analysis() {
     ok "ruff: no issues."
 }
 
-update_requirements() {
-    step "Requirements — Regenerating requirements.txt"
-    uv pip compile pyproject.toml -o requirements.txt
-    ok "requirements.txt regenerated."
-
-    if ! git diff --quiet requirements.txt; then
-        git add requirements.txt
-        git commit -m "chore: update requirements.txt for release"
-        ok "requirements.txt committed."
-    else
-        warn "requirements.txt unchanged — no commit needed."
-    fi
-}
-
 build_packages() {
     step "Build — Building sdist + wheel"
     rm -rf dist/ build/
-    "${PYTHON}" -m build
+    uv build
     ok "Build complete."
     echo ""
     ls -lh dist/
@@ -119,18 +107,42 @@ build_deb() {
     local deb_file="dist/${PACKAGE_NAME}_${version}_${deb_arch}.deb"
     local whl
     whl=$(ls dist/*.whl | sort -V | tail -1)
+    local lib_dir="${deb_staging}/usr/lib/rig-remote"
 
     rm -rf "${deb_staging}"
     mkdir -p "${deb_staging}/DEBIAN"
+    mkdir -p "${lib_dir}"
+    mkdir -p "${deb_staging}/usr/bin"
 
-    "${PIP}" install --prefix="${deb_staging}/usr" --no-deps "${whl}"
+    # Install package + all deps into a private lib dir so the system Python
+    # does not need to find them in site-packages or dist-packages.
+    uv pip install --target="${lib_dir}" "${whl}"
+
+    # Write wrapper scripts that prepend the private lib dir to sys.path.
+    cat > "${deb_staging}/usr/bin/rig_remote" <<'WRAPPER'
+#!/usr/bin/env python3
+import sys
+sys.path.insert(0, '/usr/lib/rig-remote')
+from rig_remote.rig_remote import cli
+cli()
+WRAPPER
+    chmod 755 "${deb_staging}/usr/bin/rig_remote"
+
+    cat > "${deb_staging}/usr/bin/config_checker" <<'WRAPPER'
+#!/usr/bin/env python3
+import sys
+sys.path.insert(0, '/usr/lib/rig-remote')
+from config_checker.config_checker import cli
+cli()
+WRAPPER
+    chmod 755 "${deb_staging}/usr/bin/config_checker"
 
     cat > "${deb_staging}/DEBIAN/control" <<EOF
 Package: rig-remote
 Version: ${version}
 Architecture: ${deb_arch}
 Maintainer: Simone Marzona <marzona@knoway.info>
-Depends: python3 (>= 3.13), python3-pyside6
+Depends: python3 (>= 3.13)
 Section: hamradio
 Priority: optional
 Homepage: https://github.com/Marzona/rig-remote
@@ -149,25 +161,25 @@ install_local() {
     step "Local install — Installing wheel (smoke test)"
     local whl
     whl=$(ls dist/*.whl | sort -V | tail -1)
-    "${PIP}" install "${whl}"
+    uv pip install "${whl}"
     ok "Installed: $(basename "${whl}")"
 }
 
 uninstall_local() {
     step "Local install — Removing locally installed package"
-    "${PIP}" uninstall -y "${PACKAGE_NAME}"
+    uv pip uninstall "${PACKAGE_NAME}"
     ok "Package '${PACKAGE_NAME}' uninstalled."
 }
 
 upgrade_twine() {
     step "Twine — Upgrading"
-    "${PIP}" install --upgrade twine
+    uv pip install --upgrade twine
     ok "twine is up to date."
 }
 
 upload_testpypi() {
     step "TestPyPI — Uploading"
-    "${TWINE}" upload --repository testpypi dist/*
+    "${TWINE}" upload --verbose --repository testpypi dist/*.whl dist/*.tar.gz
     echo ""
     echo -e "  ${BOLD}TestPyPI package URL:${NC}"
     echo -e "  ${BLUE}${TESTPYPI_URL}${NC}"
@@ -182,7 +194,7 @@ upload_pypi() {
     echo ""
 
     if confirm "Upload to production PyPI?"; then
-        "${TWINE}" upload dist/*
+        "${TWINE}" upload dist/*.whl dist/*.tar.gz
         echo ""
         echo -e "  ${BOLD}PyPI package URL:${NC}"
         echo -e "  ${BLUE}${PYPI_URL}${NC}"
@@ -200,27 +212,30 @@ main() {
     preflight
 
     PYTHON="${VENV_BIN}/python3"
-    PIP="${VENV_BIN}/pip"
     MYPY="${VENV_BIN}/mypy"
     RUFF="${VENV_BIN}/ruff"
     PYTEST="${VENV_BIN}/pytest"
     TWINE="${VENV_BIN}/twine"
 
     if "${PUBLISH}"; then
-        echo -e "${BOLD}${YELLOW}Mode: PUBLISH (production PyPI upload enabled)${NC}"
+        echo -e "${BOLD}${YELLOW}Mode: PUBLISH (TestPyPI + production PyPI)${NC}"
+    elif "${TEST_PUBLISH}"; then
+        echo -e "${BOLD}${YELLOW}Mode: TEST-PUBLISH (TestPyPI only)${NC}"
     else
-        echo -e "${BOLD}Mode: BETA (TestPyPI only)${NC}"
+        echo -e "${BOLD}Mode: BUILD (no upload)${NC}"
     fi
 
     run_tests
     run_static_analysis
-    update_requirements
     build_packages
     build_deb
     install_local
     upgrade_twine
-    upload_testpypi
     uninstall_local
+
+    if "${TEST_PUBLISH}" ; then
+        upload_testpypi
+    fi
 
     if "${PUBLISH}"; then
         upload_pypi

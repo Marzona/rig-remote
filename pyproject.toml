@@ -1,10 +1,10 @@
 [build-system]
 requires = ["setuptools>=61"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = 'setuptools.build_meta'
 
 [project]
 name = "rig-remote"
-version = "3.0"
+version = "3.1"
 authors = [
   { name="Simone Marzona", email="marzona@knoway.info" },
 ]
@@ -51,6 +51,7 @@ rig_remote = "rig_remote.rig_remote:cli"
 dev = [
     "build>=1.2",
     "coverage>=7.6",
+    "mock>=5.1",
     "mypy>=1.13",
     "pytest>=8.3",
     "pytest-cov>=6.0",
