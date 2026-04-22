@@ -71,7 +71,7 @@ minversion = "6.0"
 addopts = "-ra -q"
 testpaths = [
     "tests",
-    "integration",
+    "functional_tests",
 ]
 console_output_style = "progress"
 log_cli = "True"
