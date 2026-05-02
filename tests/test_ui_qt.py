@@ -11,6 +11,9 @@ from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.bookmarksmanager import bookmark_factory
 from rig_remote.exceptions import UnsupportedScanningConfigError, UnsupportedSyncConfigError
+from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
+from rig_remote.rig_backends.mode_translator import ModeTranslator
+from rig_remote.rig_backends.protocol import BackendType
 
 
 # ---------------------------------------------------------------------------
@@ -1151,3 +1154,211 @@ def test_bookmark_tree_item_sort_numeric_column_non_numeric_fallback(qapp):
     # int("abc") raises ValueError → caught and ignored → string fallback
     assert item_a.__lt__(item_b)   # "abc" < "xyz"
     assert not item_b.__lt__(item_a)
+
+
+# ---------------------------------------------------------------------------
+# process_record — lines 331-337: Hamlib backend blocks recording
+# ---------------------------------------------------------------------------
+
+def _make_hamlib_rig() -> HamlibRigCtl:
+    """Return a disconnected HamlibRigCtl so isinstance() checks work."""
+    endpoint = RigEndpoint(
+        backend=BackendType.HAMLIB,
+        rig_model=122,
+        serial_port="/dev/ttyUSB0",
+        baud_rate=38400,
+    )
+    return HamlibRigCtl(endpoint=endpoint, mode_translator=ModeTranslator(BackendType.HAMLIB))
+
+
+def test_process_record_hamlib_rig_shows_info_and_unchecks(rig_remote_app):
+    """When a HamlibRigCtl is in rigctl, checking Record shows the info dialog
+    and immediately unchecks the checkbox (lines 331-337)."""
+    hamlib_rig = _make_hamlib_rig()
+    with patch.object(rig_remote_app, "rigctl", [hamlib_rig]):
+        with patch("rig_remote.ui_handlers.QMessageBox.information") as mock_info:
+            rig_remote_app.process_record(Qt.CheckState.Checked.value)
+    mock_info.assert_called_once()
+    assert not rig_remote_app.params["ckb_record"].isChecked()
+
+
+def test_process_record_hamlib_rig_returns_without_processing_checkbutton(rig_remote_app):
+    """The early return after the info dialog means _process_checkbutton is not called."""
+    hamlib_rig = _make_hamlib_rig()
+    with patch.object(rig_remote_app, "rigctl", [hamlib_rig]):
+        with patch("rig_remote.ui_handlers.QMessageBox.information"):
+            with patch.object(rig_remote_app, "_process_checkbutton") as mock_cb:
+                rig_remote_app.process_record(Qt.CheckState.Checked.value)
+    mock_cb.assert_not_called()
+
+
+@pytest.mark.parametrize("rig_number", [1, 2])
+def test_process_record_hamlib_rig_message_mentions_rig_number(rig_remote_app, rig_number):
+    """Info dialog text includes the 1-based rig slot number (line 334)."""
+    rigs = [_make_hamlib_rig() if i + 1 == rig_number else Mock() for i in range(2)]
+    with patch.object(rig_remote_app, "rigctl", rigs):
+        with patch("rig_remote.ui_handlers.QMessageBox.information") as mock_info:
+            rig_remote_app.process_record(Qt.CheckState.Checked.value)
+    # QMessageBox.information(parent, title, text) → text is args[2]
+    assert str(rig_number) in mock_info.call_args.args[2]
+
+
+# ---------------------------------------------------------------------------
+# _on_backend_changed — lines 702-715: widget visibility toggling
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("rig_number", [1, 2])
+def test_on_backend_changed_hamlib_shows_hamlib_widgets(rig_remote_app, rig_number):
+    """Switching to HAMLIB makes Hamlib-specific widgets not-hidden (lines 705-711).
+    isVisible() requires the window to be shown; use not isHidden() for the widget's
+    own explicit visibility state."""
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("HAMLIB")
+    rig_remote_app._on_backend_changed(rig_number)
+    assert not rig_remote_app.params[f"cbb_rig_model{rig_number}"].isHidden()
+    assert not rig_remote_app.params[f"txt_serial_port{rig_number}"].isHidden()
+    assert not rig_remote_app.params[f"txt_baud_rate{rig_number}"].isHidden()
+    assert not rig_remote_app.params[f"btn_connect{rig_number}"].isHidden()
+
+
+@pytest.mark.parametrize("rig_number", [1, 2])
+def test_on_backend_changed_hamlib_hides_gqrx_widgets(rig_remote_app, rig_number):
+    """Switching to HAMLIB hides hostname and port widgets (lines 712-715)."""
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("HAMLIB")
+    rig_remote_app._on_backend_changed(rig_number)
+    assert rig_remote_app.params[f"txt_hostname{rig_number}"].isHidden()
+    assert rig_remote_app.params[f"txt_port{rig_number}"].isHidden()
+
+
+@pytest.mark.parametrize("rig_number", [1, 2])
+def test_on_backend_changed_gqrx_hides_hamlib_widgets(rig_remote_app, rig_number):
+    """Switching back to GQRX hides Hamlib-specific widgets (lines 705-711)."""
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("HAMLIB")
+    rig_remote_app._on_backend_changed(rig_number)
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("GQRX")
+    rig_remote_app._on_backend_changed(rig_number)
+    assert rig_remote_app.params[f"cbb_rig_model{rig_number}"].isHidden()
+    assert rig_remote_app.params[f"txt_serial_port{rig_number}"].isHidden()
+    assert rig_remote_app.params[f"txt_baud_rate{rig_number}"].isHidden()
+    assert rig_remote_app.params[f"btn_connect{rig_number}"].isHidden()
+
+
+@pytest.mark.parametrize("rig_number", [1, 2])
+def test_on_backend_changed_gqrx_shows_gqrx_widgets(rig_remote_app, rig_number):
+    """Switching back to GQRX makes hostname and port not-hidden (lines 712-715)."""
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("HAMLIB")
+    rig_remote_app._on_backend_changed(rig_number)
+    rig_remote_app.params[f"cbb_backend{rig_number}"].setCurrentText("GQRX")
+    rig_remote_app._on_backend_changed(rig_number)
+    assert not rig_remote_app.params[f"txt_hostname{rig_number}"].isHidden()
+    assert not rig_remote_app.params[f"txt_port{rig_number}"].isHidden()
+
+
+# ---------------------------------------------------------------------------
+# cb_connect_rig — lines 719-763: Hamlib connection flow
+# ---------------------------------------------------------------------------
+
+def _set_hamlib_widgets(app: RigRemote, rig_number: int,
+                        model: str = "122 (Yaesu FT-857)",
+                        serial_port: str = "/dev/ttyUSB0",
+                        baud_rate: str = "38400") -> None:
+    """Configure rig widgets to a known HAMLIB state for cb_connect_rig tests."""
+    app.params[f"cbb_backend{rig_number}"].setCurrentText("HAMLIB")
+    app.params[f"cbb_rig_model{rig_number}"].clear()
+    app.params[f"cbb_rig_model{rig_number}"].addItem(model)
+    app.params[f"cbb_rig_model{rig_number}"].setCurrentIndex(0)
+    app.params[f"txt_serial_port{rig_number}"].setText(serial_port)
+    app.params[f"txt_baud_rate{rig_number}"].setText(baud_rate)
+
+
+def test_cb_connect_rig_gqrx_backend_returns_early(rig_remote_app):
+    """Backend != HAMLIB → early return before any connection attempt (line 722)."""
+    rig_remote_app.params["cbb_backend1"].setCurrentText("GQRX")
+    original = rig_remote_app.rigctl[0]
+    rig_remote_app.cb_connect_rig(1)
+    assert rig_remote_app.rigctl[0] is original
+
+
+def test_cb_connect_rig_invalid_model_shows_error(rig_remote_app):
+    """Unparseable model text → critical dialog, no connection (lines 727-729)."""
+    rig_remote_app.params["cbb_backend1"].setCurrentText("HAMLIB")
+    rig_remote_app.params["cbb_rig_model1"].clear()
+    rig_remote_app.params["cbb_rig_model1"].addItem("not-a-number")
+    rig_remote_app.params["cbb_rig_model1"].setCurrentIndex(0)
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
+        rig_remote_app.cb_connect_rig(1)
+    mock_crit.assert_called_once()
+
+
+def test_cb_connect_rig_empty_model_shows_error(rig_remote_app):
+    """Empty model combo (IndexError on split()[0]) → critical dialog (lines 727-729)."""
+    rig_remote_app.params["cbb_backend1"].setCurrentText("HAMLIB")
+    rig_remote_app.params["cbb_rig_model1"].clear()
+    rig_remote_app.params["cbb_rig_model1"].addItem("")
+    rig_remote_app.params["cbb_rig_model1"].setCurrentIndex(0)
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
+        rig_remote_app.cb_connect_rig(1)
+    mock_crit.assert_called_once()
+
+
+def test_cb_connect_rig_invalid_baud_rate_shows_error(rig_remote_app):
+    """Non-integer baud rate → critical dialog, no connection (lines 735-737)."""
+    _set_hamlib_widgets(rig_remote_app, 1, baud_rate="not_a_number")
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
+        rig_remote_app.cb_connect_rig(1)
+    mock_crit.assert_called_once()
+
+
+def test_cb_connect_rig_success_updates_rigctl(rig_remote_app):
+    """Successful connect stores HamlibRigCtl in rigctl[rig_number-1] (lines 762-763)."""
+    _set_hamlib_widgets(rig_remote_app, 1)
+    mock_rig = Mock()
+    with patch("rig_remote.ui_handlers.HamlibRigCtl", return_value=mock_rig):
+        rig_remote_app.cb_connect_rig(1)
+    mock_rig.connect.assert_called_once()
+    assert rig_remote_app.rigctl[0] is mock_rig
+
+
+def test_cb_connect_rig_success_reenables_buttons(rig_remote_app):
+    """finally block re-enables scan/sync buttons after a successful connect (lines 758-760)."""
+    _set_hamlib_widgets(rig_remote_app, 1)
+    with patch("rig_remote.ui_handlers.HamlibRigCtl", return_value=Mock()):
+        rig_remote_app.cb_connect_rig(1)
+    assert rig_remote_app.freq_scan_toggle.isEnabled()
+    assert rig_remote_app.book_scan_toggle.isEnabled()
+    assert rig_remote_app.sync_button.isEnabled()
+
+
+def test_cb_connect_rig_oserror_shows_error(rig_remote_app):
+    """OSError from rig.connect() shows a critical dialog (lines 753-756)."""
+    _set_hamlib_widgets(rig_remote_app, 1)
+    mock_rig = Mock()
+    mock_rig.connect.side_effect = OSError("device not found")
+    with patch("rig_remote.ui_handlers.HamlibRigCtl", return_value=mock_rig):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_crit:
+            rig_remote_app.cb_connect_rig(1)
+    mock_crit.assert_called_once()
+
+
+def test_cb_connect_rig_oserror_does_not_update_rigctl(rig_remote_app):
+    """OSError leaves rigctl[0] unchanged — the return inside except prevents line 762 (lines 753-756)."""
+    _set_hamlib_widgets(rig_remote_app, 1)
+    original = rig_remote_app.rigctl[0]
+    mock_rig = Mock()
+    mock_rig.connect.side_effect = OSError("device not found")
+    with patch("rig_remote.ui_handlers.HamlibRigCtl", return_value=mock_rig):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
+            rig_remote_app.cb_connect_rig(1)
+    assert rig_remote_app.rigctl[0] is original
+
+
+def test_cb_connect_rig_oserror_reenables_buttons(rig_remote_app):
+    """finally block re-enables buttons even when connect raises OSError (lines 758-760)."""
+    _set_hamlib_widgets(rig_remote_app, 1)
+    mock_rig = Mock()
+    mock_rig.connect.side_effect = OSError("device not found")
+    with patch("rig_remote.ui_handlers.HamlibRigCtl", return_value=mock_rig):
+        with patch("rig_remote.ui_handlers.QMessageBox.critical"):
+            rig_remote_app.cb_connect_rig(1)
+    assert rig_remote_app.freq_scan_toggle.isEnabled()
+    assert rig_remote_app.book_scan_toggle.isEnabled()
+    assert rig_remote_app.sync_button.isEnabled()

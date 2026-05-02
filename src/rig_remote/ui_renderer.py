@@ -6,6 +6,8 @@ It is designed as a mixin class to be used with the main RigRemote class.
 """
 
 import logging
+import re
+import subprocess
 from typing import Any
 
 from PySide6.QtCore import Qt
@@ -27,6 +29,40 @@ from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rig_backends.protocol import RigBackend
 
 logger = logging.getLogger(__name__)
+
+_HAMLIB_MODEL_FALLBACK: list[str] = [
+    "1 (Hamlib Dummy)",
+    "122 (Yaesu FT-857)",
+    "209 (Kenwood TS-2000)",
+    "361 (Icom IC-7300)",
+]
+
+
+def _load_hamlib_models() -> list[str]:
+    """Return all Hamlib rig models as combo-box strings by querying rigctl.
+
+    Falls back to a short hardcoded list when rigctl is not on PATH.
+    Each entry has the format "<num> (<Mfg> <Model>)" so that
+    int(entry.split()[0]) always yields the model number.
+    """
+    try:
+        output = subprocess.check_output(["rigctl", "--list"], text=True, timeout=5)
+    except Exception:
+        logger.warning("rigctl not found on PATH; using fallback Hamlib model list")
+        return list(_HAMLIB_MODEL_FALLBACK)
+
+    entries: list[tuple[int, str]] = []
+    for line in output.splitlines():
+        parts = re.split(r"\s{2,}", line.strip())
+        if len(parts) >= 3 and parts[0].isdigit():
+            num = int(parts[0])
+            entries.append((num, f"{num} ({parts[1]} {parts[2]})"))
+
+    if not entries:
+        logger.warning("rigctl returned no parseable models; using fallback list")
+        return list(_HAMLIB_MODEL_FALLBACK)
+
+    return [label for _, label in sorted(entries)]
 
 
 class RigRemoteUIBuilder:
@@ -142,7 +178,7 @@ class RigRemoteUIBuilder:
 
         cbb_rig_model = f"cbb_rig_model{rig_number}"
         self.params[cbb_rig_model] = QComboBox()
-        self.params[cbb_rig_model].addItems(["122 (FT-857)", "361 (IC-7300)", "209 (TS-2000)", "1 (Dummy)"])
+        self.params[cbb_rig_model].addItems(_load_hamlib_models())
         self.params[cbb_rig_model].setToolTip("Hamlib rig model")
         self.params[cbb_rig_model].setVisible(False)
         grid.addWidget(self.params[cbb_rig_model], 3, 1)

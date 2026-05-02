@@ -1,8 +1,10 @@
+import subprocess
+
 import pytest
 from unittest.mock import MagicMock, Mock, patch
 from PySide6.QtWidgets import QApplication, QLineEdit, QComboBox
 
-from rig_remote.ui_renderer import RigRemoteUIBuilder
+from rig_remote.ui_renderer import RigRemoteUIBuilder, _load_hamlib_models, _HAMLIB_MODEL_FALLBACK
 from rig_remote.ui_qt import RigRemote
 from rig_remote.app_config import AppConfig
 from rig_remote.models.rig_endpoint import RigEndpoint
@@ -265,6 +267,63 @@ def test_ui_renderer_description_widget_absent_for_invalid_rig(rig_remote_app, i
 # ---------------------------------------------------------------------------
 # Tests for _build_scanning_options
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Tests for _load_hamlib_models
+# ---------------------------------------------------------------------------
+
+_RIGCTL_SAMPLE = (
+    "Rig #  Mfg                    Model                   Version         Status\n"
+    "     1  Hamlib                 Dummy                   20240709.0      Stable\n"
+    "  1001  Yaesu                  FT-847                  20230512.0      Stable\n"
+    "  1002  Yaesu                  FT-1000                 20231124.0      Beta\n"
+)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [FileNotFoundError, OSError, subprocess.TimeoutExpired("rigctl", 5)],
+)
+def test_load_hamlib_models_falls_back_when_rigctl_unavailable(error):
+    with patch("rig_remote.ui_renderer.subprocess.check_output", side_effect=error):
+        result = _load_hamlib_models()
+    assert result == _HAMLIB_MODEL_FALLBACK
+
+
+def test_load_hamlib_models_falls_back_on_empty_output():
+    with patch("rig_remote.ui_renderer.subprocess.check_output", return_value="no digits here\n"):
+        result = _load_hamlib_models()
+    assert result == _HAMLIB_MODEL_FALLBACK
+
+
+def test_load_hamlib_models_parses_count():
+    with patch("rig_remote.ui_renderer.subprocess.check_output", return_value=_RIGCTL_SAMPLE):
+        result = _load_hamlib_models()
+    assert len(result) == 3
+
+
+def test_load_hamlib_models_sorted_by_model_number():
+    with patch("rig_remote.ui_renderer.subprocess.check_output", return_value=_RIGCTL_SAMPLE):
+        result = _load_hamlib_models()
+    nums = [int(e.split()[0]) for e in result]
+    assert nums == sorted(nums)
+
+
+@pytest.mark.parametrize(
+    "rigctl_line,expected_num,expected_label",
+    [
+        ("     1  Hamlib  Dummy  20240709.0  Stable  RIG_MODEL_DUMMY\n", 1, "1 (Hamlib Dummy)"),
+        ("  1001  Yaesu  FT-847  20230512.0  Stable  RIG_MODEL_FT847\n", 1001, "1001 (Yaesu FT-847)"),
+        ("  3001  Kenwood  TS-2000  20230101.0  Stable  RIG_MODEL_TS2000\n", 3001, "3001 (Kenwood TS-2000)"),
+    ],
+)
+def test_load_hamlib_models_format(rigctl_line, expected_num, expected_label):
+    with patch("rig_remote.ui_renderer.subprocess.check_output", return_value=rigctl_line):
+        result = _load_hamlib_models()
+    assert len(result) == 1
+    assert result[0] == expected_label
+    assert int(result[0].split()[0]) == expected_num
+
 
 def test_ui_renderer_scanning_options_widgets_present(rig_remote_app):
     """_build_scanning_options creates all expected scanning widgets."""
