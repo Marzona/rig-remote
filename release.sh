@@ -69,7 +69,8 @@ preflight() {
 # ---------------------------------------------------------------------------
 run_tests() {
     step "Tests — Running unit tests (parallel)"
-    "${PYTEST}" tests/ --tb=short
+    "${PYTEST}" tests/ --tb=short \
+        --cov=rig_remote --cov-report=term-missing
     ok "Unit tests passed."
 
     step "Tests — Running functional/integration tests (serial, -n 1)"
