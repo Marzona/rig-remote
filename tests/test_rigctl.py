@@ -38,7 +38,7 @@ def test_rigctl_set_commands_no_param(command, message):
         ("set_vfo", "TX", "V TX"),
         ("set_vfo", "RX", "V RX"),
         ("set_rit", 22, "J 22"),
-        ("set_xit", "xit", "J xit"),
+        ("set_xit", "xit", "Z xit"),
         ("set_split_freq", 22, "I 22"),
         ("set_split_mode", "AM", "X AM"),
         ("set_split_mode", "FM", "X FM"),
@@ -124,7 +124,7 @@ def test_rigctl_set_commands_socket_mock():
         rigctl.set_frequency(frequency=1.1)
         assert mock_socket.call_count == 1
         mock_socket().connect.assert_called_once_with(("localhost", 8080))
-        mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
+        mock_socket().sendall.assert_called_once_with((bytearray(b"F 1\n")))
         mock_socket().close.assert_called_once()
 
 
@@ -140,7 +140,7 @@ def test_rigctl_set_commands_socket_mock_exception():
             rigctl.set_frequency(frequency=1.1)
         assert mock_socket.call_count == 1
         mock_socket().connect.assert_called_once_with(("localhost", 8080))
-        mock_socket().sendall.assert_called_once_with((bytearray(b"F 1.1\n")))
+        mock_socket().sendall.assert_called_once_with((bytearray(b"F 1\n")))
 
 
 @pytest.mark.parametrize(
@@ -150,7 +150,7 @@ def test_rigctl_set_commands_socket_mock_exception():
         ("get_mode", "m", "str"),
         ("get_vfo", "v", "str"),
         ("get_rit", "j", "str"),
-        ("get_xit", "j", "str"),
+        ("get_xit", "z", "str"),
         ("get_split_freq", "i", "int"),
         ("get_split_mode", "x", "str"),
         ("get_func", "u", "str"),

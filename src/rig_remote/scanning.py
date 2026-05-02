@@ -27,7 +27,7 @@ from rig_remote.bookmark_scanner_strategy import BookmarkScannerStrategy
 from rig_remote.disk_io import LogFile
 from rig_remote.frequency_scanner_strategy import FrequencyScannerStrategy
 from rig_remote.models.scanning_task import ScanningTask
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.protocol import RigBackend
 from rig_remote.scanner_core import ScannerCore
 from rig_remote.scanning_config import ScanningConfig
 from rig_remote.stmessenger import STMessenger
@@ -139,7 +139,7 @@ def create_scanner(
     scan_mode: str,
     scan_queue: STMessenger,
     log_filename: str,
-    rigctl: RigCtl,
+    rigctl: RigBackend,
     config: ScanningConfig | None = None,
     log: LogFile | None = None,
     sleep_fn: Callable[[float], None] | None = None,
@@ -156,7 +156,7 @@ def create_scanner(
         scan thread, used to deliver parameter updates during a scan.
     :param log_filename: Path to the activity log file passed to
         ``Scanning2``.
-    :param rigctl: RigCtl instance for the radio hardware being scanned.
+    :param rigctl: RigBackend instance for the radio hardware being scanned.
     :param config: Optional ScanningConfig; a default ScanningConfig() is
         used when not provided.
     :param log: Optional LogFile; a fresh LogFile() is created when not

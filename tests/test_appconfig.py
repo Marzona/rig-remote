@@ -3,7 +3,9 @@ from pathlib import Path
 from rig_remote.app_config import AppConfig
 import pytest
 import configparser
-from rig_remote.constants import RIG_COUNT, CONFIG_SECTIONS
+from rig_remote.constants import RIG_COUNT, CONFIG_SECTIONS, MAX_ENDPOINTS, SELECTED_RIG_KEYS
+from rig_remote.models.rig_endpoint import RigEndpoint
+from rig_remote.rig_backends.protocol import BackendType
 from unittest.mock import Mock, patch
 
 
@@ -430,3 +432,246 @@ def test_appconfig_store_conf_calls_get_conf_and_write_conf():
         assert not ac.config["auto_bookmark"]
         assert ac.config["bookmark_filename"] == "/tmp/bookmarks.csv"
         assert ac.config["log_filename"] == "/tmp/log.txt"
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_ac(tmp_path, ini_text: str) -> AppConfig:
+    cfg_path = tmp_path / "cfg.ini"
+    cfg_path.write_text(ini_text, encoding="utf-8")
+    ac = AppConfig(config_file=str(cfg_path))
+    return ac
+
+
+def _minimal_ini() -> str:
+    return (
+        "[Rig URI]\n"
+        "hostname1 = 127.0.0.1\n"
+        "hostname2 = 127.0.0.1\n"
+        "port1 = 7356\n"
+        "port2 = 7357\n"
+        "[Scanning]\n"
+        "passes = 1\naggr_scan = false\nauto_bookmark = false\n"
+        "range_min = 24000\nrange_max = 1800000\ninterval = 1\n"
+        "delay = 5\nrecord = false\nsgn_level = -30\nwait = false\n"
+        "[Main]\n"
+        "log_filename = none\nsave_exit = false\nalways_on_top = false\n"
+        "log = false\nbookmark_filename = none\n"
+        "[Monitor]\n"
+    )
+
+
+# ---------------------------------------------------------------------------
+# add_endpoint / endpoint_by_uuid
+# ---------------------------------------------------------------------------
+
+def test_add_endpoint_appends_to_list():
+    ac = AppConfig(config_file="")
+    ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    before = len(ac.rig_endpoints)
+    ac.add_endpoint(ep)
+    assert len(ac.rig_endpoints) == before + 1
+
+
+def test_endpoint_by_uuid_returns_match():
+    ac = AppConfig(config_file="")
+    ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    ac.add_endpoint(ep)
+    result = ac.endpoint_by_uuid(ep.id)
+    assert result is ep
+
+
+def test_endpoint_by_uuid_returns_none_for_missing():
+    ac = AppConfig(config_file="")
+    ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    ac.add_endpoint(ep)
+    assert ac.endpoint_by_uuid("does-not-exist-uuid") is None
+
+
+# ---------------------------------------------------------------------------
+# selected_endpoint
+# ---------------------------------------------------------------------------
+
+def test_selected_endpoint_returns_matching_uuid():
+    ac = AppConfig(config_file="")
+    ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    ac.add_endpoint(ep)
+    ac.selected_rig_uuids[0] = ep.id
+    result = ac.selected_endpoint(1)
+    assert result is ep
+
+
+def test_selected_endpoint_falls_back_to_most_recent_on_missing_uuid():
+    ac = AppConfig(config_file="")
+    ep1 = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    ep2 = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7357, number=2)
+    ac.add_endpoint(ep1)
+    ac.add_endpoint(ep2)
+    ac.selected_rig_uuids[0] = "uuid-that-does-not-match-anything"
+    result = ac.selected_endpoint(1)
+    assert result is ep2
+
+
+def test_selected_endpoint_returns_none_when_no_endpoints():
+    ac = AppConfig(config_file="")
+    ac.rig_endpoints = []
+    ac.selected_rig_uuids = ["", ""]
+    result = ac.selected_endpoint(1)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# _load_endpoints (via read_conf)
+# ---------------------------------------------------------------------------
+
+def test_load_endpoints_reads_gqrx_and_hamlib_sections(tmp_path):
+    ini = (
+        "[Rig URI]\nhostname1 = 127.0.0.1\nport1 = 7356\nhostname2 = 127.0.0.1\nport2 = 7357\n"
+        "[Scanning]\npasses = 1\naggr_scan = false\nauto_bookmark = false\n"
+        "range_min = 24000\nrange_max = 1800000\ninterval = 1\ndelay = 5\n"
+        "record = false\nsgn_level = -30\nwait = false\n"
+        "[Main]\nlog_filename = none\nsave_exit = false\nalways_on_top = false\n"
+        "log = false\nbookmark_filename = none\n"
+        "[Monitor]\n"
+        "[rigendpoint.0]\n"
+        "uuid = aaaaaaaa-0000-0000-0000-000000000000\n"
+        "backend = HAMLIB\n"
+        "name = FT-857\n"
+        "rig_model = 122\n"
+        "serial_port = /dev/ttyUSB0\n"
+        "baud_rate = 38400\n"
+        "data_bits = 8\n"
+        "stop_bits = 1\n"
+        "parity = N\n"
+        "number = 0\n"
+        "[rigendpoint.1]\n"
+        "uuid = bbbbbbbb-0000-0000-0000-000000000000\n"
+        "backend = GQRX\n"
+        "name = SDR\n"
+        "hostname = 127.0.0.1\n"
+        "port = 7356\n"
+        "number = 1\n"
+    )
+    ac = _make_ac(tmp_path, ini)
+    ac.read_conf()
+    assert len(ac.rig_endpoints) == 2
+    assert ac.rig_endpoints[0].backend == BackendType.HAMLIB
+    assert ac.rig_endpoints[0].rig_model == 122
+    assert ac.rig_endpoints[1].backend == BackendType.GQRX
+
+
+# ---------------------------------------------------------------------------
+# _load_selected_rigs (via read_conf)
+# ---------------------------------------------------------------------------
+
+def test_load_selected_rigs_reads_uuids_into_list(tmp_path):
+    target_uuid = "cccccccc-0000-0000-0000-000000000000"
+    ini = (
+        "[Rig URI]\nhostname1 = 127.0.0.1\nport1 = 7356\nhostname2 = 127.0.0.1\nport2 = 7357\n"
+        "[Scanning]\npasses = 1\naggr_scan = false\nauto_bookmark = false\n"
+        "range_min = 24000\nrange_max = 1800000\ninterval = 1\ndelay = 5\n"
+        "record = false\nsgn_level = -30\nwait = false\n"
+        "[Main]\nlog_filename = none\nsave_exit = false\nalways_on_top = false\n"
+        "log = false\nbookmark_filename = none\n"
+        "[Monitor]\n"
+        "[rigendpoint.0]\n"
+        f"uuid = {target_uuid}\n"
+        "backend = GQRX\nname = SDR\nhostname = 127.0.0.1\nport = 7356\nnumber = 0\n"
+        "[selected rigs]\n"
+        f"{SELECTED_RIG_KEYS[0]} = {target_uuid}\n"
+    )
+    ac = _make_ac(tmp_path, ini)
+    ac.read_conf()
+    assert ac.selected_rig_uuids[0] == target_uuid
+
+
+# ---------------------------------------------------------------------------
+# _write_conf / _write_endpoints
+# ---------------------------------------------------------------------------
+
+def test_write_conf_writes_endpoint_sections(tmp_path):
+    cfg_path = tmp_path / "out.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+    ep_gqrx = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=1)
+    ep_hamlib = RigEndpoint(
+        backend=BackendType.HAMLIB,
+        rig_model=122,
+        serial_port="/dev/ttyUSB0",
+        baud_rate=38400,
+        data_bits=8,
+        stop_bits=1,
+        parity="N",
+        number=0,
+    )
+    ac.rig_endpoints = [ep_gqrx, ep_hamlib]
+    ac._write_conf()
+
+    loaded = configparser.RawConfigParser()
+    loaded.read(str(cfg_path))
+    assert loaded.has_section("rigendpoint.0")
+    assert loaded.has_section("rigendpoint.1")
+    assert loaded.get("rigendpoint.0", "backend").upper() == "GQRX"
+    assert loaded.get("rigendpoint.1", "backend").upper() == "HAMLIB"
+
+
+def test_write_endpoints_evicts_oldest_when_over_max(tmp_path):
+    cfg_path = tmp_path / "evict.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+    for i in range(MAX_ENDPOINTS + 1):
+        ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356 + i, number=i)
+        ac.rig_endpoints.append(ep)
+    ac._write_conf()
+
+    loaded = configparser.RawConfigParser()
+    loaded.read(str(cfg_path))
+    endpoint_sections = [s for s in loaded.sections() if s.startswith("rigendpoint.")]
+    assert len(endpoint_sections) == MAX_ENDPOINTS
+
+
+# ---------------------------------------------------------------------------
+# _write_selected_rigs
+# ---------------------------------------------------------------------------
+
+def test_write_selected_rigs_writes_uuids(tmp_path):
+    cfg_path = tmp_path / "sel.ini"
+    ac = AppConfig(config_file=str(cfg_path))
+    ac.config = {k: (v if v is not None else "") for k, v in AppConfig.DEFAULT_CONFIG.items()}
+    ac.selected_rig_uuids = ["uuid-a", "uuid-b"]
+    ac._write_conf()
+
+    loaded = configparser.RawConfigParser()
+    loaded.read(str(cfg_path))
+    assert loaded.has_section("selected rigs")
+    assert loaded.get("selected rigs", SELECTED_RIG_KEYS[0]) == "uuid-a"
+    assert loaded.get("selected rigs", SELECTED_RIG_KEYS[1]) == "uuid-b"
+
+
+# ---------------------------------------------------------------------------
+# Backward-compat legacy bootstrap
+# ---------------------------------------------------------------------------
+
+def test_bootstrap_legacy_endpoints_creates_rig_count_endpoints(tmp_path):
+    ini = (
+        "[Rig URI]\n"
+        "hostname1 = 192.168.1.10\n"
+        "port1 = 7356\n"
+        "hostname2 = 192.168.1.20\n"
+        "port2 = 7357\n"
+        "[Scanning]\npasses = 1\naggr_scan = false\nauto_bookmark = false\n"
+        "range_min = 24000\nrange_max = 1800000\ninterval = 1\ndelay = 5\n"
+        "record = false\nsgn_level = -30\nwait = false\n"
+        "[Main]\nlog_filename = none\nsave_exit = false\nalways_on_top = false\n"
+        "log = false\nbookmark_filename = none\n"
+        "[Monitor]\n"
+    )
+    ac = _make_ac(tmp_path, ini)
+    ac.read_conf()
+    assert len(ac.rig_endpoints) == RIG_COUNT
+    assert ac.rig_endpoints[0].hostname == "192.168.1.10"
+    assert ac.rig_endpoints[0].port == 7356
+    assert ac.rig_endpoints[1].hostname == "192.168.1.20"
+    assert ac.rig_endpoints[1].port == 7357

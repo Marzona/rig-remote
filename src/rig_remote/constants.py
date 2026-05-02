@@ -58,3 +58,14 @@ CONFIG_SECTIONS = [
     "Rig URI",
     "Monitor",
 ]
+
+# Maximum number of endpoint sections persisted in the INI file.
+# When a new endpoint is saved and the count exceeds this limit,
+# the oldest endpoint is evicted (FIFO) and the eviction is logged.
+MAX_ENDPOINTS = 20
+
+# INI key names for the [selected rigs] section.
+SELECTED_RIG_KEYS = [
+    "SELECTED_RIG1_RIG_ENDPOINT",
+    "SELECTED_RIG2_RIG_ENDPOINT",
+]

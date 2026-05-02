@@ -83,7 +83,7 @@ def test_channel_eq_non_channel_raises():
         (1000, ModulationModes.FM, "1,000"),
         (25000, ModulationModes.WFM, "25,000"),
         (250000, ModulationModes.PKTLSB, "250,000"),
-        (1900000, ModulationModes.PKTU, "1,900,000"),
+        (1900000, ModulationModes.PKTUSB, "1,900,000"),
         (4000000, ModulationModes.SB, "4,000,000"),
         (1000, ModulationModes.PKTFM, "1,000"),
         (25000, ModulationModes.ECSSUSB, "25,000"),

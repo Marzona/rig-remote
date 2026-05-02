@@ -1,7 +1,7 @@
 """
 Shared primitive layer for all scanner strategies.
 
-ScannerCore owns the RigCtl reference, the STMessenger queue, the
+ScannerCore owns the RigBackend reference, the STMessenger queue, the
 ScanningConfig, the liveness flag, and the sleep indirection.  All
 scanner strategies are composed with a ScannerCore instance.
 """
@@ -13,12 +13,20 @@ from typing import Any
 
 from rig_remote.models.channel import Channel
 from rig_remote.models.scanning_task import ScanningTask
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.protocol import RigBackend
 from rig_remote.scanning_config import ScanningConfig
 from rig_remote.stmessenger import STMessenger
 from rig_remote.utility import khertz_to_hertz
 
 logger = logging.getLogger(__name__)
+
+# Hamlib.error is an optional runtime dependency.  Import it lazily so the
+# module loads correctly in environments where Hamlib is not installed.
+# When Hamlib is absent, _HAMLIB_ERROR is a never-raised sentinel type.
+try:
+    from Hamlib import error as _HAMLIB_ERROR
+except ImportError:
+    _HAMLIB_ERROR = type("_NoHamlibError", (Exception,), {})
 
 
 class ScannerCore:
@@ -26,17 +34,12 @@ class ScannerCore:
 
     Owns:
       - the STMessenger queue reference
-      - the RigCtl reference
+      - the RigBackend reference
       - the ScanningConfig
       - the liveness flag (_scan_active)
       - the sleep indirection (injectable for tests)
     """
 
-    # Explicit converters for every mutable ScanningTask field that can arrive
-    # via the scan queue.  Using a whitelist prevents arbitrary string values
-    # from bypassing ScanningTask's validation and makes the allowed mutations
-    # self-documenting.  range_min / range_max are handled separately because
-    # they require a kHz→Hz conversion before assignment.
     _QUEUE_EVENT_CONVERTERS: dict[str, Callable[[Any], Any]] = {
         "wait": bool,
         "record": bool,
@@ -49,21 +52,10 @@ class ScannerCore:
     def __init__(
         self,
         scan_queue: STMessenger,
-        rigctl: RigCtl,
+        rigctl: RigBackend,
         config: ScanningConfig,
         sleep_fn: Callable[[float], None] | None = None,
     ) -> None:
-        """Initialise the core with all required dependencies.
-
-        :param scan_queue: Inter-thread messenger used to receive UI parameter
-            updates while a scan is running.
-        :param rigctl: RigCtl instance used to send frequency and mode commands
-            to the radio hardware.
-        :param config: ScanningConfig holding all timing and signal constants
-            for this session.
-        :param sleep_fn: Optional callable used instead of ``time.sleep``; inject
-            a no-op in tests to avoid wall-time delays.
-        """
         self.scan_queue = scan_queue
         self.rigctl = rigctl
         self.config = config
@@ -80,13 +72,6 @@ class ScannerCore:
         self._scan_active = False
 
     def should_stop(self) -> bool:
-        """Return True when the scan has been terminated.
-
-        Using a method prevents mypy from narrowing _scan_active to
-        Literal[True] inside while-loops.
-
-        :returns: True if ``terminate()`` has been called, False otherwise.
-        """
         return not self._scan_active
 
     # ------------------------------------------------------------------
@@ -94,15 +79,6 @@ class ScannerCore:
     # ------------------------------------------------------------------
 
     def queue_sleep(self, task: ScanningTask) -> None:
-        """Poll the queue every second for *task.delay* seconds.
-
-        Checks the queue on each iteration so that UI parameter updates
-        are applied promptly even during a delay period.
-
-        :param task: The active ScanningTask; its ``delay`` field determines
-            how many seconds to wait, and it may be mutated by queue events
-            processed during the wait.
-        """
         remaining = task.delay
         while True:
             if self.scan_queue.update_queued():
@@ -114,18 +90,6 @@ class ScannerCore:
                 break
 
     def process_queue(self, task: ScanningTask) -> bool:
-        """Drain the scan queue, applying valid UI parameter updates to *task*.
-
-        Each event is a ``(param_name, param_value)`` pair.  Names matching
-        ``config.valid_scan_update_event_names`` are applied via ``setattr``
-        (with special handling for ``range_min`` / ``range_max`` which are
-        converted from kHz to Hz).  Unknown names or conversion errors abort
-        processing for that event.
-
-        :param task: The active ScanningTask to update in-place.
-        :returns: True if at least one event was successfully applied,
-            False otherwise.
-        """
         processed = False
         while self.scan_queue.update_queued():
             event = self.scan_queue.get_event_update()
@@ -144,7 +108,6 @@ class ScannerCore:
                 break
 
             try:
-                # UI passes "txt_range_min"; task attribute is "range_min".
                 key = param_name.split("_", 1)[1]
                 if key == "range_min":
                     task.range_min = khertz_to_hertz(int(param_value))
@@ -160,7 +123,12 @@ class ScannerCore:
                     )
                     break
             except (ValueError, TypeError) as exc:
-                logger.warning("Queue event update failed: %s — event: %s %s", exc, param_name, param_value)
+                logger.warning(
+                    "Queue event update failed: %s — event: %s %s",
+                    exc,
+                    param_name,
+                    param_value,
+                )
                 break
 
             processed = True
@@ -175,19 +143,9 @@ class ScannerCore:
     def channel_tune(self, channel: Channel) -> None:
         """Tune the rig to *channel* and wait for it to settle.
 
-        Issues a frequency command followed by a mode command, sleeping for
-        ``config.time_wait_for_tune`` seconds after each.  Sets
-        ``_scan_active = False`` and re-raises on communications errors so
-        the caller can abort the current pass.
-
-        :param channel: Channel containing the target frequency (Hz) and
-            modulation string to send to the rig.
-        :raises ValueError: If the frequency or modulation value is rejected
-            by the rig.
-        :raises OSError: If a low-level I/O error occurs while communicating
-            with the rig.
-        :raises TimeoutError: If the rig does not respond within the expected
-            time window.
+        Catches OSError, TimeoutError, and Hamlib.error (all treated as
+        retriable communications errors).  ValueError from ModeTranslator
+        (unmapped mode) is also retriable — the scan skips the channel.
         """
         logger.info("Tuning to %i", channel.frequency)
         try:
@@ -195,7 +153,7 @@ class ScannerCore:
         except ValueError:
             logger.error("Bad frequency parameter.")
             raise
-        except (OSError, TimeoutError):
+        except (OSError, TimeoutError, _HAMLIB_ERROR):
             logger.error("Communications error while setting frequency.")
             self._scan_active = False
             raise
@@ -206,39 +164,34 @@ class ScannerCore:
         except ValueError:
             logger.error("Bad modulation parameter.")
             raise
-        except (OSError, TimeoutError):
+        except (OSError, TimeoutError, _HAMLIB_ERROR):
             logger.error("Communications error while setting mode.")
             self._scan_active = False
             raise
         self._sleep(self.config.time_wait_for_tune)
 
     def signal_check(self, sgn_level: int) -> bool:
-        """Sample the signal level ``config.signal_checks`` times.
-
-        Compares the raw level returned by the rig against *sgn_level* × 10
-        (converting dBFS to internal units).  Returns True as soon as at
-        least one sample exceeds the threshold.
-
-        :param sgn_level: Signal threshold in dBFS.  Any rig level reading
-            at or above ``sgn_level * 10`` is counted as a hit.
-        :returns: True if the signal was detected in at least one sample,
-            False if all samples were below the threshold.
-        """
-        threshold = int(sgn_level) * 10  # dBFS → internal units
+        """Sample the signal level ``config.signal_checks`` times."""
+        threshold = int(sgn_level) * 10
         signal_found = 0
-        level: float = 0.0
+        level: int = 0
 
         for i in range(self.config.signal_checks):
-            logger.debug("Signal check %d/%d: level threshold=%f", i + 1, self.config.signal_checks, threshold)
+            logger.debug(
+                "Signal check %d/%d: threshold=%d",
+                i + 1,
+                self.config.signal_checks,
+                threshold,
+            )
             level = self.rigctl.get_level()
-            logger.debug("Signal check result: level=%f  threshold=%f", level, threshold)
+            logger.debug("Signal check result: level=%d threshold=%d", level, threshold)
             if level >= threshold:
                 signal_found += 1
             self._sleep(self.config.no_signal_delay)
 
         if signal_found > 0:
             logger.info(
-                "Activity found — level: %f  hits: %d/%d",
+                "Activity found — level: %d  hits: %d/%d",
                 level,
                 signal_found,
                 self.config.signal_checks,
@@ -251,15 +204,7 @@ class ScannerCore:
     # ------------------------------------------------------------------
 
     def pass_count_update(self, pass_count: int) -> int:
-        """Decrement *pass_count* and deactivate the scan when it reaches zero.
-
-        A value of zero means "unlimited passes" and is never decremented
-        further; the scan is deactivated only when the count transitions
-        from 1 to 0.
-
-        :param pass_count: Current remaining pass count.
-        :returns: Updated pass count after decrementing (minimum 0).
-        """
+        """Decrement *pass_count* and deactivate the scan when it reaches zero."""
         if pass_count > 0:
             pass_count -= 1
         if pass_count == 0:

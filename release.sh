@@ -239,6 +239,13 @@ OVERRIDES
     unset _seen_pkgs
     [[ -n "${shlib_deps}" ]] || shlib_deps="libc6"
 
+    # The Python Hamlib module (PyPI: Hamlib) is a SWIG wrapper that links
+    # against the native libhamlib shared library at runtime.  The .so is not
+    # bundled in the wheel, so the package must declare an explicit dependency
+    # on the system libhamlib package; otherwise the import fails with a linker
+    # error on the end-user machine even though all Python files are present.
+    shlib_deps="${shlib_deps}, libhamlib4"
+
     cat > "${deb_staging}/DEBIAN/control" <<EOF
 Package: rig-remote
 Version: ${version}

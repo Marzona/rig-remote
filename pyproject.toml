@@ -28,6 +28,7 @@ license-files = ["LICEN[CS]E*"]
 # stdlib modules (configparser, datetime, logging, etc.) must NOT appear here.
 dependencies = [
     "PySide6>=6.6",
+    "Hamlib",
 ]
 
 [project.urls]
@@ -104,6 +105,10 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 exclude = ["docs"]
+
+[[tool.mypy.overrides]]
+module = ["Hamlib"]
+ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
 # ruff

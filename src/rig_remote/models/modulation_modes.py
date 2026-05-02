@@ -37,7 +37,7 @@ class ModulationModes(StrEnum):
     FM = "FM"
     WFM = "WFM"
     PKTLSB = "PKTLSB"
-    PKTU = "PKTU"
+    PKTUSB = "PKTUSB"   # renamed from PKTU — preserves bookmark CSV compatibility
     SB = "SB"
     PKTFM = "PKTFM"
     ECSSUSB = "ECSSUSB"

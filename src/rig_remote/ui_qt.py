@@ -27,7 +27,10 @@ from rig_remote.constants import RIG_COUNT
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.queue_comms import QueueComms
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.gqrx_rigctl import GQRXRigCtl
+from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
+from rig_remote.rig_backends.mode_translator import ModeTranslator
+from rig_remote.rig_backends.protocol import BackendType, RigBackend
 from rig_remote.scanning import Scanning2
 from rig_remote.stmessenger import STMessenger
 from rig_remote.syncing import Syncing
@@ -82,7 +85,7 @@ class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteUIBuilder):
         self.scan_queue = STMessenger(queue_comms=QueueComms())
         self.sync_queue = STMessenger(queue_comms=QueueComms())
         self.new_bookmarks_list: list[Bookmark] = []
-        self.rigctl: list[RigCtl] = []
+        self.rigctl: list[RigBackend] = []
 
         self._build_ui()
         self._load_bookmarks()
@@ -204,7 +207,15 @@ class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteUIBuilder):
         self.ckb_top.setChecked(str(ac.config.get("always_on_top") or "false").lower() == "true")
 
         # Initialize rig controls
-        self.rigctl = [RigCtl(self.ac.rig_endpoints[i]) for i in range(RIG_COUNT)]
+        self.rigctl = []
+        for i in range(RIG_COUNT):
+            ep = self.ac.selected_endpoint(i + 1) or self.ac.rig_endpoints[i]
+            if ep.backend == BackendType.HAMLIB:
+                translator = ModeTranslator(BackendType.HAMLIB)
+                self.rigctl.append(HamlibRigCtl(endpoint=ep, mode_translator=translator))
+            else:
+                translator = ModeTranslator(BackendType.GQRX)
+                self.rigctl.append(GQRXRigCtl(endpoint=ep, mode_translator=translator))
         logger.info("Initialized %d rig controls", RIG_COUNT)
 
         # Save current params content

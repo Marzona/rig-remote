@@ -1,4 +1,5 @@
 from rig_remote.models.rig_endpoint import RigEndpoint
+from rig_remote.rig_backends.protocol import BackendType
 import pytest
 
 
@@ -165,3 +166,81 @@ def test_rig_endpoint_invalid_number(test_number):
     name = "rig_name"
     with pytest.raises(ValueError):
         RigEndpoint(hostname=hostname, port=port, number=test_number, name=name)
+
+
+# ---------------------------------------------------------------------------
+# HAMLIB construction
+# ---------------------------------------------------------------------------
+
+def test_rig_endpoint_hamlib_init():
+    ep = RigEndpoint(
+        backend=BackendType.HAMLIB,
+        rig_model=122,
+        serial_port="/dev/ttyUSB0",
+        baud_rate=38400,
+        data_bits=8,
+        stop_bits=1,
+        parity="N",
+        number=0,
+    )
+    assert ep.backend == BackendType.HAMLIB
+    assert ep.rig_model == 122
+    assert ep.serial_port == "/dev/ttyUSB0"
+    assert ep.baud_rate == 38400
+    assert ep.data_bits == 8
+    assert ep.stop_bits == 1
+    assert ep.parity == "N"
+    assert ep.number == 0
+    assert ep.name == "122"
+
+
+def test_rig_endpoint_hamlib_skips_hostname_port_validation():
+    ep = RigEndpoint(
+        backend=BackendType.HAMLIB,
+        hostname="",
+        port=0,
+        rig_model=122,
+        serial_port="/dev/ttyUSB0",
+        number=0,
+    )
+    assert ep.backend == BackendType.HAMLIB
+
+
+# ---------------------------------------------------------------------------
+# Default name
+# ---------------------------------------------------------------------------
+
+def test_rig_endpoint_gqrx_default_name():
+    ep = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, name="", number=0)
+    assert ep.name == "gqrx"
+
+
+def test_rig_endpoint_hamlib_default_name():
+    ep = RigEndpoint(backend=BackendType.HAMLIB, rig_model=122, name="", number=0)
+    assert ep.name == "122"
+
+
+# ---------------------------------------------------------------------------
+# UUID uniqueness
+# ---------------------------------------------------------------------------
+
+def test_rig_endpoint_uuid_is_unique_per_instance():
+    ep1 = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=0)
+    ep2 = RigEndpoint(backend=BackendType.GQRX, hostname="127.0.0.1", port=7356, number=0)
+    assert ep1.id != ep2.id
+
+
+# ---------------------------------------------------------------------------
+# HAMLIB rig_model parametric
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("rig_model", [1, 122, 209, 361])
+def test_rig_endpoint_hamlib_rig_model_parametric(rig_model):
+    ep = RigEndpoint(
+        backend=BackendType.HAMLIB,
+        rig_model=rig_model,
+        serial_port="/dev/ttyUSB0",
+        number=0,
+    )
+    assert ep.rig_model == rig_model
+    assert ep.backend == BackendType.HAMLIB

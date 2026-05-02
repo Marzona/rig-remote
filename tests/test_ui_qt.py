@@ -63,13 +63,14 @@ def mock_app_config():
     config.DEFAULT_CONFIG = _VALID_CONFIG.copy()
     config.rig_endpoints = list(_RIG_ENDPOINTS)
     config.get = Mock(return_value="")
+    config.selected_endpoint = Mock(return_value=None)
     return config
 
 
 @pytest.fixture
 def rig_remote_app(qapp, mock_app_config):
     with patch("rig_remote.ui_qt.BookmarksManager"):
-        with patch("rig_remote.ui_qt.RigCtl"):
+        with patch("rig_remote.ui_qt.GQRXRigCtl"):
             with patch("rig_remote.ui_handlers.QMessageBox.question", return_value=1):
                 app = RigRemote(mock_app_config)
                 app.closeEvent = Mock()
@@ -95,6 +96,7 @@ def _make_config(overrides=None):
     cfg.config = {**_VALID_CONFIG, **(overrides or {})}
     cfg.DEFAULT_CONFIG = _VALID_CONFIG.copy()
     cfg.rig_endpoints = list(_RIG_ENDPOINTS)
+    cfg.selected_endpoint = Mock(return_value=None)
     return cfg
 
 
@@ -439,7 +441,7 @@ def test_toggle_cb_top(rig_remote_app, state):
 # ---------------------------------------------------------------------------
 
 def test_apply_config_sets_hostnames_and_ports(rig_remote_app, mock_app_config):
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         rig_remote_app.apply_config(mock_app_config, silent=True)
     assert rig_remote_app.params["txt_hostname1"].text() == "localhost"
     assert rig_remote_app.params["txt_port1"].text() == "4532"
@@ -447,7 +449,7 @@ def test_apply_config_sets_hostnames_and_ports(rig_remote_app, mock_app_config):
 
 
 def test_apply_config_sets_range_and_checkboxes(rig_remote_app, mock_app_config):
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         rig_remote_app.apply_config(mock_app_config, silent=True)
     assert rig_remote_app.params["txt_range_min"].text() == "88000"
     assert isinstance(rig_remote_app.ckb_save_exit.isChecked(), bool)
@@ -456,7 +458,7 @@ def test_apply_config_sets_range_and_checkboxes(rig_remote_app, mock_app_config)
 def test_apply_config_invalid_port_not_silent(rig_remote_app):
     """Invalid port with silent=False covers QMessageBox.critical (line 327)."""
     cfg = _make_config({"port1": "not_an_int"})
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.apply_config(cfg, silent=False)
     assert rig_remote_app.params["txt_port1"].text() == "4532"
@@ -465,7 +467,7 @@ def test_apply_config_invalid_port_not_silent(rig_remote_app):
 def test_apply_config_invalid_port_silent(rig_remote_app):
     """Invalid port with silent=True uses default without popup."""
     cfg = _make_config({"port1": "not_an_int"})
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         rig_remote_app.apply_config(cfg, silent=True)
     assert rig_remote_app.params["txt_port1"].text() == "4532"
 
@@ -473,7 +475,7 @@ def test_apply_config_invalid_port_silent(rig_remote_app):
 def test_apply_config_invalid_sgn_level(rig_remote_app):
     """Non-integer sgn_level sets default and eflag (lines 375-377, 381-386)."""
     cfg = _make_config({"sgn_level": "not_a_number"})
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.apply_config(cfg, silent=False)
     assert rig_remote_app.params["txt_sgn_level"].text() == "-40"
@@ -482,14 +484,14 @@ def test_apply_config_invalid_sgn_level(rig_remote_app):
 def test_apply_config_invalid_hostname(rig_remote_app):
     cfg = _make_config({"hostname1": ""})
     cfg.config.pop("hostname1", None)
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.apply_config(cfg, silent=False)
 
 
 def test_apply_config_invalid_range_not_silent(rig_remote_app):
     cfg = _make_config({"range_min": "not_a_number", "range_max": "also_bad"})
-    with patch("rig_remote.ui_qt.RigCtl"):
+    with patch("rig_remote.ui_qt.GQRXRigCtl"):
         with patch("rig_remote.ui_qt.QMessageBox.critical"):
             rig_remote_app.apply_config(cfg, silent=False)
 

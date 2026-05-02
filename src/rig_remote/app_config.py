@@ -30,21 +30,109 @@ import sys
 from rig_remote.constants import (
     CONFIG_SECTIONS,
     MAIN_CONFIG,
+    MAX_ENDPOINTS,
     MONITOR_CONFIG,
     RIG_COUNT,
     RIG_URI_CONFIG,
     SCANNING_CONFIG,
+    SELECTED_RIG_KEYS,
 )
 from rig_remote.disk_io import IO
 from rig_remote.models.rig_endpoint import RigEndpoint
+from rig_remote.rig_backends.protocol import BackendType
 
 logger = logging.getLogger(__name__)
 
+_ENDPOINT_SECTION_PREFIX = "rigendpoint."
+_SELECTED_RIGS_SECTION = "selected rigs"
+
+# Fields persisted per endpoint section, in save order.
+_GQRX_ENDPOINT_FIELDS = ("uuid", "backend", "name", "hostname", "port")
+_HAMLIB_ENDPOINT_FIELDS = (
+    "uuid",
+    "backend",
+    "name",
+    "rig_model",
+    "serial_port",
+    "baud_rate",
+    "data_bits",
+    "stop_bits",
+    "parity",
+)
+
+
+def _endpoint_to_section(endpoint: RigEndpoint) -> dict[str, str]:
+    """Serialise a RigEndpoint to a flat string dict for configparser."""
+    base: dict[str, str] = {
+        "uuid": endpoint.id,
+        "backend": endpoint.backend.value,
+        "name": endpoint.name,
+        "number": str(endpoint.number),
+    }
+    if endpoint.backend == BackendType.GQRX:
+        base["hostname"] = endpoint.hostname
+        base["port"] = str(endpoint.port)
+    else:
+        base["rig_model"] = str(endpoint.rig_model)
+        base["serial_port"] = endpoint.serial_port
+        base["baud_rate"] = str(endpoint.baud_rate)
+        base["data_bits"] = str(endpoint.data_bits)
+        base["stop_bits"] = str(endpoint.stop_bits)
+        base["parity"] = endpoint.parity
+    return base
+
+
+def _section_to_endpoint(items: dict[str, str]) -> RigEndpoint | None:
+    """Deserialise a configparser section dict to a RigEndpoint.
+
+    Returns None and logs a warning if the section is malformed.
+    """
+    try:
+        raw_backend = items.get("backend", "GQRX").upper()
+        backend = BackendType(raw_backend)
+        number = int(items.get("number", "0"))
+        ep_id = items.get("uuid", "")
+        name = items.get("name", "")
+
+        if backend == BackendType.GQRX:
+            endpoint = RigEndpoint(
+                backend=backend,
+                number=number,
+                name=name,
+                hostname=items.get("hostname", ""),
+                port=int(items.get("port", "0")),
+            )
+        else:
+            endpoint = RigEndpoint(
+                backend=backend,
+                number=number,
+                name=name,
+                rig_model=int(items.get("rig_model", "0")),
+                serial_port=items.get("serial_port", ""),
+                baud_rate=int(items.get("baud_rate", "9600")),
+                data_bits=int(items.get("data_bits", "8")),
+                stop_bits=int(items.get("stop_bits", "1")),
+                parity=items.get("parity", "N"),
+            )
+        if ep_id:
+            endpoint.id = ep_id
+        return endpoint
+    except (ValueError, KeyError) as exc:
+        logger.warning("Skipping malformed endpoint section: %s", exc)
+        return None
+
 
 class AppConfig:
-    """This class reads the status of the UI and and parses the data
-    so that it's suitable to be saved as a csv, and the reverse
+    """Reads and writes the application configuration INI file.
 
+    Supports two INI formats:
+    - Legacy: ``[Rig URI]`` section with ``hostname1``, ``port1``,
+      ``hostname2``, ``port2`` keys.
+    - Current: ``[rigendpoint.N]`` sections (one per endpoint) plus a
+      ``[selected rigs]`` section that records which UUID is active per rig.
+
+    Both formats are read; the legacy keys bootstrap an initial endpoint list
+    when no ``[rigendpoint.*]`` sections exist.
     """
 
     DEFAULT_CONFIG: ClassVar[dict[str, str | bool | None]] = {
@@ -80,30 +168,26 @@ class AppConfig:
     )
 
     def __init__(self, config_file: str):
-        """Default config, they will be overwritten when a conf is loaded
-        this will be used to write a default config file.
-        If the command line specifies a config file we note it in
-        alternate_config_file and we use it, otherwise we check for
-        the default one.
-
-        :param config_file: config file passed as input argument
-        :returns:none
-        """
-
         self._io = IO()
         self.rig_endpoints: list[RigEndpoint] = []
+        # UUIDs of the two selected rigs, indexed 0 and 1 (rig 1 and rig 2).
+        self.selected_rig_uuids: list[str] = ["", ""]
         self.config_file = config_file
         if not self.config_file:
             self.config = dict.copy(self.DEFAULT_CONFIG)
         else:
             self.config = {}
 
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
     def read_conf(self) -> None:
         """Read the configuration file.
-        If the default one doesn't exist we create one with sane values.
-        and then we re-read it. It logs an error if a line of the file is not
-        valid and moves on to the next one.
 
+        Falls back to DEFAULT_CONFIG when the file is absent or empty.
+        Reads both legacy ``hostname/port`` keys (backward compat) and
+        new ``[rigendpoint.N]`` sections.
         """
         logger.debug("Reading configuration file: %s", self.config_file)
         if os.path.isfile(self.config_file):
@@ -116,50 +200,118 @@ class AppConfig:
                 logger.error(self._UPGRADE_MESSAGE)
                 sys.exit(1)
 
-            # If no sections were found, use default config
             if not config.sections():
                 self.config = self.DEFAULT_CONFIG
             else:
                 for section in config.sections():
                     for item in config.items(section):
                         self.config[item[0]] = item[1]
+
+            self._load_endpoints(config)
+            self._load_selected_rigs(config)
         else:
             logger.info("Using default configuration...")
             self.config = self.DEFAULT_CONFIG
 
-        # generate the rig endpoints from config
-        self.rig_endpoints = [
-            RigEndpoint(
-                hostname=str(self.config[f"hostname{instance_number}"]),
-                port=int(self.config[f"port{instance_number}"] or "0"),
-                number=instance_number,
-            )
-            for instance_number in range(1, RIG_COUNT + 1)
-        ]
+        if not self.rig_endpoints:
+            self._bootstrap_legacy_endpoints()
 
     def store_conf(self, window: RigRemote) -> None:
-        """Store the configuration from the UI window to file.
-
-        :param window: the UI window object containing the configuration
-        :returns: none
-        """
+        """Persist the configuration from the UI to the INI file."""
         self._get_conf(window)
         self._write_conf()
 
-    def _write_conf(self) -> None:
-        """Writes the configuration to file. If the default config path
-        is missing it will be created. If this is not possible the config file
-        will not be saved.
+    def add_endpoint(self, endpoint: RigEndpoint) -> None:
+        """Add *endpoint* to the in-memory list.
 
-        :param: none
-        :raises: IOError, OSError if it is not possible to write the config
-
+        FIFO eviction to MAX_ENDPOINTS is deferred to save time.
         """
-        self._io.csv_rows = []
+        self.rig_endpoints.append(endpoint)
+
+    def endpoint_by_uuid(self, uuid: str) -> RigEndpoint | None:
+        """Return the endpoint matching *uuid*, or None."""
+        for ep in self.rig_endpoints:
+            if ep.id == uuid:
+                return ep
+        return None
+
+    def selected_endpoint(self, rig_number: int) -> RigEndpoint | None:
+        """Return the selected endpoint for *rig_number* (1-based).
+
+        Falls back to the most recent endpoint when the stored UUID is absent.
+        """
+        idx = rig_number - 1
+        if 0 <= idx < len(self.selected_rig_uuids):
+            uuid = self.selected_rig_uuids[idx]
+            ep = self.endpoint_by_uuid(uuid)
+            if ep is not None:
+                return ep
+        if self.rig_endpoints:
+            logger.info(
+                "Stored UUID for rig %d not found — using most recent endpoint.",
+                rig_number,
+            )
+            return self.rig_endpoints[-1]
+        return None
+
+    # ------------------------------------------------------------------
+    # Internal helpers — load
+    # ------------------------------------------------------------------
+
+    def _load_endpoints(self, config: configparser.RawConfigParser) -> None:
+        """Populate self.rig_endpoints from [rigendpoint.N] sections."""
+        endpoint_sections = sorted(
+            (s for s in config.sections() if s.startswith(_ENDPOINT_SECTION_PREFIX)),
+            key=lambda s: int(s.split(".", 1)[1]) if s.split(".", 1)[1].isdigit() else 0,
+        )
+        for section in endpoint_sections:
+            items = dict(config.items(section))
+            ep = _section_to_endpoint(items)
+            if ep is not None:
+                self.rig_endpoints.append(ep)
+
+    def _load_selected_rigs(self, config: configparser.RawConfigParser) -> None:
+        """Read [selected rigs] UUIDs into self.selected_rig_uuids."""
+        if not config.has_section(_SELECTED_RIGS_SECTION):
+            return
+        for i, key in enumerate(SELECTED_RIG_KEYS):
+            if config.has_option(_SELECTED_RIGS_SECTION, key):
+                self.selected_rig_uuids[i] = config.get(_SELECTED_RIGS_SECTION, key)
+
+    def _bootstrap_legacy_endpoints(self) -> None:
+        """Create RigEndpoint objects from legacy hostname/port keys."""
+        for instance_number in range(1, RIG_COUNT + 1):
+            hostname_key = f"hostname{instance_number}"
+            port_key = f"port{instance_number}"
+            hostname = str(self.config.get(hostname_key, "127.0.0.1"))
+            raw_port = self.config.get(port_key, "0")
+            port = int(raw_port or "0")
+            try:
+                ep = RigEndpoint(
+                    hostname=hostname,
+                    port=port,
+                    number=instance_number,
+                )
+                self.rig_endpoints.append(ep)
+            except ValueError:
+                logger.warning(
+                    "Legacy endpoint %d invalid (hostname=%s port=%d) — skipped.",
+                    instance_number,
+                    hostname,
+                    port,
+                )
+
+    # ------------------------------------------------------------------
+    # Internal helpers — save
+    # ------------------------------------------------------------------
+
+    def _write_conf(self) -> None:
+        """Write all config, endpoints, and selected rigs to the INI file."""
         try:
             os.makedirs(os.path.dirname(self.config_file))
         except OSError:
             logger.info("skip create config path as %s, already exists?", self.config_file)
+
         config = configparser.RawConfigParser()
         for section in CONFIG_SECTIONS:
             config.add_section(section)
@@ -175,15 +327,42 @@ class AppConfig:
                 config.set("Main", key, value)
             if key in SCANNING_CONFIG:
                 config.set("Scanning", key, value)
+
+        self._write_endpoints(config)
+        self._write_selected_rigs(config)
+
         with open(self.config_file, "w", encoding="utf-8") as cf:
             config.write(cf)
 
-    def _get_conf(self, window: RigRemote) -> None:
-        """populates the ac object reading the info from the UI.
+    def _write_endpoints(self, config: configparser.RawConfigParser) -> None:
+        """Serialise self.rig_endpoints with FIFO eviction at MAX_ENDPOINTS."""
+        endpoints_to_save = self.rig_endpoints
+        if len(endpoints_to_save) > MAX_ENDPOINTS:
+            evict_count = len(endpoints_to_save) - MAX_ENDPOINTS
+            logger.info(
+                "Endpoint list exceeds %d — evicting %d oldest endpoint(s).",
+                MAX_ENDPOINTS,
+                evict_count,
+            )
+            for ep in endpoints_to_save[:evict_count]:
+                logger.info("Evicted endpoint: uuid=%s name=%s", ep.id, ep.name)
+            endpoints_to_save = endpoints_to_save[evict_count:]
 
-        :param window: object used to hold the app configuration.
-        :returns  window instance with ac obj updated.
-        """
+        for idx, endpoint in enumerate(endpoints_to_save):
+            section = f"{_ENDPOINT_SECTION_PREFIX}{idx}"
+            config.add_section(section)
+            for key, value in _endpoint_to_section(endpoint).items():
+                config.set(section, key, value)
+
+    def _write_selected_rigs(self, config: configparser.RawConfigParser) -> None:
+        """Write [selected rigs] section."""
+        config.add_section(_SELECTED_RIGS_SECTION)
+        for i, key in enumerate(SELECTED_RIG_KEYS):
+            uuid = self.selected_rig_uuids[i] if i < len(self.selected_rig_uuids) else ""
+            config.set(_SELECTED_RIGS_SECTION, key, uuid)
+
+    def _get_conf(self, window: RigRemote) -> None:
+        """Populate self.config from the UI window."""
         self.config["hostname1"] = window.params["txt_hostname1"].text()
         self.config["port1"] = window.params["txt_port1"].text()
         self.config["hostname2"] = window.params["txt_hostname2"].text()

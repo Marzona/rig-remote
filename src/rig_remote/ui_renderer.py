@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 from rig_remote.constants import RIG_COUNT
 from rig_remote.models.modulation_modes import ModulationModes
 from rig_remote.models.rig_endpoint import RigEndpoint
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.protocol import RigBackend
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class RigRemoteUIBuilder:
     _ORDINAL_NUMBERS: list[str]
     params: dict[str, Any]
     params_last_content: dict[str, str]
-    rigctl: list[RigCtl]
+    rigctl: list[RigBackend]
     tree: QTreeWidget
     ckb_top: QCheckBox
     ckb_save_exit: QCheckBox
@@ -68,6 +68,8 @@ class RigRemoteUIBuilder:
     def _import_bookmarks_dialog(self) -> None: ...
     def _export_gqrx(self) -> None: ...
     def _export_rig_remote(self) -> None: ...
+    def _on_backend_changed(self, rig_number: int) -> None: ...
+    def cb_connect_rig(self, rig_number: int) -> None: ...
 
     def _build_ui(self) -> None:
         """Build the entire UI"""
@@ -124,6 +126,56 @@ class RigRemoteUIBuilder:
         self.params[txt_port].setToolTip("Port to connect.")
         self.params[txt_port].editingFinished.connect(lambda: self.process_entry_wrapper(txt_port))
         grid.addWidget(self.params[txt_port], 1, 1)
+
+        cbb_backend = f"cbb_backend{rig_number}"
+        self.params[cbb_backend] = QComboBox()
+        self.params[cbb_backend].addItems(["GQRX", "HAMLIB"])
+        self.params[cbb_backend].currentIndexChanged.connect(
+            lambda idx: self._on_backend_changed(rig_number)
+        )
+        grid.addWidget(self.params[cbb_backend], 2, 0, 1, 2)
+
+        lbl_rig_model = f"lbl_rig_model{rig_number}"
+        self.params[lbl_rig_model] = QLabel("Rig model:")
+        self.params[lbl_rig_model].setVisible(False)
+        grid.addWidget(self.params[lbl_rig_model], 3, 0)
+
+        cbb_rig_model = f"cbb_rig_model{rig_number}"
+        self.params[cbb_rig_model] = QComboBox()
+        self.params[cbb_rig_model].addItems(["122 (FT-857)", "361 (IC-7300)", "209 (TS-2000)", "1 (Dummy)"])
+        self.params[cbb_rig_model].setToolTip("Hamlib rig model")
+        self.params[cbb_rig_model].setVisible(False)
+        grid.addWidget(self.params[cbb_rig_model], 3, 1)
+
+        lbl_serial_port = f"lbl_serial_port{rig_number}"
+        self.params[lbl_serial_port] = QLabel("Serial port:")
+        self.params[lbl_serial_port].setVisible(False)
+        grid.addWidget(self.params[lbl_serial_port], 4, 0)
+
+        txt_serial_port = f"txt_serial_port{rig_number}"
+        self.params[txt_serial_port] = QLineEdit()
+        self.params[txt_serial_port].setPlaceholderText("/dev/ttyUSB0")
+        self.params[txt_serial_port].setToolTip("Serial port")
+        self.params[txt_serial_port].setVisible(False)
+        grid.addWidget(self.params[txt_serial_port], 4, 1)
+
+        lbl_baud_rate = f"lbl_baud_rate{rig_number}"
+        self.params[lbl_baud_rate] = QLabel("Baud rate:")
+        self.params[lbl_baud_rate].setVisible(False)
+        grid.addWidget(self.params[lbl_baud_rate], 5, 0)
+
+        txt_baud_rate = f"txt_baud_rate{rig_number}"
+        self.params[txt_baud_rate] = QLineEdit()
+        self.params[txt_baud_rate].setPlaceholderText("38400")
+        self.params[txt_baud_rate].setToolTip("Baud rate")
+        self.params[txt_baud_rate].setVisible(False)
+        grid.addWidget(self.params[txt_baud_rate], 5, 1)
+
+        btn_connect = f"btn_connect{rig_number}"
+        self.params[btn_connect] = QPushButton("Connect")
+        self.params[btn_connect].clicked.connect(lambda: self.cb_connect_rig(rig_number))
+        self.params[btn_connect].setVisible(False)
+        grid.addWidget(self.params[btn_connect], 6, 0, 1, 2)
 
         group.setLayout(grid)
         layout.addWidget(group, 0, 2 + rig_number)

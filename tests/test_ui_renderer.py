@@ -95,6 +95,7 @@ def mock_app_config():
         RigEndpoint(hostname="192.168.1.3", port=4532, number=4, name="rig_4"),
     ]
     config.get = Mock(return_value="")
+    config.selected_endpoint = Mock(return_value=None)
     return config
 
 
@@ -102,7 +103,7 @@ def mock_app_config():
 def rig_remote_app(qapp, mock_app_config):
     """Create RigRemote application instance."""
     with patch("rig_remote.ui_qt.BookmarksManager"):
-        with patch("rig_remote.ui_qt.RigCtl"):
+        with patch("rig_remote.ui_qt.GQRXRigCtl"):
             with patch("rig_remote.ui_qt.QMessageBox.question", return_value=1):
                 app = RigRemote(mock_app_config)
                 app.closeEvent = Mock()

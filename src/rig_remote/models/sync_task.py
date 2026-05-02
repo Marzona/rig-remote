@@ -20,7 +20,7 @@ import logging
 from dataclasses import dataclass, field
 from uuid import uuid4
 
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.protocol import RigBackend
 from rig_remote.stmessenger import STMessenger
 
 logger = logging.getLogger(__name__)
@@ -28,14 +28,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass()
 class SyncTask:
-    """Representation of a scan task, with helper method for checking
-    for proper frequency range.
-
-    """
+    """Representation of a sync task."""
 
     syncq: STMessenger
-    src_rig: RigCtl
-    dst_rig: RigCtl
+    src_rig: RigBackend
+    dst_rig: RigBackend
     error: str = ""
     id: str = field(default_factory=lambda: str(uuid4()), compare=False)
 

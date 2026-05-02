@@ -44,7 +44,9 @@ from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.models.scanning_task import ScanningTask
 from rig_remote.models.sync_task import SyncTask
-from rig_remote.rigctl import RigCtl
+from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
+from rig_remote.rig_backends.mode_translator import ModeTranslator
+from rig_remote.rig_backends.protocol import BackendType, RigBackend
 from rig_remote.scanning import Scanning2, create_scanner
 from rig_remote.stmessenger import STMessenger
 from rig_remote.syncing import Syncing
@@ -94,7 +96,7 @@ class RigRemoteHandlersMixin:
     scanning: Scanning2 | None
     syncing: Syncing | None
     new_bookmarks_list: list[Bookmark]
-    rigctl: list[RigCtl]
+    rigctl: list[RigBackend]
     tree: QTreeWidget
     book_scan_toggle: QPushButton
     freq_scan_toggle: QPushButton
@@ -323,6 +325,16 @@ class RigRemoteHandlersMixin:
     def process_record(self, state: int) -> None:
         """Handle record checkbox"""
         event_list = ("ckb_record", state == Qt.CheckState.Checked.value)
+        if state == Qt.CheckState.Checked.value:
+            for i, rig in enumerate(self.rigctl):
+                if isinstance(rig, HamlibRigCtl):
+                    QMessageBox.information(
+                        self._parent(),
+                        "Not supported",
+                        f"Recording is not supported by the Hamlib backend (rig {i + 1}).",
+                    )
+                    self.params["ckb_record"].setChecked(False)
+                    return
         self._process_checkbutton(event_list)
 
     def process_log(self, state: int) -> None:
@@ -389,8 +401,8 @@ class RigRemoteHandlersMixin:
             try:
                 task = SyncTask(
                     self.sync_queue,
-                    RigCtl(self.ac.rig_endpoints[2]),
-                    RigCtl(self.ac.rig_endpoints[1]),
+                    self.rigctl[1],
+                    self.rigctl[0],
                 )
             except UnsupportedSyncConfigError:
                 QMessageBox.critical(self._parent(), "Sync error", "Hostname/port of both rigs must be specified")
@@ -680,6 +692,75 @@ class RigRemoteHandlersMixin:
         # Save bookmarks
         self.bookmarks.save(bookmarks_file=self.bookmarks_file)
         self._clear_form(source)
+
+    # ------------------------------------------------------------------
+    # Backend selection
+    # ------------------------------------------------------------------
+
+    def _on_backend_changed(self, rig_number: int) -> None:
+        """Show GQRX or Hamlib widgets based on the selected backend."""
+        key = f"cbb_backend{rig_number}"
+        backend_str = self.params[key].currentText()
+        is_hamlib = backend_str == "HAMLIB"
+        for suffix in (f"cbb_rig_model{rig_number}", f"txt_serial_port{rig_number}",
+                       f"txt_baud_rate{rig_number}", f"btn_connect{rig_number}",
+                       f"lbl_rig_model{rig_number}", f"lbl_serial_port{rig_number}",
+                       f"lbl_baud_rate{rig_number}"):
+            widget = self.params.get(suffix)
+            if widget is not None:
+                widget.setVisible(is_hamlib)
+        for suffix in (f"txt_hostname{rig_number}", f"txt_port{rig_number}"):
+            widget = self.params.get(suffix)
+            if widget is not None:
+                widget.setVisible(not is_hamlib)
+
+    def cb_connect_rig(self, rig_number: int) -> None:
+        """Build and connect a HamlibRigCtl for the given rig slot."""
+        backend_key = f"cbb_backend{rig_number}"
+        backend_str = self.params[backend_key].currentText()
+        if backend_str != "HAMLIB":
+            return
+
+        rig_model_text = self.params[f"cbb_rig_model{rig_number}"].currentText()
+        try:
+            rig_model = int(rig_model_text.split()[0])
+        except (ValueError, IndexError):
+            QMessageBox.critical(self._parent(), "Error", "Invalid rig model selection.")
+            return
+
+        serial_port = self.params[f"txt_serial_port{rig_number}"].text().strip()
+        baud_rate_text = self.params[f"txt_baud_rate{rig_number}"].text().strip()
+        try:
+            baud_rate = int(baud_rate_text)
+        except ValueError:
+            QMessageBox.critical(self._parent(), "Error", "Baud rate must be an integer.")
+            return
+
+        endpoint = RigEndpoint(
+            backend=BackendType.HAMLIB,
+            number=rig_number,
+            rig_model=rig_model,
+            serial_port=serial_port,
+            baud_rate=baud_rate,
+        )
+        translator = ModeTranslator(BackendType.HAMLIB)
+        rig = HamlibRigCtl(endpoint=endpoint, mode_translator=translator)
+        try:
+            self.freq_scan_toggle.setEnabled(False)
+            self.book_scan_toggle.setEnabled(False)
+            self.sync_button.setEnabled(False)
+            rig.connect()
+        except OSError as exc:
+            logger.error("Hamlib connect failed for rig %d: %s", rig_number, exc)
+            QMessageBox.critical(self._parent(), "Connection Error", f"Could not connect to rig:\n{exc}")
+            return
+        finally:
+            self.freq_scan_toggle.setEnabled(True)
+            self.book_scan_toggle.setEnabled(True)
+            self.sync_button.setEnabled(True)
+
+        self.rigctl[rig_number - 1] = rig
+        logger.info("Rig %d connected via Hamlib (model=%d port=%s)", rig_number, rig_model, serial_port)
 
     # ------------------------------------------------------------------
     # Window close

@@ -143,16 +143,16 @@ def test_sync_reads_from_src_and_propagates_to_dst() -> None:
     dst_requests = [_request_arg(c) for c in dst_rig._send_message.call_args_list]
 
     # Cycle 1: frequency UP propagated before mode change 1
-    assert dst_requests[0] == f"F {float(_FREQ_UP)}", (
-        f"Cycle 1 — expected frequency up 'F {float(_FREQ_UP)}', got '{dst_requests[0]}'"
+    assert dst_requests[0] == f"F {int(_FREQ_UP)}", (
+        f"Cycle 1 — expected frequency up 'F {int(_FREQ_UP)}', got '{dst_requests[0]}'"
     )
     assert dst_requests[1] == f"M {_MODE_1}", (
         f"Cycle 1 — expected mode '{_MODE_1}', got '{dst_requests[1]}'"
     )
 
     # Cycle 2: frequency DOWN propagated before mode change 2
-    assert dst_requests[2] == f"F {float(_FREQ_DOWN)}", (
-        f"Cycle 2 — expected frequency down 'F {float(_FREQ_DOWN)}', got '{dst_requests[2]}'"
+    assert dst_requests[2] == f"F {int(_FREQ_DOWN)}", (
+        f"Cycle 2 — expected frequency down 'F {int(_FREQ_DOWN)}', got '{dst_requests[2]}'"
     )
     assert dst_requests[3] == f"M {_MODE_2}", (
         f"Cycle 2 — expected mode '{_MODE_2}', got '{dst_requests[3]}'"
