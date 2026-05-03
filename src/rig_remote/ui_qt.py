@@ -36,6 +36,7 @@ from rig_remote.stmessenger import STMessenger
 from rig_remote.syncing import Syncing
 from rig_remote.ui_handlers import RigRemoteHandlersMixin
 from rig_remote.ui_renderer import RigRemoteUIBuilder
+from rig_remote.ui_scan_handlers import RigRemoteScanHandlersMixin
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class _BookmarkTreeItem(QTreeWidgetItem):
         return self.text(col).lower() < other.text(col).lower()
 
 
-class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteUIBuilder):
+class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteScanHandlersMixin, RigRemoteUIBuilder):
     """Remote application that interacts with the rig using rigctl protocol.
     Gqrx partially implements rigctl since version 2.3.
     """
@@ -260,8 +261,6 @@ class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteUIBuilder):
 
         self.tree.setCurrentItem(item)
         self.tree.scrollToItem(item)
-        # add bookmark to bookmarks list
-        self.bookmarks.add_bookmark(bookmark)
         # Save bookmarks
         self.bookmarks.save(bookmarks_file=self.bookmarks_file)
         logger.info("Bookmark saved: %s at %s Hz", bookmark.description, bookmark.channel.frequency)

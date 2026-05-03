@@ -555,10 +555,10 @@ def test_sync_stop_when_no_thread(rig_remote_app):
 
 def test_sync_start_success(rig_remote_app):
     rig_remote_app.sync_thread = None
-    with patch("rig_remote.ui_handlers.SyncTask") as mock_task:
-        with patch("rig_remote.ui_handlers.Syncing"):
-            with patch("rig_remote.ui_handlers.threading.Thread") as mock_thread_cls:
-                with patch("rig_remote.ui_handlers.QTimer.singleShot"):
+    with patch("rig_remote.ui_scan_handlers.SyncTask") as mock_task:
+        with patch("rig_remote.ui_scan_handlers.Syncing"):
+            with patch("rig_remote.ui_scan_handlers.threading.Thread") as mock_thread_cls:
+                with patch("rig_remote.ui_scan_handlers.QTimer.singleShot"):
                     rig_remote_app._sync("start")
     assert rig_remote_app.sync_thread is not None
     rig_remote_app.sync_thread = None
@@ -566,8 +566,8 @@ def test_sync_start_success(rig_remote_app):
 
 def test_sync_start_task_error_toggles_back(rig_remote_app):
     rig_remote_app.sync_thread = None
-    with patch("rig_remote.ui_handlers.SyncTask", side_effect=UnsupportedSyncConfigError):
-        with patch("rig_remote.ui_handlers.Syncing"):
+    with patch("rig_remote.ui_scan_handlers.SyncTask", side_effect=UnsupportedSyncConfigError):
+        with patch("rig_remote.ui_scan_handlers.Syncing"):
             with patch("rig_remote.ui_handlers.QMessageBox.critical"):
                 with patch.object(rig_remote_app, "sync_toggle") as mock_toggle:
                     rig_remote_app._sync("start")
@@ -645,7 +645,7 @@ def test_check_scan_thread_done_bookmark_mode(rig_remote_app):
 def test_check_scan_thread_still_running(rig_remote_app):
     rig_remote_app.scan_thread = Mock()
     with patch.object(rig_remote_app.scan_queue, "check_end_of_scan", return_value=False):
-        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_scan_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_scan_thread()
     mock_timer.assert_called_once()
     rig_remote_app.scan_thread = None
@@ -654,7 +654,7 @@ def test_check_scan_thread_still_running(rig_remote_app):
 def test_check_sync_thread_still_running(rig_remote_app):
     rig_remote_app.sync_thread = Mock()
     with patch.object(rig_remote_app.sync_queue, "check_end_of_sync", return_value=False):
-        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_scan_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_sync_thread()
     mock_timer.assert_called_once()
     rig_remote_app.sync_thread = None
@@ -663,7 +663,7 @@ def test_check_sync_thread_still_running(rig_remote_app):
 def test_check_sync_thread_done(rig_remote_app):
     rig_remote_app.sync_thread = None
     with patch.object(rig_remote_app.sync_queue, "check_end_of_sync", return_value=True):
-        with patch("rig_remote.ui_handlers.QTimer.singleShot") as mock_timer:
+        with patch("rig_remote.ui_scan_handlers.QTimer.singleShot") as mock_timer:
             rig_remote_app.check_sync_thread()
     mock_timer.assert_not_called()
 
@@ -738,9 +738,9 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
     rig_remote_app.tree.clear()
     rig_remote_app._insert_bookmarks([mock_bookmark])
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_handlers.create_scanner"):
-        with patch("rig_remote.ui_handlers.threading.Thread") as mock_thread_cls:
-            with patch("rig_remote.ui_handlers.QTimer.singleShot"):
+    with patch("rig_remote.ui_scan_handlers.create_scanner"):
+        with patch("rig_remote.ui_scan_handlers.threading.Thread") as mock_thread_cls:
+            with patch("rig_remote.ui_scan_handlers.QTimer.singleShot"):
                 rig_remote_app._scan("bookmarks", "start", "FM")
     assert rig_remote_app.scan_thread is not None
     rig_remote_app.scan_thread = None
@@ -749,9 +749,9 @@ def test_scan_start_bookmarks_with_entries(rig_remote_app, mock_bookmark):
 
 def test_scan_start_frequency_mode(rig_remote_app):
     rig_remote_app.scan_thread = None
-    with patch("rig_remote.ui_handlers.create_scanner"):
-        with patch("rig_remote.ui_handlers.threading.Thread"):
-            with patch("rig_remote.ui_handlers.QTimer.singleShot"):
+    with patch("rig_remote.ui_scan_handlers.create_scanner"):
+        with patch("rig_remote.ui_scan_handlers.threading.Thread"):
+            with patch("rig_remote.ui_scan_handlers.QTimer.singleShot"):
                 rig_remote_app._scan("frequency", "start", "FM")
     rig_remote_app.scan_thread = None
 
