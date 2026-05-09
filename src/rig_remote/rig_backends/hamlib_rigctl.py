@@ -30,9 +30,11 @@ from rig_remote.rig_backends.mode_translator import ModeTranslator
 
 logger = logging.getLogger(__name__)
 
+
 # Lazy Hamlib import: allows sys.modules mocking in tests without Hamlib installed.
 def _hamlib() -> types.ModuleType:
     import importlib
+
     try:
         return importlib.import_module("Hamlib")
     except ImportError as exc:

@@ -50,6 +50,7 @@ __all__ = [
 # Scanner strategy protocol
 # ---------------------------------------------------------------------------
 
+
 @runtime_checkable
 class ScannerStrategy(Protocol):
     """Structural interface every scanner strategy must satisfy."""
@@ -71,6 +72,7 @@ class ScannerStrategy(Protocol):
 # ---------------------------------------------------------------------------
 # Facade
 # ---------------------------------------------------------------------------
+
 
 class Scanning2:
     """Public facade.
@@ -168,10 +170,7 @@ def create_scanner(
     """
     strategy_cls = _SCANNER_REGISTRY.get(scan_mode.lower())
     if strategy_cls is None:
-        raise ValueError(
-            f"Unsupported scan_mode {scan_mode!r}. "
-            f"Supported modes: {list(_SCANNER_REGISTRY)}"
-        )
+        raise ValueError(f"Unsupported scan_mode {scan_mode!r}. " f"Supported modes: {list(_SCANNER_REGISTRY)}")
 
     resolved_config = config or ScanningConfig()
     resolved_log = log or LogFile()

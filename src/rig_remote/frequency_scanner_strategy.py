@@ -134,9 +134,7 @@ class FrequencyScannerStrategy:
 
         while freq < inner_end:
             try:
-                self._core.channel_tune(
-                    Channel(modulation=task.frequency_modulation, input_frequency=freq)
-                )
+                self._core.channel_tune(Channel(modulation=task.frequency_modulation, input_frequency=freq))
             except (OSError, TimeoutError, ValueError):
                 logger.warning("Inner scan tune error at %d Hz — skipping step.", freq)
                 freq += task.inner_interval
@@ -151,9 +149,7 @@ class FrequencyScannerStrategy:
 
             freq += task.inner_interval
 
-        logger.info(
-            "Inner scan complete: peak at %d Hz (level=%f)", peak_freq, peak_level
-        )
+        logger.info("Inner scan complete: peak at %d Hz (level=%f)", peak_freq, peak_level)
         return peak_freq, peak_level
 
     # ------------------------------------------------------------------
@@ -199,9 +195,7 @@ class FrequencyScannerStrategy:
                     pass_count = task.passes
 
                 try:
-                    self._core.channel_tune(
-                        Channel(modulation=task.frequency_modulation, input_frequency=freq)
-                    )
+                    self._core.channel_tune(Channel(modulation=task.frequency_modulation, input_frequency=freq))
                 except (OSError, TimeoutError, ValueError):
                     logger.error("Tune error at %d Hz — aborting pass.", freq)
                     break
@@ -216,9 +210,7 @@ class FrequencyScannerStrategy:
                             peak_freq, _ = self._inner_scan(freq, task)
                             new_bm = self._create_new_bookmark(peak_freq)
                             task.new_bookmarks_list.append(new_bm)
-                            logger.info(
-                                "Inner scan bookmark at %d Hz", peak_freq
-                            )
+                            logger.info("Inner scan bookmark at %d Hz", peak_freq)
                         else:
                             self._autobookmark(level=task.sgn_level, freq=freq, task=task)
 

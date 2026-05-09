@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # release.sh — automated release pipeline for rig-remote
 #
-# Usage:  ./release.sh [--test-publish|-t] [--publish|-p]
+# Usage:  ./release.sh <stage>
 #
-# (no flag)        : tests, lints, mypy, build, .deb, local install/uninstall.
-# --test-publish   : above + upload to TestPyPI.
-# --publish        : above + upload to TestPyPI + upload to production PyPI.
+# Stages (each includes all steps of the previous):
+#   commit_push   : tests, functional tests, lint, type check, format,
+#                   build pip + .deb. No upload.
+#   publish_test  : commit_push, then upload to TestPyPI.
+#   publish       : publish_test, then upload to production PyPI and
+#                   generate release_message.md.
 
 set -euo pipefail
 
@@ -16,11 +19,9 @@ VENV_BIN=".venv/bin"
 PACKAGE_NAME="rig-remote"
 TESTPYPI_URL="https://test.pypi.org/project/rig-remote/"
 PYPI_URL="https://pypi.org/project/rig-remote/"
-TEST_PUBLISH=false
-PUBLISH=false
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Colour helpers
 # ---------------------------------------------------------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -43,21 +44,7 @@ confirm() {
 }
 
 # ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --test-publish|-t) TEST_PUBLISH=true ;;
-            --publish|-p)      PUBLISH=true ;;
-            *) die "Unknown argument: $1. Usage: $0 [--test-publish|-t] [--publish|-p]" ;;
-        esac
-        shift
-    done
-}
-
-# ---------------------------------------------------------------------------
-# Preflight checks
+# Preflight
 # ---------------------------------------------------------------------------
 preflight() {
     [[ -f pyproject.toml ]] || die "Must be run from the directory containing pyproject.toml."
@@ -65,7 +52,7 @@ preflight() {
 }
 
 # ---------------------------------------------------------------------------
-# Step functions
+# Stage 1 — step functions
 # ---------------------------------------------------------------------------
 run_tests() {
     step "Tests — Running unit tests (parallel)"
@@ -83,9 +70,13 @@ run_static_analysis() {
     "${MYPY}" --config-file ./pyproject.toml ./src
     ok "mypy: no issues."
 
-    step "Static analysis — ruff"
+    step "Static analysis — ruff lint"
     "${RUFF}" check --fix ./src/rig_remote/
-    ok "ruff: no issues."
+    ok "ruff lint: no issues."
+
+    step "Static analysis — ruff format"
+    "${RUFF}" format ./src/rig_remote/
+    ok "ruff format: done."
 }
 
 build_packages() {
@@ -308,6 +299,9 @@ uninstall_local() {
     ok "Package '${PACKAGE_NAME}' uninstalled."
 }
 
+# ---------------------------------------------------------------------------
+# Stage 2 — step functions
+# ---------------------------------------------------------------------------
 upgrade_twine() {
     step "Twine — Upgrading"
     uv pip install --upgrade twine
@@ -323,6 +317,9 @@ upload_testpypi() {
     ok "TestPyPI upload complete."
 }
 
+# ---------------------------------------------------------------------------
+# Stage 3 — step functions
+# ---------------------------------------------------------------------------
 upload_pypi() {
     step "Production PyPI — Upload"
     echo ""
@@ -341,45 +338,81 @@ upload_pypi() {
     fi
 }
 
+generate_release_notes() {
+    step "Release notes — Generating release_message.md"
+    local version
+    version=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    local last_tag
+    last_tag=$(git tag --sort=-version:refname 2>/dev/null | head -1 || echo "")
+
+    {
+        printf '# Release %s\n\n' "${version}"
+        printf 'Released on %s\n\n' "$(date +%Y-%m-%d)"
+        printf '## Changes\n\n'
+        if [[ -n "${last_tag}" ]]; then
+            git log "${last_tag}..HEAD" --pretty=format:"- %s" 2>/dev/null || git log --pretty=format:"- %s"
+        else
+            git log --pretty=format:"- %s"
+        fi
+        printf '\n\n## Packages\n\n'
+        ls dist/ | sed 's/^/- /'
+    } > release_message.md
+
+    ok "Release notes written to release_message.md"
+}
+
 # ---------------------------------------------------------------------------
-# Main
+# Stages
 # ---------------------------------------------------------------------------
-main() {
-    parse_args "$@"
-    preflight
-
-    PYTHON="${VENV_BIN}/python3"
-    MYPY="${VENV_BIN}/mypy"
-    RUFF="${VENV_BIN}/ruff"
-    PYTEST="${VENV_BIN}/pytest"
-    TWINE="${VENV_BIN}/twine"
-
-    if "${PUBLISH}"; then
-        echo -e "${BOLD}${YELLOW}Mode: PUBLISH (TestPyPI + production PyPI)${NC}"
-    elif "${TEST_PUBLISH}"; then
-        echo -e "${BOLD}${YELLOW}Mode: TEST-PUBLISH (TestPyPI only)${NC}"
-    else
-        echo -e "${BOLD}Mode: BUILD (no upload)${NC}"
-    fi
-
+stage_commit_push() {
+    echo -e "${BOLD}Stage: COMMIT_PUSH${NC}"
     run_tests
     run_static_analysis
     build_packages
     build_deb
     install_local
-    upgrade_twine
     uninstall_local
+}
 
-    if "${TEST_PUBLISH}" ; then
-        upload_testpypi
+stage_publish_test() {
+    echo -e "${BOLD}${YELLOW}Stage: PUBLISH_TEST${NC}"
+    stage_commit_push
+    upgrade_twine
+    upload_testpypi
+}
+
+stage_publish() {
+    echo -e "${BOLD}${YELLOW}Stage: PUBLISH${NC}"
+    stage_publish_test
+    upload_pypi
+    generate_release_notes
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+main() {
+    local stage="${1:-}"
+    if [[ -z "${stage}" ]]; then
+        die "Usage: $0 <stage>  (stages: commit_push, publish_test, publish)"
     fi
 
-    if "${PUBLISH}"; then
-        upload_pypi
-    fi
+    preflight
+
+    MYPY="${VENV_BIN}/mypy"
+    RUFF="${VENV_BIN}/ruff"
+    PYTEST="${VENV_BIN}/pytest"
+    TWINE="${VENV_BIN}/twine"
+
+    case "${stage}" in
+        commit_push)  stage_commit_push ;;
+        publish_test) stage_publish_test ;;
+        publish)      stage_publish ;;
+        *) die "Unknown stage '${stage}'. Valid stages: commit_push, publish_test, publish" ;;
+    esac
 
     echo ""
-    echo -e "${GREEN}${BOLD}Release pipeline complete.${NC}"
+    echo -e "${GREEN}${BOLD}Stage '${stage}' complete.${NC}"
 }
 
 main "$@"

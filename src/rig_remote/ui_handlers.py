@@ -338,10 +338,15 @@ class RigRemoteHandlersMixin:
         key = f"cbb_backend{rig_number}"
         backend_str = self.params[key].currentText()
         is_hamlib = backend_str == "HAMLIB"
-        for suffix in (f"cbb_rig_model{rig_number}", f"txt_serial_port{rig_number}",
-                       f"txt_baud_rate{rig_number}", f"btn_connect{rig_number}",
-                       f"lbl_rig_model{rig_number}", f"lbl_serial_port{rig_number}",
-                       f"lbl_baud_rate{rig_number}"):
+        for suffix in (
+            f"cbb_rig_model{rig_number}",
+            f"txt_serial_port{rig_number}",
+            f"txt_baud_rate{rig_number}",
+            f"btn_connect{rig_number}",
+            f"lbl_rig_model{rig_number}",
+            f"lbl_serial_port{rig_number}",
+            f"lbl_baud_rate{rig_number}",
+        ):
             widget = self.params.get(suffix)
             if widget is not None:
                 widget.setVisible(is_hamlib)

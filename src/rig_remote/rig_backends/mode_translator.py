@@ -44,14 +44,14 @@ _GQRX_TO_HAMLIB: dict[str, int] = {
     "AM": _RIG_MODE_AM,
     "FM": _RIG_MODE_FM,
     "WFM": _RIG_MODE_WFM,
-    "WFM_ST": _RIG_MODE_WFM,       # stereo→mono: Hamlib has no stereo concept
+    "WFM_ST": _RIG_MODE_WFM,  # stereo→mono: Hamlib has no stereo concept
     "WFM_ST_OIRT": _RIG_MODE_WFM,  # OIRT is a broadcast standard, not an RF mode
     "USB": _RIG_MODE_USB,
     "LSB": _RIG_MODE_LSB,
     "CW": _RIG_MODE_CW,
     "CWR": _RIG_MODE_CWR,
-    "CWU": _RIG_MODE_CW,    # alias: Hamlib CW is always upper sideband
-    "CWL": _RIG_MODE_CWR,   # alias: Hamlib CWR is lower sideband
+    "CWU": _RIG_MODE_CW,  # alias: Hamlib CW is always upper sideband
+    "CWL": _RIG_MODE_CWR,  # alias: Hamlib CWR is lower sideband
     "RTTY": _RIG_MODE_RTTY,
     "RTTYR": _RIG_MODE_RTTYR,
     "AMS": _RIG_MODE_AMS,
@@ -72,11 +72,11 @@ _GQRX_TO_HAMLIB: dict[str, int] = {
 _HAMLIB_TO_GQRX: dict[int, str] = {
     _RIG_MODE_AM: "AM",
     _RIG_MODE_FM: "FM",
-    _RIG_MODE_WFM: "WFM",   # cannot determine stereo from rig; always return mono name
+    _RIG_MODE_WFM: "WFM",  # cannot determine stereo from rig; always return mono name
     _RIG_MODE_USB: "USB",
     _RIG_MODE_LSB: "LSB",
-    _RIG_MODE_CW: "CW",     # canonical name, not "CWU"
-    _RIG_MODE_CWR: "CWR",   # canonical name, not "CWL"
+    _RIG_MODE_CW: "CW",  # canonical name, not "CWU"
+    _RIG_MODE_CWR: "CWR",  # canonical name, not "CWL"
     _RIG_MODE_RTTY: "RTTY",
     _RIG_MODE_RTTYR: "RTTYR",
     _RIG_MODE_AMS: "AMS",

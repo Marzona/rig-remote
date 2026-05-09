@@ -171,8 +171,7 @@ class RigRemote(QMainWindow, RigRemoteHandlersMixin, RigRemoteScanHandlersMixin,
 
         # Test positive integer values
         keys = [f"port{r}" for r in range(1, RIG_COUNT + 1)]
-        keys.extend(["interval", "delay", "passes", "range_min", "range_max",
-                     "inner_band", "inner_interval"])
+        keys.extend(["interval", "delay", "passes", "range_min", "range_max", "inner_band", "inner_interval"])
         for key in keys:
             ekey = f"txt_{key}"
             config_key_val = str(ac.config[key] or "")

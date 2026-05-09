@@ -84,7 +84,9 @@ class RigRemoteUIBuilder:
     def setMinimumSize(self, width: int, height: int) -> None: ...
     def setCentralWidget(self, widget: QWidget) -> None: ...
     def menuBar(self) -> Any: ...
-    def close(self) -> bool: raise NotImplementedError
+    def close(self) -> bool:
+        raise NotImplementedError
+
     def process_entry_wrapper(self, widget_name: str) -> None: ...
     def process_wait(self, state: int) -> None: ...
     def process_record(self, state: int) -> None: ...
@@ -166,9 +168,7 @@ class RigRemoteUIBuilder:
         cbb_backend = f"cbb_backend{rig_number}"
         self.params[cbb_backend] = QComboBox()
         self.params[cbb_backend].addItems(["GQRX", "HAMLIB"])
-        self.params[cbb_backend].currentIndexChanged.connect(
-            lambda idx: self._on_backend_changed(rig_number)
-        )
+        self.params[cbb_backend].currentIndexChanged.connect(lambda idx: self._on_backend_changed(rig_number))
         grid.addWidget(self.params[cbb_backend], 2, 0, 1, 2)
 
         lbl_rig_model = f"lbl_rig_model{rig_number}"
@@ -342,9 +342,7 @@ class RigRemoteUIBuilder:
             "Width in Hz of the inner refinement scan when a signal is found. "
             "Set to 0 to disable. Both Inner band and Inner interval must be set together."
         )
-        self.params["txt_inner_band"].editingFinished.connect(
-            lambda: self.process_entry_wrapper("txt_inner_band")
-        )
+        self.params["txt_inner_band"].editingFinished.connect(lambda: self.process_entry_wrapper("txt_inner_band"))
         grid.addWidget(self.params["txt_inner_band"], 2, 1)
         grid.addWidget(QLabel("Hz"), 2, 2)
 

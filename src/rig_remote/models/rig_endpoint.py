@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class RigEndpoint:
     # Shared fields
     backend: BackendType = BackendType.GQRX
-    number: int = 0          # rig slot (0 = unassigned, 1 = rig 1, 2 = rig 2)
+    number: int = 0  # rig slot (0 = unassigned, 1 = rig 1, 2 = rig 2)
     id: str = field(default_factory=lambda: str(uuid4()), compare=False)
     name: str = ""
 
