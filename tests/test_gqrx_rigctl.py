@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, create_autospec
 from rig_remote.rig_backends.gqrx_rigctl import GQRXRigCtl
 from rig_remote.rig_backends.mode_translator import ModeTranslator
 from rig_remote.rig_backends.protocol import BackendType
+from rig_remote.models.modulation_modes import ModulationModes
 from rig_remote.models.rig_endpoint import RigEndpoint
 
 
@@ -80,13 +81,11 @@ def test_get_level_non_string_raises():
         ctl.get_level()
 
 
-def test_set_mode_delegates_to_translator_and_sends():
-    translator = MagicMock(spec=ModeTranslator)
-    translator.to_backend.return_value = "FM"
-    ctl = _make_ctl(mode_translator=translator)
-    ctl.set_mode("FM")
-    translator.to_backend.assert_called_once_with("FM")
-    ctl._send_message.assert_called_once_with(request="M FM")
+@pytest.mark.parametrize("mode", list(ModulationModes))
+def test_set_mode_sends_m_command_for_all_modes(mode: str) -> None:
+    ctl = _make_ctl(mode_translator=ModeTranslator(BackendType.GQRX))
+    ctl.set_mode(mode)
+    ctl._send_message.assert_called_once_with(request=f"M {mode}")
 
 
 def test_get_mode_sends_m_command_and_translates():

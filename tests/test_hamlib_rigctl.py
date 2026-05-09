@@ -12,17 +12,17 @@ from rig_remote.models.rig_endpoint import RigEndpoint
 _hl = sys.modules["Hamlib"]
 
 
-def _make_endpoint() -> RigEndpoint:
+def _make_endpoint(rig_model: int = 122) -> RigEndpoint:
     return RigEndpoint(
         backend=BackendType.HAMLIB,
-        rig_model=122,
+        rig_model=rig_model,
         serial_port="/dev/ttyUSB0",
         baud_rate=38400,
     )
 
 
-def _make_ctl_with_mock_rig() -> tuple[HamlibRigCtl, MagicMock]:
-    endpoint = _make_endpoint()
+def _make_ctl_with_mock_rig(rig_model: int = 122) -> tuple[HamlibRigCtl, MagicMock]:
+    endpoint = _make_endpoint(rig_model=rig_model)
     translator = ModeTranslator(BackendType.HAMLIB)
     ctl = HamlibRigCtl(endpoint=endpoint, mode_translator=translator)
     mock_rig = MagicMock()
@@ -201,10 +201,41 @@ def test_get_frequency_reraises_on_error():
 # set_mode / get_mode
 # ---------------------------------------------------------------------------
 
-def test_set_mode_translates_and_calls_rig():
-    ctl, mock_rig = _make_ctl_with_mock_rig()
-    ctl.set_mode("AM")
-    mock_rig.set_mode.assert_called_once_with(_hl.RIG_VFO_CURR, 1, _hl.RIG_PASSBAND_NOCHANGE)
+@pytest.mark.parametrize("rig_model", [
+    1,    # Hamlib dummy rig
+    122,  # Yaesu FT-817
+    361,  # Icom IC-706MkIIG
+])
+@pytest.mark.parametrize("mode, expected_const", [
+    ("AM",          1),
+    ("FM",          32),
+    ("WFM",         64),
+    ("WFM_ST",      64),   # stereo alias → same Hamlib constant as WFM
+    ("WFM_ST_OIRT", 64),   # OIRT alias → same Hamlib constant as WFM
+    ("USB",         4),
+    ("LSB",         8),
+    ("CW",          2),
+    ("CWR",         128),
+    ("CWU",         2),    # upper-sideband alias → CW
+    ("CWL",         128),  # lower-sideband alias → CWR
+    ("RTTY",        16),
+    ("RTTYR",       256),
+    ("AMS",         512),
+    ("PKTLSB",      1024),
+    ("PKTUSB",      2048),
+    ("PKTFM",       4096),
+    ("ECSSUSB",     8192),
+    ("ECSSLSB",     16384),
+    ("FAX",         32768),
+    ("SAM",         65536),
+    ("SAL",         131072),
+    ("SAH",         262144),
+    ("DSB",         524288),
+])
+def test_set_mode_translates_and_calls_rig(mode: str, expected_const: int, rig_model: int):
+    ctl, mock_rig = _make_ctl_with_mock_rig(rig_model=rig_model)
+    ctl.set_mode(mode)
+    mock_rig.set_mode.assert_called_once_with(_hl.RIG_VFO_CURR, expected_const, _hl.RIG_PASSBAND_NOCHANGE)
 
 
 def test_set_mode_reraises_on_error():
