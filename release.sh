@@ -119,6 +119,32 @@ build_packages() {
     ok "Build complete."
     echo ""
     ls -lh dist/
+    check_wheel_contents
+}
+
+check_wheel_contents() {
+    # Every .py file under src/ must be in the wheel. Guards against package
+    # discovery silently dropping a subpackage (it once dropped rig_backends,
+    # shipping a wheel that crashed on start). Stdlib only, so CI can run it.
+    step "Verify — wheel contains every source module"
+    local whl
+    whl=$(ls dist/*.whl | sort -V | tail -1)
+    "${VENV_BIN}/python" - "${whl}" <<'PYCHECK' || die "The wheel is missing source modules (see above)."
+import sys, zipfile
+from pathlib import Path
+
+in_wheel = {n for n in zipfile.ZipFile(sys.argv[1]).namelist() if n.endswith(".py")}
+in_src = {
+    p.relative_to("src").as_posix()
+    for p in Path("src").rglob("*.py")
+    if not any(part.endswith(".egg-info") or part == "__pycache__" for part in p.parts)
+}
+missing = sorted(in_src - in_wheel)
+for name in missing:
+    print(f"  missing from wheel: {name}")
+sys.exit(1 if missing else 0)
+PYCHECK
+    ok "Wheel contains all $(find src -name '*.py' -not -path '*.egg-info*' | wc -l) source modules."
 }
 
 build_deb() {
@@ -373,11 +399,6 @@ sha256sums=('SKIP')
 
 build() {
     cd "\$srcdir/\$pkgname-\$pkgver"
-    # The committed setup.py carries a stale packages=[...] list (predating the
-    # rig_backends subpackage) plus a broken setup_requires.  Drop it in this
-    # throwaway build copy so setuptools/pyproject auto-discovery ships every
-    # subpackage (rig_remote.rig_backends, config_checker, ...).
-    rm -f setup.py
     python -m build --wheel --no-isolation
 }
 
@@ -411,17 +432,26 @@ PKGBUILD
 }
 
 install_local() {
-    step "Local install — Installing wheel (smoke test)"
+    # Install the built wheel into a fresh, throwaway venv (not .venv, which
+    # holds the editable dev install) and run both entry points, so the test
+    # exercises the packaged files rather than src/.
+    step "Local install — Installing wheel in a clean venv (smoke test)"
     local whl
     whl=$(ls dist/*.whl | sort -V | tail -1)
-    uv pip install "${whl}"
-    ok "Installed: $(basename "${whl}")"
+    SMOKE_VENV=$(mktemp -d)
+    uv venv --quiet --python "$("${VENV_BIN}/python" -c 'import sys; print(sys.executable)')" "${SMOKE_VENV}"
+    uv pip install --quiet --python "${SMOKE_VENV}/bin/python" "${whl}"
+    QT_QPA_PLATFORM=offscreen "${SMOKE_VENV}/bin/rig_remote" --help >/dev/null \
+        || die "Installed wheel: 'rig_remote --help' failed."
+    "${SMOKE_VENV}/bin/config_checker" --help >/dev/null \
+        || die "Installed wheel: 'config_checker --help' failed."
+    ok "Installed $(basename "${whl}"); rig_remote and config_checker start."
 }
 
 uninstall_local() {
-    step "Local install — Removing locally installed package"
-    uv pip uninstall "${PACKAGE_NAME}"
-    ok "Package '${PACKAGE_NAME}' uninstalled."
+    step "Local install — Removing the smoke-test venv"
+    rm -rf "${SMOKE_VENV:?}"
+    ok "Smoke-test venv removed."
 }
 
 check_packages() {

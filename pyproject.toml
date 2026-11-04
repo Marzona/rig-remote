@@ -64,6 +64,11 @@ dev = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+# Discover every package under src/ (rig_remote, its subpackages, config_checker).
+# Never list packages by hand: a hand-written list silently drops new subpackages.
+[tool.setuptools.packages.find]
+where = ["src"]
+
 # ---------------------------------------------------------------------------
 # pytest
 # ---------------------------------------------------------------------------
