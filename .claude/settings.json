@@ -8,10 +8,8 @@
       "Bash(uv publish)",
       "Bash(./release.sh publish*)",
       "Read(~/.pypirc)",
-      "Edit(.claude/hooks/**)",
-      "Write(.claude/hooks/**)",
-      "Edit(.claude/settings.json)",
-      "Write(.claude/settings.json)"
+      "Edit(/.claude/hooks/**)",
+      "Edit(/.claude/settings.json)"
     ]
   },
   "hooks": {

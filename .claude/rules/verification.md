@@ -3,28 +3,36 @@ paths:
   - src/**/*.py
   - tests/**/*.py
   - functional_tests/**/*.py
+  - pyproject.toml
 ---
 ## Verification
 
-After any code change to `src/`, run all of the following and fix all reported
-issues before reporting the task complete:
+This file is the single home for the verification commands; agents and other
+docs point here. Run from the repository root (the directory with
+`pyproject.toml`), in this order — fixers first, so the code that is
+type-checked and tested is the code that gets committed:
 
 ```bash
-mypy --config-file ./pyproject.toml ./src
-ruff check --fix ./src/
-pytest tests/ -n 13
-pytest functional_tests/ -n 1
+.venv/bin/ruff check --fix ./src
+.venv/bin/ruff format ./src
+.venv/bin/mypy --config-file ./pyproject.toml ./src
+.venv/bin/pytest tests/ -n 13
+.venv/bin/pytest functional_tests/ -n 1 -m "not gqrx"
+.venv/bin/pytest functional_tests/ -n 1 -m gqrx -rs
 ```
 
-- Unit tests live in `tests/`, run with parallelism 13.
-- Functional/integration tests live in `functional_tests/`, run serially (`-n 1`).
-- Skip the `pytest functional_tests/` step only if the `functional_tests/` directory does not exist yet.
+- Unit tests (`tests/`) run in parallel; functional tests (`functional_tests/`) run serially.
+- `tests/test_architecture.py` enforces the invariants marked "test" in
+  `.claude/architecture.md`; a failure there means the change breaks an ADR,
+  not that the test needs loosening.
 
-Never report a task as done if any tool exits with errors.
+### Reporting
 
-## Constraints
+- The first five commands must exit 0. Never report a task done otherwise.
+- The last command needs a live gqrx at 127.0.0.1:7356. When gqrx is not
+  reachable its tests are skipped: report them as **"gqrx functional tests:
+  NOT RUN (gqrx unavailable)"** with the skip count — never as passed, and not
+  as a failure. If gqrx is reachable, failures there are real failures.
 
-- **No async.** The project is intentionally thread + `Queue` based. Do not introduce
-  `asyncio`, `anyio`, or similar.
-- **No ORM.** File I/O uses `configparser` (INI) and `csv` only.
-- **No ABC inheritance.** Use `typing.Protocol` and composition instead.
+Project constraints (no async, no ORM, no ABC, config flow, exception
+taxonomy, clamping) are in `.claude/architecture.md`.

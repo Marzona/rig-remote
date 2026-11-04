@@ -1,7 +1,13 @@
 # rig-remote — Architecture
 
-> This document captures *why* the system is structured as it is.
-> For *what* each module and class does, see `design.md`.
+> This document captures *why* the system is structured as it is. It is the
+> single home for the project's rules and their rationale: other files point
+> here instead of restating them. For orientation in the code, see `design.md`.
+>
+> **Keep it current in the same change:** a change that alters structure, an
+> invariant, or an extension point updates the relevant ADR and the invariants
+> table in the same commit. A new decision gets a new ADR; a reversed one is
+> marked superseded rather than deleted.
 
 ---
 
@@ -132,11 +138,10 @@ file-level separation (state + init, event handlers, widget builders)
 while remaining a single object from Qt's perspective — necessary because Qt
 signal/slot connections require a single `self`.
 
-The original `RigRemoteHandlersMixin` grew to 797 lines and was split:
-- `ui_handlers.py` (`RigRemoteHandlersMixin`, 433 lines) — bookmark I/O, rig
-  control, backend selection, window-close handler.
-- `ui_scan_handlers.py` (`RigRemoteScanHandlersMixin`, 451 lines) — scan/sync
-  toggles, scan orchestration, form-entry and checkbox handlers.
+Handlers are split by concern (`ui_handlers.py`: bookmark I/O, rig control,
+backend selection, window close; `ui_scan_handlers.py`: scan/sync toggles,
+scan orchestration, form-entry and checkbox handlers) so that each file stays
+within the module size limit.
 
 **Constraint:** Mixins must not own state; all instance attributes live on
 `RigRemote`.  Each mixin declares the attributes it accesses as class-level
@@ -154,6 +159,34 @@ inherit from a shared base, making independent testing harder.  A `Protocol`
 expresses the same contract structurally: any class with the right methods
 satisfies it, regardless of import path.  `@runtime_checkable` enables
 `isinstance` checks in tests.
+
+---
+
+### ADR-8 — Plain files (INI + CSV), no database or ORM
+
+**Decision:** Configuration is an INI file read with `configparser`; bookmarks
+and the activity log are CSV/text files. No database, no ORM.
+
+**Rationale:** The data is small and owned by one user. Plain files stay
+human-editable, are easy to back up and diff, and keep the bookmark CSV
+exchangeable with other tools (see the gqrx bookmark import/export). A
+database would add a dependency and a migration story with no user benefit.
+
+---
+
+### ADR-9 — Two-level exception taxonomy for the scan loop
+
+**Decision:** Errors raised inside scanning derive from `NonRetriableError`
+(abort the current scan loop entirely) or `RetriableError` (log and continue
+with the next iteration). Concrete subclasses live in `exceptions.py`.
+
+**Rationale:** The scan loop must decide between "stop" and "skip" without
+parsing messages or knowing every failure type. A malformed bookmark row, for
+example, should not abort a scan over the remaining bookmarks, while a bad
+file path or an unsupported scan configuration cannot be recovered from.
+Bare `Exception` / `ValueError` / `RuntimeError` give the loop no such signal.
+
+**Scope:** scan-loop contexts. Domain-model validation follows ADR-5.
 
 ---
 
@@ -215,22 +248,31 @@ User changes sgn_level while scanning
 
 ## Boundaries and Invariants
 
-| Invariant | Where enforced |
-|---|---|
-| Queue payload is always `tuple[str, str]` | `QueueComms` type annotation |
-| Only whitelisted queue keys mutate ScanningTask | `ScannerCore._QUEUE_EVENT_CONVERTERS` |
-| Config never injected into domain objects | CLAUDE.md + ADR-2 above |
-| No async anywhere | CLAUDE.md + ADR-1 above |
-| Module LOC ≤ 600 | Global CLAUDE.md |
-| Numeric out-of-range → clamp + log, not raise | `ScanningTask._post_init` only |
-| Out-of-bounds frequency → raise `ValueError` | `Channel._frequency_validator` (no sensible default) |
-| Unsupported mode/type → raise `ValueError` | `ScanningTask._check_scan_mode`, `Channel.__post_init__` |
+"Enforced by" says what actually fails when the invariant is broken:
+**CI** (mypy/ruff in the lint job), **test** (fails `pytest`, which CI runs),
+**hook** (blocks the agent's command), or **review only** (nothing fails
+automatically; a reviewer must catch it). Shrink the review-only group by
+turning rows into tests where a mechanical check is possible.
 
----
-
-## Known Hotspots / Refactor Candidates
-
-No modules currently exceed the 600-line limit.
+| Invariant | Why | Enforced by |
+|---|---|---|
+| No async code or async frameworks | ADR-1 | test — `tests/test_architecture.py::test_no_async_code` |
+| Queue payload is always `tuple[str, str]` | ADR-1 | CI — mypy strict on `QueueComms` / `STMessenger` annotations |
+| Every queue-mutable scan param has both an event name and a converter | ADR-1 | test — `test_queue_event_names_and_converters_match` |
+| Only whitelisted queue keys mutate `ScanningTask` | ADR-1 | test — `tests/test_scanning.py` (`process_queue` cases) |
+| `AppConfig` is imported only by the composition root and the UI | ADR-2 | test — `test_app_config_only_imported_by_composition_root_and_ui` |
+| No domain constructor takes `AppConfig` or the config dict | ADR-2 | review only (the import test covers the common case) |
+| New scan modes are strategies registered in `_SCANNER_REGISTRY`, not subclasses | ADR-3 | review only |
+| One TCP connection per rigctl command | ADR-4 | review only |
+| Out-of-range numerics in `ScanningTask` → clamp + log, not raise | ADR-5 | test — `tests/test_scanning_task.py`, `tests/test_scanning.py` |
+| Out-of-bounds frequency in `Channel` → `ValueError` | ADR-5 | test — `tests/test_channel.py` |
+| Unsupported mode/type → `ValueError` | ADR-5 | test — `test_scanning_task_init_error`, `test_channel_invalid_modulation` |
+| Mixins define no `__init__` and no class-level state (constants only) | ADR-6 | test — `test_mixins_hold_no_instance_state` |
+| No `abc` / ABC inheritance; interfaces are `Protocol`s | ADR-7 | test — `test_no_abc_inheritance` |
+| No database or ORM imports | ADR-8 | test — `test_no_database_or_orm` |
+| Module ≤ 600 lines | global rule | test — `test_module_size_within_limit` |
+| Scan-loop errors use `NonRetriableError` / `RetriableError`, not bare exceptions | ADR-9 | review only |
+| Agents never publish packages; PyPI uploads only from `release.yml` after approval | release process | hook — `.claude/hooks/block_publish.sh`; CI — `pypi` environment reviewer |
 
 ---
 
