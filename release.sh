@@ -4,11 +4,17 @@
 # Usage:  ./release.sh <stage>
 #
 # Stages (each includes all steps of the previous):
+#   package       : build pip + .deb (with lintian) only; no tests, no
+#                   upload. Used by CI, which runs the checks as separate jobs.
 #   commit_push   : tests, functional tests, lint, type check, format,
-#                   build pip + .deb. No upload.
-#   publish_test  : commit_push, then upload to TestPyPI.
-#   publish       : publish_test, then upload to production PyPI and
-#                   generate release_message.md.
+#                   build pip + .deb, twine check, local install smoke test.
+#   release       : commit_push, then generate release_message.md and print
+#                   the hand-off steps. Stops at built, verified artefacts.
+#
+# This script never uploads anything. Publishing to TestPyPI / PyPI is done
+# only by .github/workflows/release.yml (Trusted Publishing / OIDC), which a
+# human triggers by pushing a v<version> tag and approves through the "pypi"
+# GitHub environment.
 
 set -euo pipefail
 
@@ -17,8 +23,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 VENV_BIN=".venv/bin"
 PACKAGE_NAME="rig-remote"
-TESTPYPI_URL="https://test.pypi.org/project/rig-remote/"
-PYPI_URL="https://pypi.org/project/rig-remote/"
+RELEASE_WORKFLOW=".github/workflows/release.yml"
 
 # ---------------------------------------------------------------------------
 # Colour helpers
@@ -35,12 +40,8 @@ ok()   { echo -e "${GREEN}  ✔  $1${NC}"; }
 warn() { echo -e "${YELLOW}  ⚠  $1${NC}"; }
 die()  { echo -e "${RED}  ✖  $1${NC}" >&2; exit 1; }
 
-confirm() {
-    local prompt="$1"
-    local reply
-    echo -e "${YELLOW}${prompt}${NC}"
-    read -r -p "$(echo -e "${BOLD}[y/N]: ${NC}")" reply
-    [[ "${reply,,}" == "y" ]]
+read_version() {
+    grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/'
 }
 
 # ---------------------------------------------------------------------------
@@ -99,7 +100,7 @@ build_deb() {
     fi
 
     local version
-    version=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    version=$(read_version)
     local deb_arch
     deb_arch=$(dpkg --print-architecture)
     local deb_staging="deb_staging"
@@ -391,49 +392,21 @@ uninstall_local() {
     ok "Package '${PACKAGE_NAME}' uninstalled."
 }
 
-# ---------------------------------------------------------------------------
-# Stage 2 — step functions
-# ---------------------------------------------------------------------------
-upgrade_twine() {
-    step "Twine — Upgrading"
-    uv pip install --upgrade twine
-    ok "twine is up to date."
-}
-
-upload_testpypi() {
-    step "TestPyPI — Uploading"
-    "${TWINE}" upload --verbose --repository testpypi dist/*.whl dist/*.tar.gz
-    echo ""
-    echo -e "  ${BOLD}TestPyPI package URL:${NC}"
-    echo -e "  ${BLUE}${TESTPYPI_URL}${NC}"
-    ok "TestPyPI upload complete."
+check_packages() {
+    # Local metadata validation only (README rendering, required fields).
+    # Same check CI runs before publishing; nothing is sent anywhere.
+    step "Verify — twine check --strict"
+    "${TWINE}" check --strict dist/*.whl dist/*.tar.gz
+    ok "Package metadata is valid."
 }
 
 # ---------------------------------------------------------------------------
-# Stage 3 — step functions
+# Release — step functions (no network, no upload)
 # ---------------------------------------------------------------------------
-upload_pypi() {
-    step "Production PyPI — Upload"
-    echo ""
-    echo -e "  Package : ${BOLD}${PACKAGE_NAME}${NC}"
-    echo -e "  URL     : ${BLUE}${PYPI_URL}${NC}"
-    echo ""
-
-    if confirm "Upload to production PyPI?"; then
-        "${TWINE}" upload dist/*.whl dist/*.tar.gz
-        echo ""
-        echo -e "  ${BOLD}PyPI package URL:${NC}"
-        echo -e "  ${BLUE}${PYPI_URL}${NC}"
-        ok "Production PyPI upload complete."
-    else
-        warn "Production upload skipped."
-    fi
-}
-
 generate_release_notes() {
     step "Release notes — Generating release_message.md"
     local version
-    version=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    version=$(read_version)
     local last_tag
     last_tag=$(git tag --sort=-version:refname 2>/dev/null | head -1 || echo "")
 
@@ -453,9 +426,25 @@ generate_release_notes() {
     ok "Release notes written to release_message.md"
 }
 
+print_handoff() {
+    local version
+    version=$(read_version)
+    step "Hand-off — publishing is done by CI, not by this script"
+    echo -e "  Verified artefacts are in ${BOLD}dist/${NC}. To publish ${BOLD}${version}${NC}, a human:"
+    echo -e "    1. reviews and pushes the release commit"
+    echo -e "    2. ${BOLD}git tag v${version} && git push origin v${version}${NC}"
+    echo -e "    3. approves the ${BOLD}pypi${NC} deployment in GitHub Actions (${RELEASE_WORKFLOW})"
+}
+
 # ---------------------------------------------------------------------------
 # Stages
 # ---------------------------------------------------------------------------
+stage_package() {
+    echo -e "${BOLD}Stage: PACKAGE${NC}"
+    build_packages
+    build_deb
+}
+
 stage_commit_push() {
     echo -e "${BOLD}Stage: COMMIT_PUSH${NC}"
     run_tests
@@ -463,22 +452,16 @@ stage_commit_push() {
     build_packages
     build_deb
     build_arch
+    check_packages
     install_local
     uninstall_local
 }
 
-stage_publish_test() {
-    echo -e "${BOLD}${YELLOW}Stage: PUBLISH_TEST${NC}"
+stage_release() {
+    echo -e "${BOLD}Stage: RELEASE${NC}"
     stage_commit_push
-    upgrade_twine
-    upload_testpypi
-}
-
-stage_publish() {
-    echo -e "${BOLD}${YELLOW}Stage: PUBLISH${NC}"
-    stage_publish_test
-    upload_pypi
     generate_release_notes
+    print_handoff
 }
 
 # ---------------------------------------------------------------------------
@@ -487,7 +470,7 @@ stage_publish() {
 main() {
     local stage="${1:-}"
     if [[ -z "${stage}" ]]; then
-        die "Usage: $0 <stage>  (stages: commit_push, publish_test, publish)"
+        die "Usage: $0 <stage>  (stages: package, commit_push, release)"
     fi
 
     preflight
@@ -498,10 +481,12 @@ main() {
     TWINE="${VENV_BIN}/twine"
 
     case "${stage}" in
+        package)      stage_package ;;
         commit_push)  stage_commit_push ;;
-        publish_test) stage_publish_test ;;
-        publish)      stage_publish ;;
-        *) die "Unknown stage '${stage}'. Valid stages: commit_push, publish_test, publish" ;;
+        release)      stage_release ;;
+        publish_test|publish)
+            die "Stage '${stage}' was removed: release.sh no longer uploads. Run './release.sh release', then push a v<version> tag; ${RELEASE_WORKFLOW} publishes after human approval." ;;
+        *) die "Unknown stage '${stage}'. Valid stages: package, commit_push, release" ;;
     esac
 
     echo ""

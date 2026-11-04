@@ -1,0 +1,107 @@
+# Release — runs when a version tag (e.g. v3.1) is pushed.
+#
+#   1. Re-runs the full CI pipeline (lint, tests, sdist/wheel/.deb build).
+#   2. Checks that the tag matches the version in pyproject.toml.
+#   3. Publishes to TestPyPI, then to PyPI, using Trusted Publishing (OIDC):
+#      no API tokens are stored in the repository.
+#   4. Creates a GitHub Release with the wheel, sdist and .deb attached.
+#
+# One-time setup (see README / PR description):
+#   - Create GitHub environments "testpypi" and "pypi" (Settings → Environments).
+#     Add yourself as a required reviewer on "pypi": this approval is the
+#     ONLY path to a production upload (release.sh and agents never upload).
+#   - On test.pypi.org and pypi.org, add a Trusted Publisher for project
+#     rig-remote: owner Marzona, repo rig-remote, workflow release.yml,
+#     environment testpypi / pypi respectively.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  verify-version:
+    name: Tag matches pyproject version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compare tag with pyproject.toml
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [[ "${tag}" != "${version}" ]]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${version}"
+            exit 1
+          fi
+          echo "Releasing version ${version}"
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: [ci, verify-version]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/rig-remote/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # Allows re-running a failed release without bumping the version.
+          skip-existing: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/rig-remote/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub Release
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb
+          path: dist/
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --title "Release ${GITHUB_REF_NAME#v}" \
+            --generate-notes \
+            --verify-tag

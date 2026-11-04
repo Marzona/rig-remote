@@ -1,0 +1,160 @@
+# CI — runs on every push to master and every pull request.
+#
+# Mirrors .claude/rules/verification.md and the commit_push stage of release.sh:
+#   lint      : ruff check + ruff format --check + mypy (strict)
+#   test      : unit tests (parallel, with coverage) + functional tests (serial)
+#   package   : sdist + wheel + .deb (lintian-checked) via `release.sh package`
+#
+# Also exposed via workflow_call so release.yml reuses exactly the same gates.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHON_VERSION: "3.13"
+  # PySide6 tests run without a display server.
+  QT_QPA_PLATFORM: offscreen
+  FORCE_COLOR: "1"
+
+jobs:
+  lint:
+    name: Lint & type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev
+
+      - name: ruff check
+        run: uv run --no-sync ruff check --output-format=github ./src
+
+      - name: ruff format
+        run: uv run --no-sync ruff format --check ./src
+
+      - name: mypy
+        run: uv run --no-sync mypy --config-file ./pyproject.toml ./src
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Qt runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3 libglib2.0-0t64
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev
+
+      - name: Unit tests
+        run: >-
+          uv run --no-sync pytest tests/ -n auto --tb=short
+          -o faulthandler_timeout=120
+          --cov=rig_remote --cov=config_checker
+          --cov-report=term-missing --cov-report=xml
+
+      # gqrx-backed functional tests skip themselves when no gqrx server is
+      # listening on 127.0.0.1:7356, which is always the case on CI runners.
+      - name: Functional tests
+        run: uv run --no-sync pytest functional_tests/ -n 1 --tb=short -o faulthandler_timeout=120
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  package:
+    name: Build packages
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Build the .deb on the oldest supported Ubuntu that ships python3 >= 3.13,
+    # so the Depends: line computed by release.sh (via ldd + dpkg -S) names
+    # packages that exist on the target distribution.
+    container: ubuntu:26.04
+    steps:
+      - name: Install build tooling and Qt runtime libraries
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl git binutils file fakeroot lintian dpkg-dev \
+            libegl1 libgl1 libglx0 libglvnd0 libx11-xcb1 libx11-6 libxcomposite1 \
+            libxdamage1 libxext6 libxfixes3 libxrandr2 libxrender1 libxtst6 \
+            libasound2t64 libdbus-1-3 libdrm2 libfontconfig1 libfreetype6 libgbm1 \
+            libglib2.0-0t64 libgssapi-krb5-2 libnspr4 libnss3 libpulse0 libsndfile1 \
+            libwayland-client0 libwayland-cursor0 libwayland-egl1 libwayland-server0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxkbcommon-x11-0 \
+            libxkbcommon0 libxkbfile1 libpcsclite1
+
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev
+
+      - name: Build sdist, wheel and .deb
+        run: ./release.sh package
+
+      - name: Check package metadata
+        run: uv run --no-sync twine check --strict dist/*.whl dist/*.tar.gz
+
+      - name: Smoke-test the wheel
+        run: |
+          uv venv --python "${PYTHON_VERSION}" /tmp/smoke
+          uv pip install --python /tmp/smoke/bin/python dist/*.whl
+          /tmp/smoke/bin/python -c "import rig_remote, config_checker"
+
+      - name: Upload Python distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+          if-no-files-found: error
