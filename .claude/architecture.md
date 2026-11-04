@@ -14,19 +14,29 @@
 ## System Context
 
 ```
-┌──────────────────────────────────────────────────┐
-│  rig-remote (this application)                   │
-│                                                  │
-│   Qt GUI ──► RigCtl ──TCP/IP──► gqrx / rigctld  │
-│                                                  │
-│   (optionally mirrors rig1 → rig2 via Syncing)   │
-└──────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│  rig-remote (this application)                                │
+│                                                               │
+│   Qt GUI ──► RigBackend (Protocol)                            │
+│                ├─ GQRXRigCtl ──TCP/IP──► gqrx / rigctld       │
+│                └─ HamlibRigCtl ──Hamlib lib──► serial/USB rig │
+│                                                               │
+│   (optionally mirrors rig1 → rig2 via Syncing)                │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-rig-remote is a **thin controller**: it sends text commands to a remote radio
-front-end (gqrx or any rigctl-compatible daemon) and reads back frequency,
-mode, and signal level.  It does not process RF, decode audio, or talk to
-hardware directly.  All radio state lives on the remote end.
+rig-remote is a **thin controller** with two interchangeable rig backends
+(`src/rig_remote/rig_backends/`, selected per endpoint via `BackendType`):
+
+- **gqrx backend** (`gqrx_rigctl.py`): sends rigctl text commands over TCP to
+  gqrx or any rigctl-compatible daemon; all radio state lives on the remote end.
+- **Hamlib backend** (`hamlib_rigctl.py`): drives a physical transceiver over
+  serial/USB through the native Hamlib library, in-process. No network daemon
+  is involved.
+
+Both satisfy the `RigBackend` protocol (`protocol.py`); `mode_translator.py`
+maps mode names between the two vocabularies. rig-remote does not process RF
+or decode audio; it reads back frequency, mode, and signal level.
 
 ---
 
@@ -91,10 +101,11 @@ callers.
 
 ---
 
-### ADR-4 — One TCP connection per rigctl command
+### ADR-4 — One TCP connection per rigctl command (gqrx backend only)
 
-**Decision:** `RigCtl._send_message()` opens a socket, sends the command,
-reads the response, then closes the socket on every call.
+**Decision:** `GQRXRigCtl._send_message()` (`rig_backends/gqrx_rigctl.py`)
+opens a socket, sends the command, reads the response, then closes the socket
+on every call.  This applies to the gqrx TCP backend only.
 
 **Rationale:** gqrx's rigctl server is single-request-per-connection by
 design.  Keeping a persistent connection would require connection-state
@@ -104,6 +115,14 @@ given that scan intervals are measured in seconds, not milliseconds.
 **Trade-off:** High-frequency polling (e.g. signal-level checks) creates
 many short-lived TCP connections.  This is acceptable because all traffic
 stays on localhost or LAN.
+
+**Hamlib backend (different lifecycle):** `HamlibRigCtl`
+(`rig_backends/hamlib_rigctl.py`) talks to a serial/USB device, so it keeps
+the connection open between commands.  `connect()` closes any existing
+`Hamlib.Rig` and opens a new one from the endpoint (a failed open raises
+`OSError`); `disconnect()` closes it.  Every call is serialised with a
+`threading.RLock` because the rig is a stateful serial object shared by the
+UI and scan threads.
 
 ---
 
@@ -133,7 +152,7 @@ default exists.
 `QMainWindow`, `RigRemoteHandlersMixin`, `RigRemoteScanHandlersMixin`, `RigRemoteUIBuilder`.
 
 **Rationale:** A single monolithic `QMainWindow` subclass would easily
-exceed 1000 lines.  Python multiple inheritance with mixins gives clean
+grow far beyond the module size limit.  Python multiple inheritance with mixins gives clean
 file-level separation (state + init, event handlers, widget builders)
 while remaining a single object from Qt's perspective — necessary because Qt
 signal/slot connections require a single `self`.
@@ -261,18 +280,24 @@ turning rows into tests where a mechanical check is possible.
 | Every queue-mutable scan param has both an event name and a converter | ADR-1 | test — `test_queue_event_names_and_converters_match` |
 | Only whitelisted queue keys mutate `ScanningTask` | ADR-1 | test — `tests/test_scanning.py` (`process_queue` cases) |
 | `AppConfig` is imported only by the composition root and the UI | ADR-2 | test — `test_app_config_only_imported_by_composition_root_and_ui` |
-| No domain constructor takes `AppConfig` or the config dict | ADR-2 | review only (the import test covers the common case) |
-| New scan modes are strategies registered in `_SCANNER_REGISTRY`, not subclasses | ADR-3 | review only |
-| One TCP connection per rigctl command | ADR-4 | review only |
+| No domain constructor takes `AppConfig` or the config dict | ADR-2 | test — `test_domain_code_takes_no_config_parameter` (`models/` and scanner modules; a `config` parameter is allowed only when annotated `ScanningConfig`) |
+| New scan modes are strategies registered in `_SCANNER_REGISTRY`, not subclasses | ADR-3 | test — `test_scanner_registry_entries_are_structural_strategies` (each entry is a class with callable `scan`/`terminate` and no base other than object/Protocol/Generic) |
+| gqrx backend: one TCP connection per rigctl command | ADR-4 | review only |
 | Out-of-range numerics in `ScanningTask` → clamp + log, not raise | ADR-5 | test — `tests/test_scanning_task.py`, `tests/test_scanning.py` |
 | Out-of-bounds frequency in `Channel` → `ValueError` | ADR-5 | test — `tests/test_channel.py` |
 | Unsupported mode/type → `ValueError` | ADR-5 | test — `test_scanning_task_init_error`, `test_channel_invalid_modulation` |
-| Mixins define no `__init__` and no class-level state (constants only) | ADR-6 | test — `test_mixins_hold_no_instance_state` |
+| Mixins define no `__init__`, no class-level state (constants only), and assign only attributes annotated on the mixin | ADR-6 | test — `test_mixins_hold_no_instance_state` |
 | No `abc` / ABC inheritance; interfaces are `Protocol`s | ADR-7 | test — `test_no_abc_inheritance` |
 | No database or ORM imports | ADR-8 | test — `test_no_database_or_orm` |
 | Module ≤ 600 lines | global rule | test — `test_module_size_within_limit` |
 | Scan-loop errors use `NonRetriableError` / `RetriableError`, not bare exceptions | ADR-9 | review only |
-| Agents never publish packages; PyPI uploads only from `release.yml` after approval | release process | hook — `.claude/hooks/block_publish.sh`; CI — `pypi` environment reviewer |
+| Agents never publish packages; PyPI uploads only from `release.yml` after approval | release process | hook — `.claude/hooks/block_publish.sh` (tested by `tests/test_hooks.py`, fails closed; cannot stop shell obfuscation such as split strings); CI — `pypi` environment reviewer, Trusted Publishing, no local credentials |
+| Releases only from commits on `master`, from protected `v*` tags | release process | CI — on-master check in `release.yml`; GitHub tag ruleset (`.github/rulesets/release-tags.json`) |
+| Workflow actions pinned to commit SHAs | release process | test — `tests/test_workflows.py` (also checks the on-master step, the dev-version guard and env-only PR text); Dependabot proposes SHA updates |
+| Published wheel and `.deb` install and start | release process | CI — `package` job runs both entry points from a clean venv; `test-deb` job installs the `.deb` in a clean container before the `deb` artifact exists |
+| Protected architecture paths change only with an ADR update or a stated reason | this file | CI — `adr-impact` job (`scripts/check_adr_impact.py`, tested by `tests/test_check_adr_impact.py`); review judges whether the reason is believable |
+| Docs reference only things that exist (paths, ADRs, tests, release stages, modules) | this file | test — `tests/test_doc_drift.py` |
+| `code_review_agent` never modifies files | review role | isolation — tests run only in `scripts/review_worktree.sh` (disposable worktree, scrubbed env, offline where `unshare -rn` works); hook — `.claude/hooks/review_readonly.sh` as a second layer (tested by `tests/test_hooks.py`, fails closed) |
 
 ---
 

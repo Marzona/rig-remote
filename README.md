@@ -62,8 +62,8 @@ on the system.
 
 ```bash
 git clone https://github.com/Marzona/rig-remote.git
-cd rig-remote/rig-remote
-uv sync
+cd rig-remote
+uv sync --group dev
 ```
 
 ---

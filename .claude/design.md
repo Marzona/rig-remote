@@ -8,7 +8,8 @@
 ## Purpose
 
 Desktop GUI (PySide6) that remotely controls radio transceivers by sending
-rigctl text commands to gqrx or a rigctld-compatible daemon, plus a
+rigctl text commands to gqrx or a rigctld-compatible daemon, or by driving a
+serial/USB transceiver through the native Hamlib library, plus a
 `config_checker` CLI. Entry points are declared in `pyproject.toml`.
 
 ## Where things live
@@ -20,15 +21,18 @@ rigctl text commands to gqrx or a rigctld-compatible daemon, plus a
 - **Config:** `app_config.py` — INI ⇄ dict; values flow one way into the UI and
   constructors (ADR-2).
 - **Rig access:** `rig_backends/` — the backend protocol plus the gqrx (TCP,
-  ADR-4) and Hamlib implementations and the mode translator.
+  ADR-4) and Hamlib implementations and the mode translator. `rigctl.py` is a
+  compatibility shim re-exporting the gqrx backend as `RigCtl`.
 - **Scanning:** `scanning.py` (protocol, `Scanning2` facade, `create_scanner()`
-  factory) → strategies in `*_scanner_strategy.py` → shared primitives in
+  factory) → strategies in `bookmark_scanner_strategy.py` and
+  `frequency_scanner_strategy.py` → shared primitives in
   `scanner_core.py`; timing knobs in `scanning_config.py` (ADR-3).
 - **Threads & messaging:** `queue_comms.py`, `stmessenger.py`, `syncing.py` (ADR-1).
 - **Domain models:** `models/` — `ScanningTask`, `Channel`, `Bookmark`,
   `RigEndpoint`, `SyncTask`, `ModulationModes` (validation policy: ADR-5).
 - **Persistence:** `disk_io.py`, `bookmarksmanager.py` (ADR-8).
 - **Errors:** `exceptions.py` (ADR-9).
+- **Helpers:** `utility.py` — small shared helpers.
 
 ## Threading model
 
