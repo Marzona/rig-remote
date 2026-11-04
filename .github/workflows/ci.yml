@@ -81,10 +81,10 @@ jobs:
           --cov=rig_remote --cov=config_checker
           --cov-report=term-missing --cov-report=xml
 
-      # gqrx-backed functional tests skip themselves when no gqrx server is
-      # listening on 127.0.0.1:7356, which is always the case on CI runners.
-      - name: Functional tests
-        run: uv run --no-sync pytest functional_tests/ -n 1 --tb=short -o faulthandler_timeout=120
+      # gqrx-marked tests need a live gqrx at 127.0.0.1:7356, which CI runners
+      # never have; they are excluded explicitly rather than silently skipped.
+      - name: Functional tests (excluding gqrx)
+        run: uv run --no-sync pytest functional_tests/ -m "not gqrx" -n 1 --tb=short -o faulthandler_timeout=120
 
       - name: Upload coverage report
         if: always()

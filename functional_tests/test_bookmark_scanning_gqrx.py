@@ -51,6 +51,7 @@ BOOKMARK_FILE = (
 # ---------------------------------------------------------------------------
 
 pytestmark = [
+    pytest.mark.gqrx,
     pytest.mark.skipif(
         not _gqrx_reachable(),
         reason=f"gqrx not available at {_GQRX_HOST}:{_GQRX_PORT} — skipping hardware tests",

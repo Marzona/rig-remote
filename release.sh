@@ -6,8 +6,10 @@
 # Stages (each includes all steps of the previous):
 #   package       : build pip + .deb (with lintian) only; no tests, no
 #                   upload. Used by CI, which runs the checks as separate jobs.
-#   commit_push   : tests, functional tests, lint, type check, format,
-#                   build pip + .deb, twine check, local install smoke test.
+#   commit_push   : ruff fix + format, mypy, then unit + functional tests (in that
+#                   order, so the tested code is the packaged code), build pip +
+#                   .deb, twine check, local install smoke test. gqrx functional
+#                   tests are reported NOT RUN when gqrx is unreachable.
 #   release       : commit_push, then generate release_message.md and print
 #                   the hand-off steps. Stops at built, verified artefacts.
 #
@@ -55,29 +57,50 @@ preflight() {
 # ---------------------------------------------------------------------------
 # Stage 1 — step functions
 # ---------------------------------------------------------------------------
-run_tests() {
-    step "Tests — Running unit tests (parallel)"
-    "${PYTEST}" tests/ --tb=short \
-        --cov=rig_remote --cov-report=term-missing
-    ok "Unit tests passed."
-
-    step "Tests — Running functional/integration tests (serial, -n 1)"
-    "${PYTEST}" functional_tests/ --tb=short -n 1
-    ok "Functional tests passed."
-}
-
 run_static_analysis() {
-    step "Static analysis — mypy"
-    "${MYPY}" --config-file ./pyproject.toml ./src
-    ok "mypy: no issues."
-
-    step "Static analysis — ruff lint"
-    "${RUFF}" check --fix ./src/rig_remote/
+    # Runs BEFORE run_tests: ruff --fix / ruff format may rewrite sources, and
+    # mypy + the tests must check the code that actually gets packaged.
+    step "Static analysis — ruff lint (--fix)"
+    "${RUFF}" check --fix ./src
     ok "ruff lint: no issues."
 
     step "Static analysis — ruff format"
-    "${RUFF}" format ./src/rig_remote/
+    "${RUFF}" format ./src
     ok "ruff format: done."
+
+    if ! git diff --quiet -- src; then
+        warn "ruff changed files under src/ — commit them before tagging, so the tag matches what was tested:"
+        git diff --stat -- src
+    fi
+
+    step "Static analysis — mypy"
+    "${MYPY}" --config-file ./pyproject.toml ./src
+    ok "mypy: no issues."
+}
+
+gqrx_reachable() {
+    "${VENV_BIN}/python" -c 'import socket; socket.create_connection(("127.0.0.1", 7356), timeout=1).close()' \
+        >/dev/null 2>&1
+}
+
+run_tests() {
+    step "Tests — Running unit tests (parallel)"
+    "${PYTEST}" tests/ -n auto --tb=short \
+        --cov=rig_remote --cov-report=term-missing
+    ok "Unit tests passed."
+
+    step "Tests — Running functional tests (serial, -n 1, excluding gqrx)"
+    "${PYTEST}" functional_tests/ -m "not gqrx" --tb=short -n 1
+    ok "Functional tests passed."
+
+    step "Tests — Running gqrx functional tests (need gqrx at 127.0.0.1:7356)"
+    if gqrx_reachable; then
+        "${PYTEST}" functional_tests/ -m gqrx --tb=short -n 1
+        ok "gqrx functional tests passed."
+    else
+        warn "gqrx functional tests NOT RUN: gqrx is not reachable at 127.0.0.1:7356."
+        warn "  Report them as 'not run', never as passed."
+    fi
 }
 
 build_packages() {
@@ -433,7 +456,11 @@ print_handoff() {
     echo -e "  Verified artefacts are in ${BOLD}dist/${NC}. To publish ${BOLD}${version}${NC}, a human:"
     echo -e "    1. reviews and pushes the release commit"
     echo -e "    2. ${BOLD}git tag v${version} && git push origin v${version}${NC}"
-    echo -e "    3. approves the ${BOLD}pypi${NC} deployment in GitHub Actions (${RELEASE_WORKFLOW})"
+    if [[ "${version}" =~ \.dev[0-9]+$ ]]; then
+        echo -e "  ${version} is a .devN version: CI publishes it to ${BOLD}TestPyPI only${NC}."
+    else
+        echo -e "    3. approves the ${BOLD}pypi${NC} deployment in GitHub Actions (${RELEASE_WORKFLOW})"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -447,8 +474,8 @@ stage_package() {
 
 stage_commit_push() {
     echo -e "${BOLD}Stage: COMMIT_PUSH${NC}"
-    run_tests
     run_static_analysis
+    run_tests
     build_packages
     build_deb
     build_arch

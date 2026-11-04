@@ -6,6 +6,10 @@
 #      no API tokens are stored in the repository.
 #   4. Creates a GitHub Release with the wheel, sdist and .deb attached.
 #
+# Development versions (PEP 440 X.Y.devN, tag vX.Y.devN) stop after step 3's
+# TestPyPI upload: no production PyPI upload and no GitHub Release. Use a new
+# N for every TestPyPI trial; the next real release is plain X.Y.
+#
 # One-time setup (see README / PR description):
 #   - Create GitHub environments "testpypi" and "pypi" (Settings → Environments).
 #     Add yourself as a required reviewer on "pypi": this approval is the
@@ -33,9 +37,12 @@ jobs:
   verify-version:
     name: Tag matches pyproject version
     runs-on: ubuntu-latest
+    outputs:
+      is-dev: ${{ steps.compare.outputs.is-dev }}
     steps:
       - uses: actions/checkout@v5
       - name: Compare tag with pyproject.toml
+        id: compare
         run: |
           tag="${GITHUB_REF_NAME#v}"
           version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
@@ -43,7 +50,13 @@ jobs:
             echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${version}"
             exit 1
           fi
-          echo "Releasing version ${version}"
+          if [[ "${version}" =~ \.dev[0-9]+$ ]]; then
+            echo "is-dev=true" >> "${GITHUB_OUTPUT}"
+            echo "Releasing development version ${version} (TestPyPI only)"
+          else
+            echo "is-dev=false" >> "${GITHUB_OUTPUT}"
+            echo "Releasing version ${version}"
+          fi
 
   publish-testpypi:
     name: Publish to TestPyPI
@@ -67,7 +80,8 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: publish-testpypi
+    needs: [verify-version, publish-testpypi]
+    if: needs.verify-version.outputs.is-dev == 'false'
     runs-on: ubuntu-latest
     environment:
       name: pypi

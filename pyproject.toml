@@ -78,6 +78,9 @@ console_output_style = "progress"
 log_cli = "True"
 pythonpath = "src"
 required_plugins = ["pytest-xdist>=3.6.1"]
+markers = [
+    "gqrx: needs a live gqrx at 127.0.0.1:7356; skipped (NOT RUN) when it is unreachable",
+]
 
 # ---------------------------------------------------------------------------
 # mypy
