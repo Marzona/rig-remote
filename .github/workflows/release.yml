@@ -1,7 +1,8 @@
 # Release — runs when a version tag (e.g. v3.1) is pushed.
 #
 #   1. Re-runs the full CI pipeline (lint, tests, sdist/wheel/.deb build).
-#   2. Checks that the tag matches the version in pyproject.toml.
+#   2. Checks that the tagged commit is on master and that the tag matches
+#      the version in pyproject.toml.
 #   3. Publishes to TestPyPI, then to PyPI, using Trusted Publishing (OIDC):
 #      no API tokens are stored in the repository.
 #   4. Creates a GitHub Release with the wheel, sdist and .deb attached.
@@ -10,7 +11,12 @@
 # TestPyPI upload: no production PyPI upload and no GitHub Release. Use a new
 # N for every TestPyPI trial; the next real release is plain X.Y.
 #
+# Actions are pinned to commit SHAs (version in the trailing comment);
+# Dependabot's github-actions ecosystem proposes updates.
+#
 # One-time setup (see README / PR description):
+#   - Import .github/rulesets/release-tags.json (Settings → Rules → Rulesets →
+#     New ruleset → Import) so only admins can create, move or delete v* tags.
 #   - Create GitHub environments "testpypi" and "pypi" (Settings → Environments).
 #     Add yourself as a required reviewer on "pypi": this approval is the
 #     ONLY path to a production upload (release.sh and agents never upload).
@@ -40,7 +46,19 @@ jobs:
     outputs:
       is-dev: ${{ steps.compare.outputs.is-dev }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # Full history of all branches, so the on-master check can run.
+          fetch-depth: 0
+      - name: Tagged commit must be on master
+        # Any v* tag triggers this workflow; refuse to publish a commit that
+        # never reached master (e.g. a tag pushed on a feature branch).
+        run: |
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (${GITHUB_SHA}) is not on master; refusing to release."
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} points at a commit on master."
       - name: Compare tag with pyproject.toml
         id: compare
         run: |
@@ -68,11 +86,11 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: python-dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           repository-url: https://test.pypi.org/legacy/
           # Allows re-running a failed release without bumping the version.
@@ -89,11 +107,11 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: python-dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
   github-release:
     name: GitHub Release
@@ -102,11 +120,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: python-dist
           path: dist/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: deb
           path: dist/
