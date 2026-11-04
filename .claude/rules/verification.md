@@ -16,11 +16,17 @@ type-checked and tested is the code that gets committed:
 .venv/bin/ruff check --fix ./src
 .venv/bin/ruff format ./src
 .venv/bin/mypy --config-file ./pyproject.toml ./src
-.venv/bin/pytest tests/ -n 13
+.venv/bin/pytest tests/ -n auto
 .venv/bin/pytest functional_tests/ -n 1 -m "not gqrx"
 .venv/bin/pytest functional_tests/ -n 1 -m gqrx -rs
 ```
 
+- `ruff check` and `ruff format` cover `src/` only, on purpose: formatting `tests/`
+  is deliberately out of scope. Do not "fix" or reformat test files.
+- CI also measures coverage with `--cov=rig_remote --cov=config_checker`; use the same
+  set when comparing coverage.
+- Reviewers run these through `scripts/review_worktree.sh` (disposable worktree,
+  scrubbed environment, offline tests).
 - Unit tests (`tests/`) run in parallel; functional tests (`functional_tests/`) run serially.
 - `tests/test_architecture.py` enforces the invariants marked "test" in
   `.claude/architecture.md`; a failure there means the change breaks an ADR,

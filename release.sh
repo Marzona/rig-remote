@@ -66,9 +66,18 @@ check_lock() {
     ok "uv.lock is current."
 }
 
+src_fingerprint() {
+    # Content hash of every file under src/, to detect what ruff itself changed
+    # (comparing against HEAD would also flag the developer's own edits).
+    find src -type f -not -path '*/__pycache__/*' -not -path '*.egg-info/*' -print0 \
+        | sort -z | xargs -0 sha256sum | sha256sum
+}
+
 run_static_analysis() {
     # Runs BEFORE run_tests: ruff --fix / ruff format may rewrite sources, and
     # mypy + the tests must check the code that actually gets packaged.
+    local src_before
+    src_before=$(src_fingerprint)
     step "Static analysis — ruff lint (--fix)"
     "${RUFF}" check --fix ./src
     ok "ruff lint: no issues."
@@ -77,7 +86,7 @@ run_static_analysis() {
     "${RUFF}" format ./src
     ok "ruff format: done."
 
-    if ! git diff --quiet -- src; then
+    if [[ "$(src_fingerprint)" != "${src_before}" ]]; then
         warn "ruff changed files under src/ — commit them before tagging, so the tag matches what was tested:"
         git diff --stat -- src
     fi
@@ -95,7 +104,7 @@ gqrx_reachable() {
 run_tests() {
     step "Tests — Running unit tests (parallel)"
     "${PYTEST}" tests/ -n auto --tb=short \
-        --cov=rig_remote --cov-report=term-missing
+        --cov=rig_remote --cov=config_checker --cov-report=term-missing
     ok "Unit tests passed."
 
     step "Tests — Running functional tests (serial, -n 1, excluding gqrx)"

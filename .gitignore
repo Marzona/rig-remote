@@ -104,3 +104,6 @@ rig-remote-venv
 !.claude/
 !.claude/**
 .claude/settings.local.json
+
+# Specs stay local (working documents, not part of the repository).
+doc/specs/

@@ -13,6 +13,8 @@ that contains `pyproject.toml`); the tools are in `.venv/bin/`.
   your bearings; for exact values, read the code.
 - `.claude/rules/verification.md` — the verification commands and how to
   report results, including gqrx tests that could not run.
+- `.claude/review/` — the committed reviewer procedure and the global coding rules
+  it applies; `scripts/review_worktree.sh` runs verification in an isolated worktree.
 - `.claude/agents/release_agent.md` — the release process. Agents never publish.
 
 ## Keep architecture.md current
