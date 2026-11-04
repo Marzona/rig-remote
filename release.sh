@@ -57,6 +57,15 @@ preflight() {
 # ---------------------------------------------------------------------------
 # Stage 1 — step functions
 # ---------------------------------------------------------------------------
+check_lock() {
+    # CI installs with `uv sync --locked`, which fails if uv.lock is stale —
+    # e.g. after a version bump in pyproject.toml. Catch it before tagging.
+    step "Lockfile — uv lock --check"
+    uv lock --check \
+        || die "uv.lock is out of date (did pyproject.toml change?). Run 'uv lock' and commit uv.lock."
+    ok "uv.lock is current."
+}
+
 run_static_analysis() {
     # Runs BEFORE run_tests: ruff --fix / ruff format may rewrite sources, and
     # mypy + the tests must check the code that actually gets packaged.
@@ -474,6 +483,7 @@ stage_package() {
 
 stage_commit_push() {
     echo -e "${BOLD}Stage: COMMIT_PUSH${NC}"
+    check_lock
     run_static_analysis
     run_tests
     build_packages

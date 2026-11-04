@@ -39,6 +39,9 @@ lintian overrides, the generated PKGBUILD) are documented in comments inside
 ## Versions
 
 - The version lives only in `pyproject.toml`; `release.sh` and CI read it from there.
+- After every version change run `uv lock` and commit `uv.lock` with it: the lockfile
+  records the project's own version, and CI's `uv sync --locked` fails on a stale lock.
+  `release.sh` checks this (`check_lock`).
 - **TestPyPI trial:** set `version = "X.Y.devN"` (PEP 440), starting at `dev1` and
   incrementing N for each trial. CI publishes `.devN` tags to TestPyPI only — never to
   PyPI and without a GitHub Release.
