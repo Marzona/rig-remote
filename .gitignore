@@ -94,4 +94,6 @@ rig-remote-venv
 .py~
 .py.save
 .coveragerc
-uv.lock
+
+# Committed: CI runs `uv sync --locked` (overrides the global excludesfile).
+!uv.lock
