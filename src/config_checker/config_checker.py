@@ -18,12 +18,13 @@ License: MIT License
 Copyright (c) 2015 Simone Marzona
 """
 
-import os
-import csv
-import platform
 import argparse
+import csv
 import logging
+import os
+import platform
 import pprint
+
 from rig_remote.app_config import AppConfig
 
 logger = logging.getLogger(__name__)
@@ -72,26 +73,26 @@ def dump_info() -> None:
 
     """
 
-    print("Python version: {}".format(platform.python_version()))
+    print(f"Python version: {platform.python_version()}")
     print("\n   ")
-    print("System's release version: {}".format(platform.version()))
+    print(f"System's release version: {platform.version()}")
     print("\n   ")
-    print("Platform: {}".format(platform.platform()))
+    print(f"Platform: {platform.platform()}")
     print("\n   ")
-    print("OS environment: {}".format(platform.system()))
+    print(f"OS environment: {platform.system()}")
     print("\n   ")
-    print("Platform architecture: {}".format(platform.architecture()))
+    print(f"Platform architecture: {platform.architecture()}")
     print("\n   ")
-    print("Linux distrubition name: {}".format(platform.freedesktop_os_release()))
+    print(f"Linux distrubition name: {platform.freedesktop_os_release()}")
     print("\n   ")
-    print("System/OS name: {}".format(platform.system()))
+    print(f"System/OS name: {platform.system()}")
 
 
 def check_config(config: str) -> bool:
     config_file = os.path.join(config, "rig-remote.conf")
 
-    with open(config_file, "r", encoding="utf-8") as cf:
-        print("Using config file:{}".format(config_file))
+    with open(config_file, encoding="utf-8") as cf:
+        print(f"Using config file:{config_file}")
         count = 0
         config_data = []
         bookmark_file = None
@@ -105,7 +106,7 @@ def check_config(config: str) -> bool:
                 config_data.append(row)
                 count += 1
             else:
-                print("Error in config file, line: {}".format(row))
+                print(f"Error in config file, line: {row}")
         if count < 19:
             print("The configuration is missing some keyword")
         print("\n   ")
@@ -114,28 +115,28 @@ def check_config(config: str) -> bool:
         print("\n   ")
         print("Bookmarks info:")
         if bookmark_file:
-            with open(bookmark_file, "r", encoding="utf-8") as bf:
+            with open(bookmark_file, encoding="utf-8") as bf:
                 row_list = []
                 reader = csv.reader(bf, delimiter=",")
                 for line in reader:
                     if len(line) != 4:
-                        print("Bookmark line malformed: {}".format(line))
+                        print(f"Bookmark line malformed: {line}")
                     row_list.append(line)
             print("\n   ")
             pprint.pprint(row_list)
 
-        print("Parsing configuration file: {}".format(config_file))
+        print(f"Parsing configuration file: {config_file}")
         ac = AppConfig(config_file=config_file)
         try:
             ac.read_conf()
             print("Configuration file is valid.")
             return True
         except SystemExit as e:
-            print("Error reading configuration file: {}".format(e))
+            print(f"Error reading configuration file: {e}")
             print("Please check the configuration file for errors.")
             return False
         except Exception as e:
-            print("Unexpected error: {}".format(e))
+            print(f"Unexpected error: {e}")
             return False
 
 

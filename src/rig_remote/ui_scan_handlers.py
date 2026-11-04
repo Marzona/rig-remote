@@ -138,7 +138,8 @@ class RigRemoteScanHandlersMixin:
                     self.params_last_content[widget_name] = event_list_value
                 else:
                     if self.params_last_content.get(widget_name):
-                        widget.setText(self.params_last_content[widget_name])
+                        event_list_value = self.params_last_content[widget_name]
+                        widget.setText(event_list_value)
                     else:
                         widget.setFocus()
                         return
