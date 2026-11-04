@@ -97,3 +97,10 @@ rig-remote-venv
 
 # Committed: CI runs `uv sync --locked` (overrides the global excludesfile).
 !uv.lock
+
+# Claude Code project config (agents, hooks, rules, settings, memory bank).
+# Re-included here because the global excludesfile ignores `.claude` and `*.md`;
+# repo rules take precedence over it. Personal settings stay local.
+!.claude/
+!.claude/**
+.claude/settings.local.json
