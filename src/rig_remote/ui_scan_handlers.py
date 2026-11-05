@@ -40,7 +40,7 @@ from rig_remote.models.sync_task import SyncTask
 from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
 from rig_remote.rig_backends.protocol import RigBackend
 from rig_remote.scanning import Scanning2, create_scanner
-from rig_remote.stmessenger import STMessenger
+from rig_remote.stmessenger import STMessenger, encode_bool
 from rig_remote.syncing import Syncing
 
 logger = logging.getLogger(__name__)
@@ -170,8 +170,7 @@ class RigRemoteScanHandlersMixin:
 
         self.params_last_content[widget_name] = event_list_value
         if self.scan_thread is not None:
-            event_list = (widget_name, event_list_value_int)
-            self.scan_queue.send_event_update(event_list)
+            self.scan_queue.send_event_update((widget_name, str(event_list_value_int)))
 
     def _process_hostname_entry(self, event_list_value: str, rig_number: int, silent: bool = False) -> None:
         """Process hostname entry"""
@@ -238,10 +237,10 @@ class RigRemoteScanHandlersMixin:
         event_list = ("ckb_auto_bookmark", state == Qt.CheckState.Checked.value)
         self._process_checkbutton(event_list)
 
-    def _process_checkbutton(self, event_list: tuple[str, str | bool]) -> None:
+    def _process_checkbutton(self, event_list: tuple[str, bool]) -> None:
         """Process checkbox state changes"""
         if self.scan_thread is not None:
-            self.scan_queue.send_event_update(event_list)
+            self.scan_queue.send_event_update((event_list[0], encode_bool(event_list[1])))
             self.params_last_content[event_list[0]] = event_list[1]
 
     def toggle_cb_top(self, state: int) -> None:

@@ -59,6 +59,12 @@ user-facing benefit.
 background work must use `threading.Thread` and communicate via
 `STMessenger`/`QueueComms`.
 
+**Wire format:** every queue payload is `tuple[str, str]` — event name and
+value as text. Integers travel as `str(int)`; booleans as exactly `"true"` or
+`"false"` (`stmessenger.encode_bool`). The receiver parses booleans strictly
+(`scanner_core.parse_bool`: true/1, false/0, case-insensitive) and skips any
+other value with a warning — never `bool(str)`, which is `True` for `"False"`.
+
 ---
 
 ### ADR-2 — Config as plain dict, not injected objects
@@ -143,6 +149,16 @@ frequency exists — silently substituting one would tune the rig to the wrong
 frequency.  `Bookmark` has no numeric fields.  Unsupported modes/types
 (`scan_mode`, `modulation`) also raise `ValueError` because no sensible
 default exists.
+
+**Mid-scan updates:** clamping also applies to values changed while a scan
+runs. `ScannerCore.process_queue` never assigns task fields directly; every
+queue event goes through `ScanningTask.apply_update(name, value)`, which
+assigns and re-runs the same checks as construction (passes ≥ 1, interval ≥
+the minimum step, delay ≥ 0, range bounds within the band, inner-scan params).
+A mid-scan update never raises for a numeric value: if it would invert the
+frequency range, the bound just updated is moved so the range stays valid and
+the sweep always terminates. Only an unknown field name or a wrong value type
+raises.
 
 ---
 
@@ -276,7 +292,9 @@ turning rows into tests where a mechanical check is possible.
 | Invariant | Why | Enforced by |
 |---|---|---|
 | No async code or async frameworks | ADR-1 | test — `tests/test_architecture.py::test_no_async_code` |
-| Queue payload is always `tuple[str, str]` | ADR-1 | CI — mypy strict on `QueueComms` / `STMessenger` annotations |
+| Queue payload is always `tuple[str, str]` | ADR-1 | CI — mypy strict (every `STMessenger`/`QueueComms` signature is `tuple[str, str]`, no `Any`); test — `tests/test_stmessenger.py` (runtime `ValueError` for non-str items, mypy-on-snippet check) and `tests/test_ui_qt.py` (senders encode ints and bools as strings) |
+| Queue booleans are parsed strictly, never with `bool(str)` | ADR-1 | test — `test_scanning_core_process_queue_bool_parsing_strict`, `test_scanning_core_process_queue_bool_invalid_skipped_with_warning` |
+| Mid-scan queue updates are validated and clamped like construction | ADR-5 | test — `test_scanning_core_process_queue_clamps_out_of_range`, `test_apply_update_clamps_and_logs`, `functional_tests/test_queue_updates_mid_scan_hamlib.py` (interval `"0"`/`"-1"` through the real queue; the pass terminates) |
 | Every queue-mutable scan param has both an event name and a converter | ADR-1 | test — `test_queue_event_names_and_converters_match` |
 | Only whitelisted queue keys mutate `ScanningTask` | ADR-1 | test — `tests/test_scanning.py` (`process_queue` cases) |
 | `AppConfig` is imported only by the composition root and the UI | ADR-2 | test — `test_app_config_only_imported_by_composition_root_and_ui` |

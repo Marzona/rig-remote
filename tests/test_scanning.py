@@ -445,10 +445,10 @@ def test_scanning_core_process_queue_invalid_event_name_returns_false():
     (("txt_range_max", "108000"), "range_max", khertz_to_hertz(108000)),
     (("txt_delay",     "7"),      "delay",     7),
     (("txt_passes",    "3"),      "passes",    3),
-    (("txt_interval",  "500"),    "interval",  500),
+    (("txt_interval",  "5000"),   "interval",  5000),
     (("txt_sgn_level", "-50"),    "sgn_level", -50),
-    (("ckb_wait",      True),     "wait",      True),
-    (("ckb_record",    False),    "record",    False),
+    (("ckb_wait",      "true"),   "wait",      True),
+    (("ckb_record",    "false"),  "record",    False),
 ])
 def test_scanning_core_process_queue_valid_event_parametric(event, attr, expected_value):
     core = _core(queue=_queue(events=[event]))
@@ -456,6 +456,71 @@ def test_scanning_core_process_queue_valid_event_parametric(event, attr, expecte
     result = core.process_queue(task)
     assert result is True
     assert getattr(task, attr) == expected_value
+
+
+@pytest.mark.parametrize("field,raw,expected", [
+    ("ckb_wait", "true", True),
+    ("ckb_wait", "false", False),
+    ("ckb_wait", "TRUE", True),
+    ("ckb_wait", "False", False),
+    ("ckb_wait", "1", True),
+    ("ckb_wait", "0", False),
+    ("ckb_record", "true", True),
+    ("ckb_record", "False", False),
+    ("ckb_record", "0", False),
+])
+def test_scanning_core_process_queue_bool_parsing_strict(field, raw, expected):
+    task = _bm_task(wait=not expected, record=not expected)
+    core = _core(queue=_queue(events=[(field, raw)]))
+    assert core.process_queue(task) is True
+    assert getattr(task, field.split("_", 1)[1]) is expected
+
+
+@pytest.mark.parametrize("field", ["ckb_wait", "ckb_record"])
+@pytest.mark.parametrize("raw", ["yes", "", "maybe", "2"])
+def test_scanning_core_process_queue_bool_invalid_skipped_with_warning(field, raw, caplog):
+    task = _bm_task(wait=True, record=True)
+    core = _core(queue=_queue(events=[(field, raw)]))
+    with caplog.at_level("WARNING"):
+        assert core.process_queue(task) is False
+    assert task.wait is True and task.record is True
+    assert any("Queue event update failed" in r.message for r in caplog.records)
+
+
+@pytest.mark.parametrize("value", [True, 5, None, b"5"])
+def test_scanning_core_process_queue_non_str_value_skipped(value, caplog):
+    task = _bm_task()
+    core = _core(queue=_queue(events=[("txt_passes", value)]))
+    with caplog.at_level("WARNING"):
+        assert core.process_queue(task) is False
+    assert task.passes == 1
+    assert any("non-str value" in r.message for r in caplog.records)
+
+
+@pytest.mark.parametrize("event,attr,expected", [
+    (("txt_interval", "0"), "interval", 1000),
+    (("txt_interval", "-1"), "interval", 1000),
+    (("txt_interval", "999"), "interval", 1000),
+    (("txt_passes", "0"), "passes", 1),
+    (("txt_passes", "-1"), "passes", 1),
+    (("txt_delay", "-1"), "delay", 0),
+    (("txt_range_min", "-5"), "range_min", 0),
+    (("txt_range_max", "999999999"), "range_max", 500_000_000),
+    # inverted: updated bound moves, min < max always holds
+    (("txt_range_max", "50000"), "range_max", 100_001_000),   # max (50 MHz) < min (100 MHz)
+    (("txt_range_min", "200000"), "range_min", 100_199_000),  # min (200 MHz) >= max (100.2 MHz)
+    (("txt_range_max", "100000"), "range_max", 100_001_000),  # max == min
+])
+def test_scanning_core_process_queue_clamps_out_of_range(event, attr, expected, caplog):
+    task = _freq_task()
+    core = _core(queue=_queue(events=[event]))
+    with caplog.at_level("ERROR"):
+        assert core.process_queue(task) is True
+    assert getattr(task, attr) == expected
+    assert task.interval >= ScanningTask._MIN_INTERVAL
+    assert task.passes >= 1 and task.delay >= 0
+    assert 0 <= task.range_min < task.range_max <= 500_000_000
+    assert any(r.levelname == "ERROR" for r in caplog.records)
 
 
 def test_scanning_core_process_queue_range_min_uses_khertz_to_hertz():

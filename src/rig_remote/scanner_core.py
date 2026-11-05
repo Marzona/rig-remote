@@ -9,7 +9,6 @@ scanner strategies are composed with a ScannerCore instance.
 import logging
 import time
 from collections.abc import Callable
-from typing import Any
 
 from rig_remote.models.channel import Channel
 from rig_remote.models.scanning_task import ScanningTask
@@ -20,8 +19,22 @@ from rig_remote.utility import khertz_to_hertz
 
 logger = logging.getLogger(__name__)
 
+
 # Hamlib.error is an optional runtime dependency.  Import it lazily so the
 # module loads correctly in environments where Hamlib is not installed.
+def parse_bool(value: str) -> bool:
+    """Strictly parse a queue boolean: true/false (any case) or 1/0.
+
+    :raises ValueError: for anything else (``bool("False")`` would be True).
+    """
+    normalised = value.strip().lower()
+    if normalised in ("true", "1"):
+        return True
+    if normalised in ("false", "0"):
+        return False
+    raise ValueError(f"invalid boolean value {value!r}")
+
+
 # When Hamlib is absent, _HAMLIB_ERROR is a never-raised sentinel type.
 try:
     from Hamlib import error as _HAMLIB_ERROR
@@ -40,9 +53,9 @@ class ScannerCore:
       - the sleep indirection (injectable for tests)
     """
 
-    _QUEUE_EVENT_CONVERTERS: dict[str, Callable[[Any], Any]] = {
-        "wait": bool,
-        "record": bool,
+    _QUEUE_EVENT_CONVERTERS: dict[str, Callable[[str], int | bool]] = {
+        "wait": parse_bool,
+        "record": parse_bool,
         "sgn_level": int,
         "passes": int,
         "interval": int,
@@ -97,6 +110,14 @@ class ScannerCore:
                 break
 
             param_name, param_value = event
+            if not isinstance(param_value, str):
+                logger.warning(  # type: ignore[unreachable]
+                    "Queue event %s has non-str value %r (%s) — skipping",
+                    param_name,
+                    param_value,
+                    type(param_value).__name__,
+                )
+                break
             logger.info("Retrieved event %s %s", param_name, param_value)
 
             if param_name not in self.config.valid_scan_update_event_names:
@@ -109,20 +130,18 @@ class ScannerCore:
 
             try:
                 key = param_name.split("_", 1)[1]
-                if key == "range_min":
-                    task.range_min = khertz_to_hertz(int(param_value))
-                elif key == "range_max":
-                    task.range_max = khertz_to_hertz(int(param_value))
+                if key in ("range_min", "range_max"):
+                    task.apply_update(key, khertz_to_hertz(int(param_value)))
                 elif key in self._QUEUE_EVENT_CONVERTERS:
                     converter = self._QUEUE_EVENT_CONVERTERS[key]
-                    setattr(task, key, converter(param_value))
+                    task.apply_update(key, converter(param_value))
                 else:
                     logger.warning(
                         "Queue event key %r has no registered converter — skipping",
                         key,
                     )
                     break
-            except (ValueError, TypeError) as exc:
+            except (ValueError, TypeError) as exc:  # parse failures; clamping is done in apply_update
                 logger.warning(
                     "Queue event update failed: %s — event: %s %s",
                     exc,

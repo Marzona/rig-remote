@@ -90,10 +90,96 @@ class ScanningTask:
 
     def _post_init(self) -> None:
         self._check_passes()
+        self._check_delay()
         self._check_scan_mode()
         self._check_range_min()
         self._check_range_max()
         self._check_inner_scan_params()
+
+    # Queue-updatable fields: name -> kind ("bool" or "int").
+    _UPDATABLE_FIELDS: dict[str, str] = {
+        "wait": "bool",
+        "record": "bool",
+        "sgn_level": "int",
+        "passes": "int",
+        "interval": "int",
+        "delay": "int",
+        "range_min": "int",
+        "range_max": "int",
+    }
+
+    def apply_update(self, name: str, value: int | bool) -> None:
+        """Apply a mid-scan update, running the same clamps as construction.
+
+        Out-of-range numeric values are clamped and logged (ADR-5), never
+        rejected.  ``range_min`` / ``range_max`` are in Hz.  After an update
+        of a range bound in frequency mode the pair is kept consistent
+        (``range_min < range_max``) by moving the *updated* bound, so the
+        sweep always terminates.  ``sgn_level`` has no defined domain bound
+        and is accepted as any integer.
+
+        :raises ValueError: if *name* is not an updatable field.
+        :raises TypeError: if *value* has the wrong type for *name*.
+        """
+        kind = self._UPDATABLE_FIELDS.get(name)
+        if kind is None:
+            message = f"Unsupported scan task update {name!r}, supported: {sorted(self._UPDATABLE_FIELDS)}"
+            logger.error(message)
+            raise ValueError(message)
+        if kind == "bool":
+            if not isinstance(value, bool):
+                message = f"Field {name!r} requires a bool, got {type(value).__name__}"
+                logger.error(message)
+                raise TypeError(message)
+        elif isinstance(value, bool) or not isinstance(value, int):
+            message = f"Field {name!r} requires an int, got {type(value).__name__}"
+            logger.error(message)
+            raise TypeError(message)
+
+        setattr(self, name, value)
+        if name == "passes":
+            self._check_passes()
+        elif name == "delay":
+            self._check_delay()
+        elif name == "interval":
+            self._check_interval()
+        elif name == "range_min":
+            self._check_range_min()
+            self._reconcile_range(updated="range_min")
+        elif name == "range_max":
+            self._check_range_max()
+            self._reconcile_range(updated="range_max")
+        self._check_inner_scan_params()
+
+    def _reconcile_range(self, updated: str) -> None:
+        """Keep range_min < range_max after a mid-scan update (frequency mode)."""
+        if self.range_max < 0:
+            logger.error("Negative range_max %i provided, overriding with 0", self.range_max)
+            self.range_max = 0
+        if self.scan_mode != "frequency" or self.range_min < self.range_max:
+            return
+        if updated == "range_max":
+            new_max = min(self.range_min + self._MIN_INTERVAL, MAX_FREQUENCY_HZ)
+            logger.error(
+                "range_max %i must exceed range_min %i, clamping to %i", self.range_max, self.range_min, new_max
+            )
+            self.range_max = new_max
+        else:
+            new_min = max(self.range_max - self._MIN_INTERVAL, 0)
+            logger.error(
+                "range_min %i must be below range_max %i, clamping to %i", self.range_min, self.range_max, new_min
+            )
+            self.range_min = new_min
+        if self.range_min >= self.range_max:
+            # Both bounds pinned at an extreme (e.g. 0 / 0): re-open the band.
+            self.range_min = 0
+            self.range_max = self._MIN_INTERVAL
+
+    def _check_delay(self) -> None:
+        """Clamp a negative delay to 0 and log."""
+        if self.delay < 0:
+            logger.error("Negative delay %i provided, overriding with 0", self.delay)
+            self.delay = 0
 
     def _check_range_min(self) -> None:
         """Checks for a sane range_min. We don't want to search for signals

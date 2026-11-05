@@ -205,3 +205,75 @@ def test_scanning_task_passes_less_than_one(passes, expected_passes):
 
     assert task.passes == expected_passes
     assert task.error is None
+
+
+# ---------------------------------------------------------------------------
+# ScanningTask.apply_update
+# ---------------------------------------------------------------------------
+
+def _apply_task(**kw) -> ScanningTask:
+    params = dict(
+        frequency_modulation="FM", scan_mode="frequency", new_bookmarks_list=[],
+        range_min=100_000_000, range_max=101_000_000, interval=100_000, delay=1,
+        passes=1, sgn_level=-40, wait=False, record=False, auto_bookmark=False,
+        log=False, bookmarks=[],
+    )
+    params.update(kw)
+    return ScanningTask(**params)
+
+
+@pytest.mark.parametrize("name,value,attr,expected", [
+    ("interval", 0, "interval", 1000),
+    ("interval", -1, "interval", 1000),
+    ("interval", 5000, "interval", 5000),
+    ("passes", 0, "passes", 1),
+    ("passes", -3, "passes", 1),
+    ("passes", 4, "passes", 4),
+    ("delay", -1, "delay", 0),
+    ("delay", 9, "delay", 9),
+    ("sgn_level", -500, "sgn_level", -500),
+    ("wait", True, "wait", True),
+    ("record", True, "record", True),
+    ("range_min", -1, "range_min", 0),
+    ("range_max", 600_000_000, "range_max", 500_000_000),
+    ("range_max", 99_000_000, "range_max", 100_001_000),
+    ("range_min", 101_000_000, "range_min", 100_999_000),
+])
+def test_apply_update_clamps_and_logs(name, value, attr, expected, caplog):
+    task = _apply_task()
+    with caplog.at_level("ERROR"):
+        task.apply_update(name, value)
+    assert getattr(task, attr) == expected
+    assert task.range_min < task.range_max
+    clamped = getattr(task, attr) != value
+    assert (len(caplog.records) > 0) == clamped
+
+
+def test_apply_update_range_pinned_at_zero_reopens_band():
+    task = _apply_task(range_min=0, range_max=1000)
+    task.apply_update("range_max", -5)
+    assert (task.range_min, task.range_max) == (0, 1000)
+
+
+def test_apply_update_range_not_enforced_in_bookmark_mode():
+    task = _apply_task(scan_mode="bookmarks")
+    task.apply_update("range_max", 50_000_000)
+    assert task.range_max == 50_000_000
+
+
+@pytest.mark.parametrize("name,value,exc", [
+    ("bogus", 1, ValueError),
+    ("scan_mode", 1, ValueError),
+    ("wait", 1, TypeError),
+    ("passes", True, TypeError),
+    ("passes", "3", TypeError),
+])
+def test_apply_update_rejects_wrong_name_or_type(name, value, exc, caplog):
+    task = _apply_task()
+    with caplog.at_level("ERROR"), pytest.raises(exc):
+        task.apply_update(name, value)  # type: ignore[arg-type]
+    assert caplog.records
+
+
+def test_scanning_task_init_negative_delay_clamped():
+    assert _apply_task(delay=-2).delay == 0

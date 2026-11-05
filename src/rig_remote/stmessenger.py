@@ -20,11 +20,15 @@ TAS - Tim Sweeney - mainetim@gmail.com
 """
 
 import logging
-from typing import Any
 
 from rig_remote.queue_comms import QueueComms
 
 logger = logging.getLogger(__name__)
+
+
+def encode_bool(value: bool) -> str:
+    """Encode a bool for the queue wire format: exactly "true" or "false"."""
+    return "true" if value else "false"
 
 
 class STMessenger:
@@ -36,18 +40,19 @@ class STMessenger:
     def __init__(self, queue_comms: QueueComms):
         self.queue_comms = queue_comms
 
-    def send_event_update(self, event: tuple[str, Any]) -> None:
+    def send_event_update(self, event: tuple[str, str]) -> None:
         """Send an event update to the scanning thread.
 
-        :param event: tuple of event name and state
+        :param event: tuple of (event name, value as string). Ints are sent as
+            ``str(int)``, bools via :func:`encode_bool`.
 
         :raises: ValueError if event is mal-formed.
         """
 
-        if isinstance(event, tuple) and len(event) == 2:
+        if isinstance(event, tuple) and len(event) == 2 and all(isinstance(item, str) for item in event):
             self.queue_comms.send_to_child(event)
         else:
-            logger.error("Event : %s", event)  # type: ignore[unreachable]
+            logger.error("Event : %s", event)
             raise ValueError("Bad event update attempt.")
 
     def update_queued(self) -> bool:

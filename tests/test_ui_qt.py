@@ -421,11 +421,31 @@ def test_process_checkbox_no_scan_thread(rig_remote_app, method, param):
     getattr(rig_remote_app, method)(Qt.CheckState.Checked.value)
 
 
+@pytest.mark.parametrize("checked, expected", [(True, "true"), (False, "false")])
+def test_process_checkbutton_sends_lowercase_string(rig_remote_app, checked, expected):
+    rig_remote_app.scan_thread = Mock()
+    with patch.object(rig_remote_app.scan_queue, "send_event_update") as mock_send:
+        rig_remote_app._process_checkbutton(("ckb_log", checked))
+    mock_send.assert_called_once_with(("ckb_log", expected))
+    rig_remote_app.scan_thread = None
+
+
+@pytest.mark.parametrize("text, expected", [("5", "5"), ("100,000", "100000"), ("-40", "-40")])
+def test_process_entry_sends_int_as_string(rig_remote_app, text, expected):
+    rig_remote_app.scan_thread = Mock()
+    rig_remote_app.params["txt_delay"].setText(text)
+    event = _make_event(rig_remote_app.params["txt_delay"], "txt_delay")
+    with patch.object(rig_remote_app.scan_queue, "send_event_update") as mock_send:
+        rig_remote_app._process_entry(event)
+    mock_send.assert_called_once_with(("txt_delay", expected))
+    rig_remote_app.scan_thread = None
+
+
 def test_process_checkbutton_sends_when_scan_active(rig_remote_app):
     rig_remote_app.scan_thread = Mock()
     with patch.object(rig_remote_app.scan_queue, "send_event_update") as mock_send:
         rig_remote_app._process_checkbutton(("ckb_wait", True))
-    mock_send.assert_called_once_with(("ckb_wait", True))
+    mock_send.assert_called_once_with(("ckb_wait", "true"))
     assert rig_remote_app.params_last_content["ckb_wait"] is True
     rig_remote_app.scan_thread = None
 

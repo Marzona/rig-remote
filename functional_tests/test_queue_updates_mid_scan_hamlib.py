@@ -358,3 +358,33 @@ def test_multiple_queued_events_all_applied():
         f"Expected 4 tune calls (2 passes × 2 steps), "
         f"got {rig.set_frequency.call_count}"
     )
+
+
+# ---------------------------------------------------------------------------
+# ADR-5: mid-scan updates are clamped (interval 0 must not hang the sweep)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", ["0", "-1"])
+def test_interval_zero_update_mid_scan_is_clamped_and_pass_terminates(raw):
+    """txt_interval=0 / -1 arriving through the real queue is clamped to the
+    minimum interval; without clamping ``freq += 0`` would never end the pass."""
+    import threading
+
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 88_005_000   # 5 steps at the 1 kHz minimum interval
+
+    queue = _make_live_queue([("txt_interval", raw)])
+    rig   = _make_silent_rig()
+    task  = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=1_000)
+    scanner = _scanner(queue, rig)
+
+    worker = threading.Thread(target=scanner.scan, args=(task,), daemon=True)
+    worker.start()
+    worker.join(timeout=10)
+    hung = worker.is_alive()
+    if hung:
+        scanner.terminate()
+        worker.join(timeout=5)
+    assert not hung, "frequency pass did not terminate after interval update"
+    assert task.interval == ScanningTask._MIN_INTERVAL
+    assert rig.set_frequency.call_count == 5
