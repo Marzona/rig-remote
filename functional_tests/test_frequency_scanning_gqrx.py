@@ -356,9 +356,12 @@ def test_scanning_frequency_invalid_scan_mode_raises_value_error():
         )
 
 
-@pytest.mark.parametrize("passes", [-3, -1, 0])
+@pytest.mark.parametrize("passes", [-3, -1])
 def test_scanning_frequency_negative_passes_clamped_to_one(passes):
-    """passes < 1 is silently clamped to 1; the scan executes exactly once."""
+    """Negative passes are clamped to 1; the scan executes exactly once.
+
+    passes=0 means infinite (ADR-5) and is covered by test_queue_updates_mid_scan_hamlib.py.
+    """
     RANGE_MIN = 88_000_000
     RANGE_MAX = 90_000_000
     INTERVAL  =  1_000_000  # 2 steps: 88 MHz, 89 MHz
