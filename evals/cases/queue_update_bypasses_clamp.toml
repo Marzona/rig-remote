@@ -1,0 +1,23 @@
+kind = "seed"
+title = "Mid-scan queue updates assigned directly, bypassing ADR-5 clamping (interval 0 never ends a pass)"
+origin = '''
+Real bug until 5789624: txt_interval=0 set interval to 0, so `freq += interval` never finished the pass.
+'''
+pr_description = '''
+Speed up queue handling: assign the converted value directly instead of going through
+ScanningTask.apply_update for the simple scalar fields.
+'''
+
+[expect]
+files = ["src/rig_remote/scanner_core.py"]
+keywords = ["clamp", "apply_update", "ADR-5", "validation"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/scanner_core.py"
+old = '''
+                    task.apply_update(key, converter(param_value))
+'''
+new = '''
+                    setattr(task, key, converter(param_value))
+'''

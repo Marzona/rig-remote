@@ -1,0 +1,148 @@
+kind = "seed"
+title = "Pass count 0 clamped to 1, breaking infinite scans (code, tests and docs changed together)"
+origin = '''
+Real bug: shipped until afb42b7. The UI labels passes '0=Infinite' and the default config uses 0, but ScanningTask clamped 0 to 1; the tests and ADR-5 agreed with the wrong rule.
+'''
+pr_description = '''
+Validate scan passes: a pass count must be at least 1. A value of 0 made the pass counter start at
+zero, so _check_passes now clamps anything <= INFINITE_PASSES to 1. Tests and ADR-5 updated to match.
+'''
+
+[expect]
+files = ["src/rig_remote/models/scanning_task.py"]
+keywords = ["infinite"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/models/scanning_task.py"
+old = '''
+    def _check_passes(self) -> None:
+        """Clamp negative pass counts; 0 (INFINITE_PASSES) means scan until stopped.
+
+        A negative value is a typo, not a request to scan forever, so it is
+        clamped to the smallest finite count (1) rather than to 0.
+        """
+        if self.passes < INFINITE_PASSES:
+            logger.error("scan passes must be >= 0 (0 = infinite), got %i, updated to 1", self.passes)
+            self.passes = 1
+'''
+new = '''
+    def _check_passes(self) -> None:
+        """A scan needs at least one pass; clamp anything lower to 1."""
+        if self.passes <= INFINITE_PASSES:
+            logger.error("scan passes must be >= 1, got %i, updated to 1", self.passes)
+            self.passes = 1
+'''
+
+[[edit]]
+file = "tests/test_scanning_task.py"
+old = '''
+    ("passes", 0, "passes", 0),   # INFINITE_PASSES is valid, not clamped
+'''
+new = '''
+    ("passes", 0, "passes", 1),
+'''
+
+[[edit]]
+file = "tests/test_scanning_task.py"
+old = '''
+
+
+
+def test_scanning_task_passes_zero_means_infinite(caplog):
+    """passes=0 is INFINITE_PASSES (the UI's "0=Infinite", the config default): kept, not clamped."""
+    with caplog.at_level("ERROR"):
+        task = _apply_task(passes=0)
+    assert task.passes == 0
+    assert not caplog.records
+'''
+new = '''
+'''
+
+[[edit]]
+file = "tests/test_scanning.py"
+old = '''
+
+
+
+def test_scanning_core_process_queue_passes_zero_means_infinite(caplog):
+    task = _freq_task(passes=3)
+    core = _core(queue=_live_queue([("txt_passes", "0")]))
+    with caplog.at_level("ERROR"):
+        assert core.process_queue(task) is True
+    assert task.passes == 0
+    assert not [r for r in caplog.records if r.levelname == "ERROR"], "0 is valid and must not be logged as clamped"'''
+new = '''
+'''
+
+[[edit]]
+file = "functional_tests/test_queue_updates_mid_scan_hamlib.py"
+old = '''
+
+
+
+def test_infinite_passes_keep_scanning_until_terminate():
+    """passes=0 (the UI's "0=Infinite", the config default) scans past many
+    passes and stops only on terminate()."""
+    import threading
+    import time
+
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 90_000_000   # 2 steps per pass
+    INTERVAL = 1_000_000
+    MIN_PASSES = 5
+
+    queue = _make_live_queue()
+    rig = _make_silent_rig()
+    task = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=INTERVAL, passes=0)
+    assert task.passes == 0, "passes=0 must not be clamped to 1"
+    scanner = _scanner(queue, rig)
+
+    worker = threading.Thread(target=scanner.scan, args=(task,), daemon=True)
+    worker.start()
+    deadline = time.monotonic() + 10
+    while rig.set_frequency.call_count < MIN_PASSES * 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    still_running = worker.is_alive()
+    scanner.terminate()
+    worker.join(timeout=5)
+
+    assert rig.set_frequency.call_count >= MIN_PASSES * 2, (
+        f"infinite scan stopped early after {rig.set_frequency.call_count} tunes"
+    )
+    assert still_running, "infinite scan finished on its own instead of waiting for terminate()"
+    assert not worker.is_alive(), "scan did not stop after terminate()"'''
+new = '''
+'''
+
+[[edit]]
+file = ".claude/architecture.md"
+old = '''
+**Passes:** `0` is `INFINITE_PASSES` — scan until stopped. The UI labels it
+"0=Infinite" and the default config uses it, so it is a valid value, never
+clamped. Only negative values are invalid; they are clamped to `1` (a typo
+must not silently become a scan that never ends). A mid-scan `passes` update
+restarts the remaining-pass count; updates to any other field do not.
+
+'''
+new = '''
+**Passes:** a scan runs at least one pass; values below 1 are clamped to 1.
+A mid-scan `passes` update restarts the remaining-pass count; updates to any
+other field do not.
+
+'''
+
+[[edit]]
+file = ".claude/architecture.md"
+old = '''
+| `passes` = 0 means infinite; only negatives are clamped (to 1) | ADR-5 | test — `test_scanning_task_passes_zero_means_infinite`, `test_scanning_core_pass_count_update_infinite_stays_active_over_many_passes`, `test_infinite_passes_keep_scanning_until_terminate` (real scan still running after 5 passes, stops on `terminate()`) |
+'''
+new = '''
+'''
+
+[[edit]]
+file = ".claude/architecture.md"
+old = '''
+(passes ≥ 0, interval'''
+new = '''
+(passes ≥ 1, interval'''

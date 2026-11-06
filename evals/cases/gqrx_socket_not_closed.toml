@@ -1,0 +1,21 @@
+kind = "seed"
+title = "gqrx backend stops closing its per-command socket (connection leak, ADR-4)"
+origin = '''
+Synthetic: ADR-4 (one TCP connection per command) is enforced by review only.
+'''
+pr_description = '''
+Small cleanup in GQRXRigCtl._send_message: drop a redundant statement.
+'''
+
+[expect]
+files = ["src/rig_remote/rig_backends/gqrx_rigctl.py"]
+keywords = ["close", "leak", "ADR-4", "resource", "file descriptor"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/rig_backends/gqrx_rigctl.py"
+old = '''
+            rig_socket.close()
+'''
+new = '''
+'''

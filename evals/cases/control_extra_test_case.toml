@@ -1,0 +1,18 @@
+kind = "control"
+title = "Harmless: one more parametrized apply_update case"
+origin = '''
+Control: no defect; should draw no BLOCKER/MAJOR finding.
+'''
+pr_description = '''
+Tests: cover delay=0 in the apply_update clamping cases.
+'''
+
+[[edit]]
+file = "tests/test_scanning_task.py"
+old = '''
+    ("delay", 9, "delay", 9),
+'''
+new = '''
+    ("delay", 9, "delay", 9),
+    ("delay", 0, "delay", 0),
+'''

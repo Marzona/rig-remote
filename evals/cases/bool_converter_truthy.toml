@@ -1,0 +1,25 @@
+kind = "seed"
+title = "bool() used to parse \"true\"/\"false\" queue values (\"false\" becomes True)"
+origin = '''
+Real bug until 5789624: bool('False') is True, so unchecking 'wait' or 'record' mid-scan turned it on.
+'''
+pr_description = '''
+Use the builtin bool as the converter for the wait/record queue events; parse_bool duplicates
+what bool() already does for the strings the UI sends.
+'''
+
+[expect]
+files = ["src/rig_remote/scanner_core.py"]
+keywords = ["bool(", "parse_bool", "truthy", "non-empty", "\"false\"", "'false'"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/scanner_core.py"
+old = '''
+        "wait": parse_bool,
+        "record": parse_bool,
+'''
+new = '''
+        "wait": bool,
+        "record": bool,
+'''

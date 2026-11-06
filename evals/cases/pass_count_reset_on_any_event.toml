@@ -1,0 +1,72 @@
+kind = "seed"
+title = "Any mid-scan update (delay, sgn_level, ...) restarts the remaining pass count"
+origin = '''
+Real behaviour until afb42b7: a delay or signal-level change during the last pass added passes.
+'''
+pr_description = '''
+Simplify pass-count handling in the scan strategies: re-read task.passes whenever process_queue
+applied an update, instead of going through the separate consume_passes_update() flag.
+'''
+
+[expect]
+files = ["src/rig_remote/frequency_scanner_strategy.py", "src/rig_remote/bookmark_scanner_strategy.py"]
+keywords = ["reset", "restart", "pass_count", "pass count", "consume_passes_update"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/frequency_scanner_strategy.py"
+old = '''
+                self._core.process_queue(task)
+                if self._core.consume_passes_update():
+                    pass_count = task.passes
+'''
+new = '''
+                if self._core.process_queue(task):
+                    pass_count = task.passes
+'''
+
+[[edit]]
+file = "src/rig_remote/bookmark_scanner_strategy.py"
+old = '''
+                self._core.process_queue(task)
+                if self._core.consume_passes_update():
+                    pass_count = task.passes
+'''
+new = '''
+                if self._core.process_queue(task):
+                    pass_count = task.passes
+'''
+
+[[edit]]
+file = "functional_tests/test_queue_updates_mid_scan_hamlib.py"
+old = '''
+
+
+
+@pytest.mark.parametrize("event", [("txt_delay", "0"), ("txt_sgn_level", "-30"), ("ckb_wait", "false")])
+def test_non_passes_update_mid_scan_does_not_restart_pass_count(event):
+    """An update to anything but passes, arriving during pass 2 of 2, must not
+    restart the count: exactly 2 passes run (4 tunes), not 3 (6 tunes)."""
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 90_000_000   # 2 steps per pass
+    INTERVAL = 1_000_000
+
+    queue = _make_live_queue()
+    rig = _make_silent_rig()
+    _inject_on_tune(rig, queue, at_call=3, event=event)   # first tune of pass 2
+    task = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=INTERVAL, passes=2)
+    _scanner(queue, rig).scan(task)
+
+    assert rig.set_frequency.call_count == 4, (
+        f"expected 2 passes × 2 steps = 4 tunes, got {rig.set_frequency.call_count}"
+    )'''
+new = '''
+'''
+
+[[edit]]
+file = ".claude/architecture.md"
+old = '''
+| Only a `passes` update restarts the remaining-pass count | ADR-5 | test — `test_scanning_core_consume_passes_update_only_for_passes_events`, `test_non_passes_update_mid_scan_does_not_restart_pass_count`, `test_passes_update_mid_scan_restarts_pass_count` |
+'''
+new = '''
+'''

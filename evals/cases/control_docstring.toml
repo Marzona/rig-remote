@@ -1,0 +1,20 @@
+kind = "control"
+title = "Harmless: docstring for ScannerCore.should_stop"
+origin = '''
+Control: no defect; should draw no BLOCKER/MAJOR finding.
+'''
+pr_description = '''
+Docs: add a docstring to ScannerCore.should_stop.
+'''
+
+[[edit]]
+file = "src/rig_remote/scanner_core.py"
+old = '''
+    def should_stop(self) -> bool:
+        return not self._scan_active
+'''
+new = '''
+    def should_stop(self) -> bool:
+        """Return True once the scan was terminated or finished its last pass."""
+        return not self._scan_active
+'''

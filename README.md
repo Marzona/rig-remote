@@ -118,6 +118,9 @@ functional_tests/     integration tests (tests marked `gqrx` need a running gqrx
   release agent that stops at verified artefacts, a read-only review agent, and
   hooks (tested in [`tests/test_hooks.py`](tests/test_hooks.py)) that block
   publishing and file changes by those agents.
+- **Review-agent evals:** [`evals/`](evals/README.md) applies seeded bugs (most of
+  them real bugs this project shipped) and harmless controls, then scores what the
+  review agent catches against what CI alone catches.
 - **Running the checks locally:** see
   [`.claude/rules/verification.md`](.claude/rules/verification.md), or run
   `./release.sh commit_push`.

@@ -1,0 +1,35 @@
+kind = "seed"
+title = "Release workflow lets .devN tags publish to production PyPI (guard and its test removed)"
+origin = '''
+Synthetic, against a real control: .devN versions must publish to TestPyPI only.
+'''
+pr_description = '''
+Release workflow: let publish-pypi run for every tag. The pypi environment approval already gates
+production uploads, so the dev-version condition is redundant. Dropped the matching workflow test.
+'''
+
+[expect]
+files = [".github/workflows/release.yml"]
+keywords = ["dev", "TestPyPI", "is-dev", "pre-release", "prerelease"]
+min_severity = "BLOCKER"
+
+[[edit]]
+file = ".github/workflows/release.yml"
+old = '''
+    if: needs.verify-version.outputs.is-dev == 'false'
+'''
+new = '''
+'''
+
+[[edit]]
+file = "tests/test_workflows.py"
+old = '''
+
+
+
+def test_publish_pypi_skips_dev_versions(release_text):
+    block = _job_block(release_text, "publish-pypi")
+    assert "if: needs.verify-version.outputs.is-dev == 'false'" in block
+    assert "verify-version" in block.split("steps:")[0]'''
+new = '''
+'''

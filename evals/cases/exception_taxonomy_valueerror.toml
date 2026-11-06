@@ -1,0 +1,46 @@
+kind = "seed"
+title = "Bookmark format error raised as a bare ValueError instead of the ADR-9 taxonomy"
+origin = '''
+Synthetic: the 'scan-loop errors use the taxonomy' invariant is enforced by review only.
+'''
+pr_description = '''
+Raise ValueError for unknown bookmark file formats: callers already handle ValueError for bad
+input, so the custom exception adds nothing.
+'''
+
+[expect]
+files = ["src/rig_remote/bookmarksmanager.py"]
+keywords = ["BookmarkFormatError", "ADR-9", "taxonomy", "RetriableError"]
+min_severity = "MAJOR"
+
+[[edit]]
+file = "src/rig_remote/bookmarksmanager.py"
+old = '''
+from rig_remote.exceptions import (
+    BookmarkFormatError,
+    InvalidPathError,
+)
+'''
+new = '''
+from rig_remote.exceptions import (
+    InvalidPathError,
+)
+'''
+
+[[edit]]
+file = "src/rig_remote/bookmarksmanager.py"
+old = '''
+        raise BookmarkFormatError(message)
+'''
+new = '''
+        raise ValueError(message)
+'''
+
+[[edit]]
+file = "tests/test_bookmarksmanager.py"
+old = '''
+    with pytest.raises(BookmarkFormatError):
+'''
+new = '''
+    with pytest.raises(ValueError):
+'''
