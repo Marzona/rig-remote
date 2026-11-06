@@ -5,6 +5,8 @@ Control: no defect; should draw no BLOCKER/MAJOR finding.
 '''
 pr_description = '''
 Docs: add a docstring to ScannerCore.should_stop.
+
+ADR-impact: none, because this only adds a docstring and changes no behaviour.
 '''
 
 [[edit]]

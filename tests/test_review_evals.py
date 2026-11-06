@@ -181,3 +181,15 @@ def test_review_evals_snapshot_hides_answer_key_and_history():
         ).stdout
         assert status == "", "the snapshot must start clean so the reviewer sees only the case's diff"
     assert not path.exists(), "the snapshot is removed afterwards"
+
+
+def test_review_evals_snapshot_commits_exactly_heads_files_minus_hidden():
+    def tracked(cwd):
+        out = runner.subprocess.run(["git", "ls-files"], cwd=cwd, capture_output=True, text=True, check=True).stdout
+        return set(out.splitlines())
+
+    expected = {
+        f for f in tracked(REPO_ROOT) if not any(f == h or f.startswith(h + "/") for h in runner.HIDDEN_FROM_REVIEWER)
+    }
+    with runner.snapshot() as path:
+        assert tracked(path) == expected, "files ignored by a global excludesfile must still be committed"

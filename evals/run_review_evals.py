@@ -110,7 +110,9 @@ def snapshot() -> Iterator[Path]:
             "commit.gpgsign=false",
         ]
         subprocess.run([*git, "init", "--quiet", "--initial-branch=master"], cwd=path, check=True)
-        subprocess.run([*git, "add", "--all"], cwd=path, check=True)
+        # --force: commit exactly HEAD's tracked files, even ones a global excludesfile ignores
+        # (a global "*.md" or ".claude" rule would otherwise silently drop docs and agent config).
+        subprocess.run([*git, "add", "--all", "--force"], cwd=path, check=True)
         subprocess.run([*git, "commit", "--quiet", "--message", "Base"], cwd=path, check=True)
         yield path
     finally:
