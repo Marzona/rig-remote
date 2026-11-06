@@ -165,3 +165,19 @@ def test_review_evals_write_summary_counts_outcomes(tmp_path):
     assert "**1/1**" in markdown  # seed caught; also the CI-silent seed caught
     assert "false BLOCKER/MAJOR alarm: **1/1**" in markdown
     assert (tmp_path / "summary.json").is_file() and (tmp_path / "reports" / "c.md").is_file()
+
+
+def test_review_evals_snapshot_hides_answer_key_and_history():
+    with runner.snapshot() as path:
+        for hidden in runner.HIDDEN_FROM_REVIEWER:
+            assert not (path / hidden).exists(), f"{hidden} must not be visible to the reviewer"
+        assert (path / "src" / "rig_remote").is_dir()
+        log = runner.subprocess.run(
+            ["git", "log", "--oneline"], cwd=path, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        assert len(log) == 1, "the snapshot must have a single commit and no project history"
+        status = runner.subprocess.run(
+            ["git", "status", "--porcelain"], cwd=path, capture_output=True, text=True, check=True
+        ).stdout
+        assert status == "", "the snapshot must start clean so the reviewer sees only the case's diff"
+    assert not path.exists(), "the snapshot is removed afterwards"

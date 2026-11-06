@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Run the review-agent evals.
 
-For each case in evals/cases/: create a throwaway git worktree at HEAD, apply
-the case's edits, optionally record whether CI's own checks would fail, ask
-the review agent (``code_review_agent``) for a report, and score it.
+For each case in evals/cases/: create a throwaway snapshot repo of HEAD (no
+evals, no history, so the reviewer cannot read the answer key), apply the
+case's edits, optionally record whether CI's own checks would fail, ask the
+review agent (``code_review_agent``) for a report, and score it.
 
     python3 evals/run_review_evals.py --measure-ci          # all cases, real review
     python3 evals/run_review_evals.py --dry-run --measure-ci  # no model calls
@@ -17,12 +18,15 @@ session, so a full run costs real usage; --dry-run makes no model calls.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 from collections.abc import Iterator
@@ -41,6 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CASES_DIR = REPO_ROOT / "evals" / "cases"
 RESULTS_DIR = REPO_ROOT / "evals" / "results"
 VENV_BIN = REPO_ROOT / ".venv" / "bin"
+HIDDEN_FROM_REVIEWER = ("evals", "tests/test_review_evals.py")
 REVIEW_TIMEOUT_S = 45 * 60
 CI_TIMEOUT_S = 15 * 60
 
@@ -73,16 +78,43 @@ class CaseRun:
 
 
 @contextmanager
-def worktree() -> Iterator[Path]:
-    """A detached worktree at HEAD, removed again afterwards."""
+def snapshot() -> Iterator[Path]:
+    """A throwaway git repo holding HEAD's files minus the answer key, as one commit.
+
+    The reviewer must not be able to read the expected findings (``evals/``)
+    or the history of the fixes being re-broken (commit messages), so the
+    snapshot has no evals and no history: a fresh repo with a single commit.
+    """
     parent = Path(tempfile.mkdtemp(prefix="rig-remote-eval-"))
-    path = parent / "wt"
-    subprocess.run(["git", "worktree", "add", "--quiet", "--detach", str(path), "HEAD"], cwd=REPO_ROOT, check=True)
+    path = parent / "repo"
+    path.mkdir()
     try:
+        archive = subprocess.run(
+            ["git", "archive", "--format=tar", "HEAD"], cwd=REPO_ROOT, capture_output=True, check=True
+        )
+        with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+            tar.extractall(path, filter="data")
+        for hidden in HIDDEN_FROM_REVIEWER:
+            target = path / hidden
+            if target.is_dir():
+                shutil.rmtree(target)
+            elif target.exists():
+                target.unlink()
+        git = [
+            "git",
+            "-c",
+            "user.name=review-eval",
+            "-c",
+            "user.email=review-eval@localhost",
+            "-c",
+            "commit.gpgsign=false",
+        ]
+        subprocess.run([*git, "init", "--quiet", "--initial-branch=master"], cwd=path, check=True)
+        subprocess.run([*git, "add", "--all"], cwd=path, check=True)
+        subprocess.run([*git, "commit", "--quiet", "--message", "Base"], cwd=path, check=True)
         yield path
     finally:
-        subprocess.run(["git", "worktree", "remove", "--force", str(path)], cwd=REPO_ROOT, check=False)
-        parent.rmdir()
+        shutil.rmtree(parent)
 
 
 def measure_ci(path: Path) -> tuple[bool, str]:
@@ -138,7 +170,7 @@ def run_case(case: Case, *, dry_run: bool, with_ci: bool, reviewer: str) -> Case
     result: CaseResult | None = None
     error = ""
     try:
-        with worktree() as path:
+        with snapshot() as path:
             apply_edits(case, path)
             if with_ci:
                 ci_detects, ci_detail = measure_ci(path)
