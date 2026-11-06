@@ -9,8 +9,8 @@ from rig_remote.ui_handlers import RigRemoteHandlersMixin
 from rig_remote.app_config import AppConfig
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
-from rig_remote.bookmarksmanager import bookmark_factory
-from rig_remote.exceptions import UnsupportedScanningConfigError, UnsupportedSyncConfigError
+from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
+from rig_remote.exceptions import BookmarkFormatError, UnsupportedScanningConfigError, UnsupportedSyncConfigError
 from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
 from rig_remote.rig_backends.mode_translator import ModeTranslator
 from rig_remote.rig_backends.protocol import BackendType
@@ -176,6 +176,42 @@ def test_import_bookmarks_dialog_with_filename(rig_remote_app):
 def test_import_bookmarks_empty_list(rig_remote_app):
     rig_remote_app.bookmarks.import_bookmarks = Mock(return_value=[])
     rig_remote_app._import_bookmarks(Path("/tmp/bm.csv"))  # returns early
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        BookmarkFormatError("No parser found for filename /tmp/bm.csv"),
+        OSError("Permission denied"),
+        UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte"),
+    ],
+    ids=["unknown-format", "unreadable", "binary-file"],
+)
+def test_import_bookmarks_reports_error_instead_of_raising(rig_remote_app, error):
+    rig_remote_app.bookmarks.import_bookmarks = Mock(side_effect=error)
+    with (
+        patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_critical,
+        patch.object(rig_remote_app, "_insert_bookmarks") as mock_insert,
+    ):
+        rig_remote_app._import_bookmarks(Path("/tmp/bm.csv"))
+    mock_critical.assert_called_once()
+    assert mock_critical.call_args.args[1] == "Import error"
+    assert "/tmp/bm.csv" in mock_critical.call_args.args[2]
+    mock_insert.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "content",
+    [b"this,is,not,a,bookmark,file,at,all\n", b"\xff\xfe\x00binary"],
+    ids=["unknown-format", "binary-file"],
+)
+def test_import_bookmarks_real_manager_bad_file_shows_dialog(rig_remote_app, tmp_path, content):
+    bad_file = tmp_path / "bad.csv"
+    bad_file.write_bytes(content)
+    rig_remote_app.bookmarks = BookmarksManager()
+    with patch("rig_remote.ui_handlers.QMessageBox.critical") as mock_critical:
+        rig_remote_app._import_bookmarks(bad_file)
+    mock_critical.assert_called_once()
 
 
 def test_import_bookmarks_with_entries(rig_remote_app, mock_bookmark):

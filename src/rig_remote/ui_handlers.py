@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 
 from rig_remote.app_config import AppConfig
 from rig_remote.bookmarksmanager import BookmarksManager, bookmark_factory
+from rig_remote.exceptions import BookmarkFormatError
 from rig_remote.models.bookmark import Bookmark
 from rig_remote.models.rig_endpoint import RigEndpoint
 from rig_remote.rig_backends.hamlib_rigctl import HamlibRigCtl
@@ -152,8 +153,21 @@ class RigRemoteHandlersMixin:
         self._import_bookmarks(Path(filename))
 
     def _import_bookmarks(self, bookmarks_file_path: Path) -> None:
-        """Import bookmarks from the selected file."""
-        bookmark_list = self.bookmarks.import_bookmarks(bookmarks_file_path)
+        """Import bookmarks from the selected file.
+
+        A file that can't be read or isn't a recognised bookmark format is
+        reported to the user instead of raising out of the Qt slot.
+        """
+        try:
+            bookmark_list = self.bookmarks.import_bookmarks(bookmarks_file_path)
+        except (BookmarkFormatError, OSError, UnicodeDecodeError) as err:
+            logger.error("Could not import bookmarks from %s: %s", bookmarks_file_path, err)
+            QMessageBox.critical(
+                self._parent(),
+                "Import error",
+                f"Could not import bookmarks from {bookmarks_file_path}:\n{err}",
+            )
+            return
         if not bookmark_list:
             return
         self._insert_bookmarks(bookmarks=bookmark_list)
