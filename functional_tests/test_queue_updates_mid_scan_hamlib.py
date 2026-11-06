@@ -388,3 +388,89 @@ def test_interval_zero_update_mid_scan_is_clamped_and_pass_terminates(raw):
     assert not hung, "frequency pass did not terminate after interval update"
     assert task.interval == ScanningTask._MIN_INTERVAL
     assert rig.set_frequency.call_count == 5
+
+
+# ---------------------------------------------------------------------------
+# Infinite passes (passes=0) and which updates restart the pass count
+# ---------------------------------------------------------------------------
+
+def _inject_on_tune(rig: Mock, queue: STMessenger, at_call: int, event: tuple[str, str]) -> None:
+    """Send *event* through the real queue when the rig is tuned for the *at_call*-th time (1-based)."""
+    calls = {"n": 0}
+
+    def _tune(*_args: object, **_kwargs: object) -> None:
+        calls["n"] += 1
+        if calls["n"] == at_call:
+            queue.send_event_update(event)
+
+    rig.set_frequency.side_effect = _tune
+
+
+def test_infinite_passes_keep_scanning_until_terminate():
+    """passes=0 (the UI's "0=Infinite", the config default) scans past many
+    passes and stops only on terminate()."""
+    import threading
+    import time
+
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 90_000_000   # 2 steps per pass
+    INTERVAL = 1_000_000
+    MIN_PASSES = 5
+
+    queue = _make_live_queue()
+    rig = _make_silent_rig()
+    task = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=INTERVAL, passes=0)
+    assert task.passes == 0, "passes=0 must not be clamped to 1"
+    scanner = _scanner(queue, rig)
+
+    worker = threading.Thread(target=scanner.scan, args=(task,), daemon=True)
+    worker.start()
+    deadline = time.monotonic() + 10
+    while rig.set_frequency.call_count < MIN_PASSES * 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    still_running = worker.is_alive()
+    scanner.terminate()
+    worker.join(timeout=5)
+
+    assert rig.set_frequency.call_count >= MIN_PASSES * 2, (
+        f"infinite scan stopped early after {rig.set_frequency.call_count} tunes"
+    )
+    assert still_running, "infinite scan finished on its own instead of waiting for terminate()"
+    assert not worker.is_alive(), "scan did not stop after terminate()"
+
+
+@pytest.mark.parametrize("event", [("txt_delay", "0"), ("txt_sgn_level", "-30"), ("ckb_wait", "false")])
+def test_non_passes_update_mid_scan_does_not_restart_pass_count(event):
+    """An update to anything but passes, arriving during pass 2 of 2, must not
+    restart the count: exactly 2 passes run (4 tunes), not 3 (6 tunes)."""
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 90_000_000   # 2 steps per pass
+    INTERVAL = 1_000_000
+
+    queue = _make_live_queue()
+    rig = _make_silent_rig()
+    _inject_on_tune(rig, queue, at_call=3, event=event)   # first tune of pass 2
+    task = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=INTERVAL, passes=2)
+    _scanner(queue, rig).scan(task)
+
+    assert rig.set_frequency.call_count == 4, (
+        f"expected 2 passes × 2 steps = 4 tunes, got {rig.set_frequency.call_count}"
+    )
+
+
+def test_passes_update_mid_scan_restarts_pass_count():
+    """A passes update is the one event that restarts the remaining count."""
+    RANGE_MIN = 88_000_000
+    RANGE_MAX = 90_000_000   # 2 steps per pass
+    INTERVAL = 1_000_000
+
+    queue = _make_live_queue()
+    rig = _make_silent_rig()
+    _inject_on_tune(rig, queue, at_call=1, event=("txt_passes", "2"))
+    task = _freq_task(range_min=RANGE_MIN, range_max=RANGE_MAX, interval=INTERVAL, passes=1)
+    _scanner(queue, rig).scan(task)
+
+    assert task.passes == 2
+    assert rig.set_frequency.call_count == 4, (
+        f"expected the restarted count to run 2 passes (4 tunes), got {rig.set_frequency.call_count}"
+    )

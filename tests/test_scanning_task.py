@@ -178,14 +178,13 @@ def test_scanning_task_full_params(frequency_modulation, interval, delay, passes
 @pytest.mark.parametrize(
     "passes, expected_passes",
     [
-        (0, 1),
         (-1, 1),
         (-10, 1),
         (-100, 1),
     ],
 )
 def test_scanning_task_passes_less_than_one(passes, expected_passes):
-    """Test ScanningTask corrects passes < 1 to minimum value of 1."""
+    """Negative passes are clamped to 1; 0 means infinite and is kept (see the infinite-passes tests)."""
     task = ScanningTask(
         frequency_modulation="FM",
         scan_mode="frequency",
@@ -226,7 +225,7 @@ def _apply_task(**kw) -> ScanningTask:
     ("interval", 0, "interval", 1000),
     ("interval", -1, "interval", 1000),
     ("interval", 5000, "interval", 5000),
-    ("passes", 0, "passes", 1),
+    ("passes", 0, "passes", 0),   # INFINITE_PASSES is valid, not clamped
     ("passes", -3, "passes", 1),
     ("passes", 4, "passes", 4),
     ("delay", -1, "delay", 0),
@@ -277,3 +276,11 @@ def test_apply_update_rejects_wrong_name_or_type(name, value, exc, caplog):
 
 def test_scanning_task_init_negative_delay_clamped():
     assert _apply_task(delay=-2).delay == 0
+
+
+def test_scanning_task_passes_zero_means_infinite(caplog):
+    """passes=0 is INFINITE_PASSES (the UI's "0=Infinite", the config default): kept, not clamped."""
+    with caplog.at_level("ERROR"):
+        task = _apply_task(passes=0)
+    assert task.passes == 0
+    assert not caplog.records

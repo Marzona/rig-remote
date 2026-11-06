@@ -191,7 +191,8 @@ class FrequencyScannerStrategy:
                 if self._core.should_stop():
                     return task
 
-                if self._core.process_queue(task):
+                self._core.process_queue(task)
+                if self._core.consume_passes_update():
                     pass_count = task.passes
 
                 try:

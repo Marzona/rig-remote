@@ -23,6 +23,11 @@ LEN_BM = 4
 # Upper bound for valid rig frequencies (500 MHz)
 MAX_FREQUENCY_HZ = 500_000_000
 
+# A scan "passes" value of 0 means scan until stopped (the UI labels it
+# "0=Infinite" and the default config uses it). Positive values are a fixed
+# number of passes; negative values are invalid and clamped to 1.
+INFINITE_PASSES = 0
+
 # Log record type identifiers used in activity log files
 LOG_RECORD_BOOKMARK = "B"
 LOG_RECORD_FREQUENCY = "F"

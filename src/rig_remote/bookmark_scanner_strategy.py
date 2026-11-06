@@ -50,7 +50,8 @@ class BookmarkScannerStrategy:
             for bookmark in task.bookmarks:
                 logger.info("Processing bookmark %s", bookmark.id)
 
-                if self._core.process_queue(task):
+                self._core.process_queue(task)
+                if self._core.consume_passes_update():
                     pass_count = task.passes
 
                 if bookmark.lockout == "L":

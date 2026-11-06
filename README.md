@@ -98,8 +98,29 @@ page on the wiki for the full field specification.
 src/rig_remote/       main application package
 src/config_checker/   configuration checker CLI
 tests/                unit tests
-functional_tests/     integration tests (require a running gqrx or equivalent)
+functional_tests/     integration tests (tests marked `gqrx` need a running gqrx)
 ```
+
+---
+
+## Quality checks and agent setup
+
+- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs lint, type
+  checks, unit and functional tests, builds the wheel and `.deb`, and starts both
+  entry points from the installed wheel and from the `.deb` in a clean container.
+  Releases go through [`.github/workflows/release.yml`](.github/workflows/release.yml):
+  tag on `master`, Trusted Publishing, and a required approval before PyPI.
+- **Architecture rules as tests:** the decisions and invariants in
+  [`.claude/architecture.md`](.claude/architecture.md) list what enforces each one;
+  [`tests/test_architecture.py`](tests/test_architecture.py) and
+  [`tests/test_doc_drift.py`](tests/test_doc_drift.py) fail when code or docs drift.
+- **AI agent setup:** [`.claude/`](.claude/) holds the project instructions, a
+  release agent that stops at verified artefacts, a read-only review agent, and
+  hooks (tested in [`tests/test_hooks.py`](tests/test_hooks.py)) that block
+  publishing and file changes by those agents.
+- **Running the checks locally:** see
+  [`.claude/rules/verification.md`](.claude/rules/verification.md), or run
+  `./release.sh commit_push`.
 
 ---
 

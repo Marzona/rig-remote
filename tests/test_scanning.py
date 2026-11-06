@@ -326,7 +326,7 @@ def test_scanning_core_should_stop_after_terminate():
     (5,  4, True),
     (2,  1, True),
     (1,  0, False),   # last pass → deactivates
-    (0,  0, False),   # already zero → still deactivates
+    (0,  0, True),    # INFINITE_PASSES → never deactivates by count
 ])
 def test_scanning_core_pass_count_update_parametric(initial, expected_count, expected_active):
     core = _core()
@@ -501,7 +501,6 @@ def test_scanning_core_process_queue_non_str_value_skipped(value, caplog):
     (("txt_interval", "0"), "interval", 1000),
     (("txt_interval", "-1"), "interval", 1000),
     (("txt_interval", "999"), "interval", 1000),
-    (("txt_passes", "0"), "passes", 1),
     (("txt_passes", "-1"), "passes", 1),
     (("txt_delay", "-1"), "delay", 0),
     (("txt_range_min", "-5"), "range_min", 0),
@@ -1464,3 +1463,73 @@ def test_scanning_core_process_queue_unknown_converter_key_returns_false():
     cfg.valid_scan_update_event_names = ["txt_unknown"]
     core = _core(queue=_queue(events=[("txt_unknown", "value")]), config=cfg)
     assert core.process_queue(_bm_task()) is False
+
+
+# ---------------------------------------------------------------------------
+# Infinite passes (INFINITE_PASSES = 0) and pass-count resets
+# ---------------------------------------------------------------------------
+
+def _live_queue(events: list[tuple[str, str]]) -> STMessenger:
+    """Real STMessenger/QueueComms pre-loaded with *events*."""
+    from rig_remote.queue_comms import QueueComms
+
+    q = STMessenger(queue_comms=QueueComms())
+    for event in events:
+        q.send_event_update(event)
+    return q
+
+
+def test_scanning_core_pass_count_update_infinite_stays_active_over_many_passes():
+    core = _core()
+    count = 0
+    for _ in range(50):
+        count = core.pass_count_update(count)
+    assert count == 0
+    assert core.should_stop() is False
+
+
+def test_scanning_core_process_queue_passes_zero_means_infinite(caplog):
+    task = _freq_task(passes=3)
+    core = _core(queue=_live_queue([("txt_passes", "0")]))
+    with caplog.at_level("ERROR"):
+        assert core.process_queue(task) is True
+    assert task.passes == 0
+    assert not [r for r in caplog.records if r.levelname == "ERROR"], "0 is valid and must not be logged as clamped"
+
+
+@pytest.mark.parametrize(
+    "events,expected",
+    [
+        ([("txt_passes", "3")], True),
+        ([("txt_passes", "0")], True),
+        ([("txt_delay", "2")], False),
+        ([("txt_sgn_level", "-30")], False),
+        ([("ckb_wait", "true")], False),
+        ([("txt_passes", "not-a-number")], False),
+        ([("txt_delay", "2"), ("txt_passes", "4")], True),
+    ],
+)
+def test_scanning_core_consume_passes_update_only_for_passes_events(events, expected):
+    core = _core(queue=_live_queue(events))
+    core.process_queue(_freq_task(passes=2))
+    assert core.consume_passes_update() is expected
+    assert core.consume_passes_update() is False, "the flag must reset after it is consumed"
+
+
+@pytest.mark.parametrize(
+    "bad_event",
+    [
+        ("txt_unknown", "1"),
+        ("txt_delay", "not-a-number"),
+        ("ckb_wait", "yes"),
+    ],
+)
+def test_scanning_core_process_queue_bad_event_does_not_delay_valid_events(bad_event, caplog):
+    task = _freq_task(delay=0)
+    queue = _live_queue([bad_event, ("txt_delay", "7")])
+    core = _core(queue=queue)
+    with caplog.at_level("WARNING"):
+        assert core.process_queue(task) is True
+    assert task.delay == 7, "the valid event behind the bad one must be applied in the same drain"
+    assert queue.update_queued() is False
+    assert any(r.levelname == "WARNING" for r in caplog.records)

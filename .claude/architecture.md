@@ -153,12 +153,21 @@ default exists.
 **Mid-scan updates:** clamping also applies to values changed while a scan
 runs. `ScannerCore.process_queue` never assigns task fields directly; every
 queue event goes through `ScanningTask.apply_update(name, value)`, which
-assigns and re-runs the same checks as construction (passes ≥ 1, interval ≥
+assigns and re-runs the same checks as construction (passes ≥ 0, interval ≥
 the minimum step, delay ≥ 0, range bounds within the band, inner-scan params).
 A mid-scan update never raises for a numeric value: if it would invert the
 frequency range, the bound just updated is moved so the range stays valid and
 the sweep always terminates. Only an unknown field name or a wrong value type
 raises.
+
+**Passes:** `0` is `INFINITE_PASSES` — scan until stopped. The UI labels it
+"0=Infinite" and the default config uses it, so it is a valid value, never
+clamped. Only negative values are invalid; they are clamped to `1` (a typo
+must not silently become a scan that never ends). A mid-scan `passes` update
+restarts the remaining-pass count; updates to any other field do not.
+
+**Bad events:** an invalid queue event is logged and skipped, and the drain
+continues, so valid events queued behind it are applied in the same drain.
 
 ---
 
@@ -295,6 +304,9 @@ turning rows into tests where a mechanical check is possible.
 | Queue payload is always `tuple[str, str]` | ADR-1 | CI — mypy strict (every `STMessenger`/`QueueComms` signature is `tuple[str, str]`, no `Any`); test — `tests/test_stmessenger.py` (runtime `ValueError` for non-str items, mypy-on-snippet check) and `tests/test_ui_qt.py` (senders encode ints and bools as strings) |
 | Queue booleans are parsed strictly, never with `bool(str)` | ADR-1 | test — `test_scanning_core_process_queue_bool_parsing_strict`, `test_scanning_core_process_queue_bool_invalid_skipped_with_warning` |
 | Mid-scan queue updates are validated and clamped like construction | ADR-5 | test — `test_scanning_core_process_queue_clamps_out_of_range`, `test_apply_update_clamps_and_logs`, `functional_tests/test_queue_updates_mid_scan_hamlib.py` (interval `"0"`/`"-1"` through the real queue; the pass terminates) |
+| `passes` = 0 means infinite; only negatives are clamped (to 1) | ADR-5 | test — `test_scanning_task_passes_zero_means_infinite`, `test_scanning_core_pass_count_update_infinite_stays_active_over_many_passes`, `test_infinite_passes_keep_scanning_until_terminate` (real scan still running after 5 passes, stops on `terminate()`) |
+| Only a `passes` update restarts the remaining-pass count | ADR-5 | test — `test_scanning_core_consume_passes_update_only_for_passes_events`, `test_non_passes_update_mid_scan_does_not_restart_pass_count`, `test_passes_update_mid_scan_restarts_pass_count` |
+| An invalid queue event never delays valid events behind it | ADR-1 | test — `test_scanning_core_process_queue_bad_event_does_not_delay_valid_events` |
 | Every queue-mutable scan param has both an event name and a converter | ADR-1 | test — `test_queue_event_names_and_converters_match` |
 | Only whitelisted queue keys mutate `ScanningTask` | ADR-1 | test — `tests/test_scanning.py` (`process_queue` cases) |
 | `AppConfig` is imported only by the composition root and the UI | ADR-2 | test — `test_app_config_only_imported_by_composition_root_and_ui` |

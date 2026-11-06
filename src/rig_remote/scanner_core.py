@@ -10,6 +10,7 @@ import logging
 import time
 from collections.abc import Callable
 
+from rig_remote.constants import INFINITE_PASSES
 from rig_remote.models.channel import Channel
 from rig_remote.models.scanning_task import ScanningTask
 from rig_remote.rig_backends.protocol import RigBackend
@@ -73,6 +74,7 @@ class ScannerCore:
         self.rigctl = rigctl
         self.config = config
         self._scan_active: bool = True
+        self._passes_updated: bool = False
         self._sleep: Callable[[float], None] = sleep_fn or time.sleep
 
     # ------------------------------------------------------------------
@@ -103,6 +105,12 @@ class ScannerCore:
                 break
 
     def process_queue(self, task: ScanningTask) -> bool:
+        """Apply every queued update to *task*; return True if any was applied.
+
+        An invalid event is logged and skipped, and draining continues, so a
+        bad event never delays the valid events queued behind it. A ``passes``
+        update is recorded for ``consume_passes_update``.
+        """
         processed = False
         while self.scan_queue.update_queued():
             event = self.scan_queue.get_event_update()
@@ -117,7 +125,7 @@ class ScannerCore:
                     param_value,
                     type(param_value).__name__,
                 )
-                break
+                continue
             logger.info("Retrieved event %s %s", param_name, param_value)
 
             if param_name not in self.config.valid_scan_update_event_names:
@@ -126,7 +134,7 @@ class ScannerCore:
                     param_name,
                     self.config.valid_scan_update_event_names,
                 )
-                break
+                continue
 
             try:
                 key = param_name.split("_", 1)[1]
@@ -140,7 +148,7 @@ class ScannerCore:
                         "Queue event key %r has no registered converter — skipping",
                         key,
                     )
-                    break
+                    continue
             except (ValueError, TypeError) as exc:  # parse failures; clamping is done in apply_update
                 logger.warning(
                     "Queue event update failed: %s — event: %s %s",
@@ -148,8 +156,10 @@ class ScannerCore:
                     param_name,
                     param_value,
                 )
-                break
+                continue
 
+            if key == "passes":
+                self._passes_updated = True
             processed = True
             logger.info("Queue event applied: %s = %s", param_name, param_value)
 
@@ -223,10 +233,28 @@ class ScannerCore:
     # ------------------------------------------------------------------
 
     def pass_count_update(self, pass_count: int) -> int:
-        """Decrement *pass_count* and deactivate the scan when it reaches zero."""
-        if pass_count > 0:
-            pass_count -= 1
-        if pass_count == 0:
+        """Count one finished pass and deactivate the scan after the last one.
+
+        ``INFINITE_PASSES`` (0) means scan until stopped: the count is returned
+        unchanged and the scan stays active. A positive count is decremented,
+        and the scan is deactivated when it reaches zero.
+        """
+        if pass_count == INFINITE_PASSES:
+            return pass_count
+        pass_count -= 1
+        if pass_count <= 0:
             logger.info("Maximum passes reached — deactivating scan.")
             self._scan_active = False
+            return 0
         return pass_count
+
+    def consume_passes_update(self) -> bool:
+        """Return True once after a queue event changed ``passes``, then reset.
+
+        Strategies use this to restart their remaining-pass count only when the
+        user changed the number of passes, not on every queue event. It also
+        catches ``passes`` updates applied while sleeping in ``queue_sleep``.
+        """
+        updated = self._passes_updated
+        self._passes_updated = False
+        return updated

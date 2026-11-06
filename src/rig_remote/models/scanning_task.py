@@ -18,7 +18,7 @@ Copyright (c) 2016 Tim Sweeney
 
 import logging
 
-from rig_remote.constants import MAX_FREQUENCY_HZ
+from rig_remote.constants import INFINITE_PASSES, MAX_FREQUENCY_HZ
 from rig_remote.models.bookmark import Bookmark
 
 logger = logging.getLogger(__name__)
@@ -237,8 +237,13 @@ class ScanningTask:
             raise ValueError(message)
 
     def _check_passes(self) -> None:
-        if self.passes < 1:
-            logger.error("scan passes must be >=1, got %i, updated to 1", self.passes)
+        """Clamp negative pass counts; 0 (INFINITE_PASSES) means scan until stopped.
+
+        A negative value is a typo, not a request to scan forever, so it is
+        clamped to the smallest finite count (1) rather than to 0.
+        """
+        if self.passes < INFINITE_PASSES:
+            logger.error("scan passes must be >= 0 (0 = infinite), got %i, updated to 1", self.passes)
             self.passes = 1
 
     def _check_inner_scan_params(self) -> None:
